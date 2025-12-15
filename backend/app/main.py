@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, jsonify
+from pathlib import Path
 from werkzeug.datastructures import FileStorage
-from scaler import EEGScaler
-from model import EEG_CNN_LSTM_HPO
+from .ml.scaler import EEGScaler
+from .ml.model import EEG_CNN_LSTM_HPO
 from typing import TypedDict
-from error_handle import error_handle
+from .core.error_handle import error_handle
 
 import torch
 
@@ -19,11 +20,16 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')  # Non-GUI backend
 
-from threader import threaded
+from .core.threader import threaded
 
 
-# Initialize the Flask app
-app = Flask(__name__)
+# Initialize the Flask app with explicit template/static folders
+_here = Path(__file__).parent
+app = Flask(
+    __name__,
+    template_folder=str(_here / "templates"),
+    static_folder=str(_here / "static"),
+)
 
 SAMPLE_RATE = 128             # Hz
 WINDOW_SECONDS = 4            # window duration

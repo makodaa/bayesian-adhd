@@ -2,3 +2,4 @@ mne
 flask
 torch
 pillow
+pandas
