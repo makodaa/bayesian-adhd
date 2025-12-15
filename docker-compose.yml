@@ -12,5 +12,35 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql
 
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: backend
+        restart: unless-stopped
+        environment:
+            # Flask config
+            FLASK_ENV: production
+            # Database connection (adjust if app reads these)
+            DATABASE_HOST: database
+            DATABASE_PORT: 5432
+            DATABASE_USER: db_user
+            DATABASE_PASSWORD: db_password
+            DATABASE_NAME: bayesian_adhd
+        env_file:
+            - ./backend/.env
+        ports:
+            - "8000:8000"
+        depends_on:
+            - database
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - backend_exports:/app/exports
+
 volumes:
     postgres_data:
+    backend_exports:

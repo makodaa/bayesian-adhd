@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.env
+venv/
+.env/
+.ipynb_checkpoints/
+notebooks/
+old/
+flask_server/
