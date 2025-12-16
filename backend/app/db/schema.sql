@@ -17,9 +17,15 @@ CREATE TABLE clinicians (
 
 CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
-    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
     file_name VARCHAR(50) NOT NULL,
-    file_path TEXT NOT NULL,
+    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    sleep_hours NUMERIC(4,2),
+    food_intake TEXT,
+    caffeinated BOOLEAN,
+    medicated BOOLEAN,
+    medication_intake TEXT,
+    artifacts_noted TEXT,
+    notes TEXT,
     uploaded_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -33,7 +39,8 @@ CREATE TABLE results (
 
 CREATE TABLE band_powers (
     id SERIAL PRIMARY KEY,
-    results_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    electrode VARCHAR(50) NOT NULL,
     frequency_band VARCHAR(50) NOT NULL,
     absolute_power FLOAT NOT NULL,
     relative_power FLOAT NOT NULL,
@@ -42,14 +49,14 @@ CREATE TABLE band_powers (
 
 CREATE TABLE ratios (
     id SERIAL PRIMARY KEY,
-    results_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
     ratio_name VARCHAR(50) NOT NULL,
     ratio_value FLOAT NOT NULL
 );
 
 CREATE TABLE reports (
     id SERIAL PRIMARY KEY,
-    results_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
     interpretation VARCHAR(50) NOT NULL,
     report_path TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
