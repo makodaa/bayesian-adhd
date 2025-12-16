@@ -1,7 +1,7 @@
 from .base import BaseRepository
 
 class ResultsRepository(BaseRepository):
-    def create_result(self, recording_id, predicted_class, confidence_score):
+    def create_result(self, recording_id, classification, confidence_score):
         """Create a new result and return its ID."""
         query = """
         INSERT INTO results(recording_id, predicted_class, confidence_score)
@@ -10,7 +10,7 @@ class ResultsRepository(BaseRepository):
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(query, (recording_id, predicted_class, confidence_score))
+            cursor.execute(query, (recording_id, classification, confidence_score))
             return cursor.fetchone()[0]
     
     def get_by_id(self, result_id):
