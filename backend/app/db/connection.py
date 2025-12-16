@@ -2,6 +2,9 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import os
+from ..core.logging_config import get_db_logger
+
+logger = get_db_logger(__name__)
 
 DB_CONFIG = {
     "host": os.getenv("DATABASE_HOST", "localhost"),
@@ -23,15 +26,30 @@ def get_db_connection():
             cursor.execute("SELECT * FROM table")
             results = cursor.fetchall()
     """
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = None
     try:
+        logger.debug(f"Attempting database connection to {DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['dbname']}")
+        conn = psycopg2.connect(**DB_CONFIG)
+        logger.debug("Database connection established successfully")
         yield conn
         conn.commit()
-    except Exception:
-        conn.rollback()
+        logger.debug("Database transaction committed successfully")
+    except psycopg2.Error as e:
+        logger.error(f"Database error: {e}", exc_info=True)
+        if conn:
+            conn.rollback()
+            logger.warning("Database transaction rolled back")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in database connection: {e}", exc_info=True)
+        if conn:
+            conn.rollback()
+            logger.warning("Database transaction rolled back")
         raise
     finally:
-        conn.close()
+        if conn:
+            conn.close()
+            logger.debug("Database connection closed")
 
 def get_dict_cursor(conn):
     """Get a cursor that returns results as dictionaries."""

@@ -1,12 +1,13 @@
+# docker-compose.prod.yml - Production configuration
 services:
     database:
         image: postgres:18
         container_name: database
-        restart: unless-stopped
+        restart: always
         environment:
             POSTGRES_DB: bayesian_adhd
             POSTGRES_USER: db_user
-            POSTGRES_PASSWORD: db_password
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-db_password} # Use env var or default
         ports:
             - "5432:5432"
         volumes:
@@ -14,7 +15,7 @@ services:
             - ./backend/app/db/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U db_user -d bayesian_adhd"]
-            interval: 5s
+            interval: 10s
             timeout: 5s
             retries: 5
 
@@ -22,21 +23,16 @@ services:
         build:
             context: ./backend
             dockerfile: Dockerfile
-            target: development
+            target: production
         container_name: backend
-        restart: unless-stopped
+        restart: always
         environment:
-            # Flask config
-            FLASK_ENV: development
-            FLASK_DEBUG: "1"
-            # Database connection
+            FLASK_ENV: production
             DATABASE_HOST: database
             DATABASE_PORT: 5432
             DATABASE_USER: db_user
-            DATABASE_PASSWORD: db_password
+            DATABASE_PASSWORD: ${DB_PASSWORD:-db_password}
             DATABASE_NAME: bayesian_adhd
-        env_file:
-            - ./backend/.env
         ports:
             - "8000:8000"
         depends_on:
@@ -44,15 +40,12 @@ services:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 30s
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
         volumes:
-            - ./backend:/app:cached
             - backend_exports:/app/exports
-            - /app/venv
-            - /app/__pycache__
 
 volumes:
     postgres_data:

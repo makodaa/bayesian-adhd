@@ -51,7 +51,6 @@ class VisualizationService:
             n_channels=len(ch_names),
             show=False,
             show_scrollbars=False,
-            show_option=False,
             clipping=None,
             block=False
         )

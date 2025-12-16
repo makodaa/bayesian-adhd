@@ -1,5 +1,10 @@
-mne
 flask
-torch
-pillow
 pandas
+numpy
+scipy
+mne
+matplotlib
+torch
+psycopg2-binary
+werkzeug
+gunicorn

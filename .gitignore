@@ -2,10 +2,10 @@ exports
 exports_old
 extracted_eegs
 validation_data
+logs
 __pycache__
 .Trash*
-
+.secrets
 
 *.csv
-
-.secrets
+.DS_Store

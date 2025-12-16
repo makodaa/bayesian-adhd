@@ -4,6 +4,9 @@ from scipy.signal import welch
 from ..config import SAMPLE_RATE, FREQUENCY_BANDS
 from ..db.repositories.band_powers import BandPowersRepository
 from ..db.repositories.ratios import RatiosRepository
+from ..core.logging_config import get_app_logger
+
+logger = get_app_logger(__name__)
 
 class BandAnalysisService:
     """
@@ -27,7 +30,9 @@ class BandAnalysisService:
     
     def compute_band_powers(self, df: pd.DataFrame) -> dict:
         """Compute absolute and relative power for each frequency band"""
+        logger.info(f"Computing band powers for {len(df)} samples")
         electrodes = df.select_dtypes(include=[np.number]).columns.tolist()
+        logger.debug(f"Processing {len(electrodes)} electrodes: {electrodes}")
         result = {
             'absolute_power' : {},
             'relative_power' : {},
@@ -81,14 +86,18 @@ class BandAnalysisService:
             'theta_alpha_ratio': float(avg_theta/avg_alpha) if avg_alpha > 0 else 0.0,
             'alpha_theta_ratio': float(avg_alpha/avg_theta) if avg_theta > 0 else 0.0,
         }
+        
+        logger.info(f"Band power computation complete. Ratios: theta/beta={result['band_ratios']['theta_beta_ratio']:.4f}")
 
         return result
     
     def compute_and_save(self, result_id:int, df:pd.DataFrame) -> dict:
         """Compute band powers and save to database."""
+        logger.info(f"Computing and saving band powers for result {result_id}")
         powers = self.compute_band_powers(df)
 
         # Save band powers for each electrode
+        band_power_count = 0
         for electrode, absolute_powers in powers['absolute_power'].items():
             relative_powers = powers['relative_power'][electrode]
             for band, power in absolute_powers.items():
@@ -99,6 +108,9 @@ class BandAnalysisService:
                     absolute_power=power,
                     relative_power=relative_powers[band]
                 )
+                band_power_count += 1
+
+        logger.info(f"Saved {band_power_count} band power entries for result {result_id}")
 
         # Save ratios
         for ratio, value in powers['band_ratios'].items():
@@ -107,5 +119,7 @@ class BandAnalysisService:
                 ratio_name=ratio,
                 ratio_value=value
             )
+        
+        logger.info(f"Saved {len(powers['band_ratios'])} ratio entries for result {result_id}")
             
         return powers
