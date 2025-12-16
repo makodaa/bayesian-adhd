@@ -18,7 +18,10 @@ class RecordingService:
         self.eeg_service = eeg_service
         self.band_analysis_service = band_analysis_service
 
-    def process_and_store(self, subject_id:int, file: FileStorage, clinician_id: int) -> dict:
+    def process_and_store(self, subject_id:int, file: FileStorage, clinician_id: int,
+                         sleep_hours=None, food_intake=None, caffeinated=None,
+                         medicated=None, medication_intake=None,
+                         artifacts_noted=None, notes=None) -> dict:
         """Process uploaded EEG file and store results."""
         df = self.file_service.read_csv(file)
         self.file_service.validate_eeg_data(df)
@@ -27,6 +30,13 @@ class RecordingService:
         recording_id = self.recordings_repo.create_recording(
             subject_id=subject_id,
             file_name=file.filename,
+            sleep_hours=sleep_hours,
+            food_intake=food_intake,
+            caffeinated=caffeinated,
+            medicated=medicated,
+            medication_intake=medication_intake,
+            artifacts_noted=artifacts_noted,
+            notes=notes
         )
 
         # Classify and save results
