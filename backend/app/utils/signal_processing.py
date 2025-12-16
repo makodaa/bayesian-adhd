@@ -41,7 +41,7 @@ def bandpass_df(df:pd.DataFrame, low=None, high=None, order=4, window_sec=1):
                 continue
 
             filtered[start:end] = filtfilt(b,a,segment,method="gust")
-    
-    df[col] = filtered
+        
+        df[col] = filtered
 
     return df

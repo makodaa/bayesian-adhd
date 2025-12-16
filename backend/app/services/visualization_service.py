@@ -17,9 +17,9 @@ class VisualizationService:
         'filtered': (0.5,40),
         'delta': (0.5,4),
         'theta': (4,8),
-        'alpha': (8,12),
-        'beta': (12,30),
-        'gamma': (30,40),
+        'alpha': (8,13),
+        'beta': (13,30),
+        'gamma': (30,60),
         'raw': (None,None),
     }
 
