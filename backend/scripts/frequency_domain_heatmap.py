@@ -383,4 +383,4 @@ if __name__ == "__main__":
     # Create group average
     create_group_average_heatmap(results, export_path, freq_max=40.0)
     
-    print("\n✓ Frequency domain visualization complete!")
+    print("\nFrequency domain visualization complete!")

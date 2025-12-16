@@ -73,6 +73,6 @@ class MockDataGenerator:
             notes=recording_data['notes']
         )
         
-        print(f"🔧 Created mock subject (ID: {subject_id}) and recording (ID: {recording_id})")
+        print(f"Created mock subject (ID: {subject_id}) and recording (ID: {recording_id})")
         
         return subject_id, recording_id

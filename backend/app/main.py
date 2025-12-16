@@ -115,7 +115,7 @@ def analyze_csv_bands(file):
         confidence_score=0.0
     )
     
-    print("📊 Preprocessing EEG data for band analysis...")
+    print("Preprocessing EEG data for band analysis...")
     band_powers = band_analysis_service.compute_and_save(result_id, df)
     
     # Add metadata to response
@@ -165,17 +165,17 @@ def visualize_eeg(eeg_type):
     try:
         result = visualize_file(file, eeg_type)
         if result is None:
-            print(f"⚠️  visualize_file returned None for {file.filename}")
+            print(f"Warning: visualize_file returned None for {file.filename}")
             return jsonify({'error': 'Something went wrong while reading the file.'}), 500
         if isinstance(result, dict) and 'error' in result:
-            print(f"⚠️  Error from visualize_file: {result['error']}")
+            print(f"Warning: Error from visualize_file: {result['error']}")
             return jsonify({'error': result['error']}), 400
         return jsonify({'result': result}), 200
     except ValueError as e:
-        print(f"❌ ValueError in visualize_eeg: {str(e)}")
+        print(f"ValueError in visualize_eeg: {str(e)}")
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        print(f"❌ Exception in visualize_eeg: {str(e)}")
+        print(f"Exception in visualize_eeg: {str(e)}")
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Failed to visualize: {str(e)}'}), 500

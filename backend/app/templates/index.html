@@ -1,445 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BayesianADHD Thesis Prototype</title>
-    <link rel="stylesheet" href="static/styles.css" />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    />
-  </head>
-  <body>
-    <div class="container d-flex flex-column align-items-center gap-4">
-      <h1>BayesianADHD</h1>
-      <!-- Form for fupload -->
-      <div class="upload-section d-flex flex-column align-items-center gap-4">
-        <form
-          id="upload-form"
-          action="/predict"
-          method="POST"
-          enctype="multipart/form-data"
-          class="d-flex flex-row align-items-center gap-4 justify-content-between"
-        >
-          <label for="file" class="btn btn-primary flex-fill">Upload an EEG Recording</label>
-          <input
-            type="file"
-            name="file"
-            id="file"
-            accept=".csv"
-            onchange="visualizeEeg(event)"
-            required
-          />
-          <button type="submit" id="submit-btn" class="btn btn-primary flex-fill" disabled>
-            Upload & Analyze
-          </button>
-        </form>
-        Supported file types: '.csv'
-      </div>
-
-      <!-- Dynamic result display -->
-      <div
-        class="result d-flex flex-column align-items-center gap-4"
-        id="result"
-        aria-live="polite"
-      ></div>
-
-      <!-- Band Power Analysis Section -->
-      <div class="container mt-4" id="band-analysis-section" style="display: none;">
-        <h3 class="text-center mb-3">Frequency Band Power Analysis</h3>
-        
-        <!-- Average Powers -->
-        <div class="row mb-4">
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Average Relative Power (%)</h5>
-              </div>
-              <div class="card-body">
-                <div id="relative-power-bars"></div>
-              </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BayesianADHD Thesis Prototype</title>
+        <link rel="stylesheet" href="static/styles.css" />
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body>
+        <div class="container d-flex flex-column align-items-center gap-4">
+            <h1>BayesianADHD</h1>
+            <!-- Form for fupload -->
+            <div
+                class="upload-section d-flex flex-column align-items-center gap-4"
+            >
+                <form
+                    id="upload-form"
+                    action="/predict"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="d-flex flex-row align-items-center gap-4 justify-content-between"
+                >
+                    <label for="file" class="btn btn-primary flex-fill"
+                        >Upload an EEG Recording</label
+                    >
+                    <input
+                        type="file"
+                        name="file"
+                        id="file"
+                        accept=".csv"
+                        onchange="visualizeEeg(event)"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        id="submit-btn"
+                        class="btn btn-primary flex-fill"
+                        disabled
+                    >
+                        Upload & Analyze
+                    </button>
+                </form>
+                Supported file types: '.csv'
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Clinical Ratios</h5>
-              </div>
-              <div class="card-body">
-                <div id="clinical-ratios"></div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Band breakdown -->
-        <div class="card mb-4">
-          <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Frequency Band Distribution</h5>
-          </div>
-          <div class="card-body">
-            <div class="row" id="band-breakdown">
-              <!-- Will be populated dynamically -->
-            </div>
-          </div>
-        </div>
+            <!-- Dynamic result display -->
+            <div
+                class="result d-flex flex-column align-items-center gap-4"
+                id="result"
+                aria-live="polite"
+            ></div>
 
-        <!-- ADHD Indicators -->
-        <div class="card mb-4" id="adhd-indicators-card">
-          <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0">⚡ ADHD Indicators</h5>
-          </div>
-          <div class="card-body" id="adhd-indicators">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
-      </div>
+            <!-- Band Power Analysis Section -->
+            <div
+                class="container mt-4"
+                id="band-analysis-section"
+                style="display: none"
+            >
+                <h3 class="text-center mb-3">Frequency Band Power Analysis</h3>
 
-      <div style="margin-top: 30px; text-align: center; color: #666; font-size: 0.9rem">
-        EEG Analysis Platform v2.1
-      </div>
-    </div>
-
-    <script>
-      function html(...args) {
-        const holder = document.createElement("div");
-        holder.innerHTML = String.raw(...args).trim();
-
-        const children = [...holder.childNodes];
-        console.log(children);
-        if (children.length > 1) {
-          throw new Error("html should only use a single element");
-        }
-
-        return children[0];
-      }
-    </script>
-
-    <script>
-      const sleep = (time) => new Promise((r, _) => setTimeout(() => r(), time));
-
-      function putLoading(message) {
-        const result = document.getElementById("result");
-        const child = html`
-          <div id="loading-indicator" class="d-flex flex-column align-items-center gap-2">
-            <div class="spinner-border" id="spinner" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <div>
-              <p>${message}</p>
-            </div>
-          </div>
-        `;
-
-        result.appendChild(child);
-      }
-
-      function clearLoading() {
-        const loadingIndicator = document.getElementById("loading-indicator");
-        if (loadingIndicator == null) {
-          return;
-        }
-
-        loadingIndicator.parentNode.removeChild(loadingIndicator);
-      }
-
-      function disableSubmitButton() {
-        const submitButton = document.getElementById("submit-btn");
-
-        submitButton.setAttribute("disabled", true);
-      }
-
-      function enableSubmitButton() {
-        const submitButton = document.getElementById("submit-btn");
-
-        submitButton.removeAttribute("disabled");
-      }
-
-      function removeIfIdExists(id) {
-        const existingPreview = document.getElementById(id);
-        if (existingPreview != null) {
-          existingPreview.parentNode.removeChild(existingPreview);
-        }
-      }
-
-      function clearResults() {
-        const result = document.getElementById("result");
-
-        result.innerHTML = "";
-      }
-
-      // Preview image before upload
-      function visualizeEeg(event) {
-        const result = document.getElementById("result");
-
-        clearResults();
-        putLoading("Generating EEG Preview...");
-        disableSubmitButton();
-        setTimeout(async function () {
-          const form = new FormData(document.querySelector("#upload-form"));
-          const response = await fetch("/visualize_eeg/raw", {
-            method: "POST",
-            body: form,
-          });
-          const data = await response.json();
-
-          clearLoading();
-          if (data.result == null) return;
-
-          const box = (() => {
-            const f = event.target.files?.[0];
-            if (!f) return "";
-            const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
-            const humanSize = ((s) => {
-              if (s < 1024) return `${s} B`;
-              if (s < 1024 * 1024) return `${Math.round((s / 1024) * 100) / 100} KB`;
-              return `${Math.round((s / (1024 * 1024)) * 100) / 100} MB`;
-            })(f.size);
-
-            return html`
-              <div id="file-information" class="container">
-                <h4>File Information:</h4>
-                <p><b>Name:</b> ${f.name}</p>
-                <p><b>Extension:</b> ${ext}</p>
-                <p><b>Size:</b> ${humanSize}</p>
-              </div>
-            `;
-          })();
-          result.appendChild(box);
-
-          const imgElement = html`
-            <div class="container">
-              <h4>Rendered EEG Preview</h4>
-              <img
-                src=${data.result}
-                alt="Uploaded Image Preview"
-                id="eeg-preview"
-                class="img-fluid"
-                style="height: 450px"
-              />
-            </div>
-          `;
-          result.appendChild(imgElement);
-
-          enableSubmitButton();
-        }, 0);
-      }
-
-      // Handling result display after prediction
-      async function getPrediction(event) {
-        event.preventDefault(); // Prevent form from submitting normally
-
-        const form = new FormData(document.querySelector("#upload-form"));
-        clearResults();
-
-        const result = document.getElementById("result");
-        putLoading("Classifying uploaded EEG...");
-
-        await sleep(1000);
-        try {
-          const response = await fetch("/predict", {
-            method: "POST",
-            body: form,
-          });
-
-          const data = await response.json();
-
-          clearLoading();
-          if (data.error) {
-            result.innerHTML = `<p class='error'>Error: ${data.error}</p>`;
-          } else {
-            const value = data.result;
-
-            const isAdhdPositive = value > 0;
-            const isNotAdhdPositive = value < 0;
-            const confidence = Math.abs(value);
-            const confidenceString = `${~~(confidence * 10000) / 100}%`;
-
-            result.appendChild(html`<hr />`)
-
-            result.appendChild(html`<h3>Model Diagnosis</h3>`);
-            if (isAdhdPositive) {
-              result.appendChild(html`
-                <div class="container">
-                  <p>Predicted Class: <span style="color: green">ADHD</span></p>
-                  <p>Confidence: <span style="color: orange;">${confidenceString}</span></p>
-                  <p class="disclaimer">Disclaimer: This is not a definitive diagnosis.</p>
+                <!-- Average Powers -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Average Relative Power (%)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="relative-power-bars"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Clinical Ratios</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="clinical-ratios"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              `);
-            } else if (isNotAdhdPositive) {
-              result.appendChild(html`
-                <div class="container">
-                  <p>Predicted Class: <span style="color: blue">Non-ADHD</span></p>
-                  <p>Confidence: <span style="color: orange;">${confidenceString}</span></p>
-                  <p class="disclaimer">Disclaimer: This is not a definitive diagnosis.</p>
+
+                <!-- Band breakdown -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Frequency Band Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="band-breakdown">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
                 </div>
-              `);
+
+                <!-- ADHD Indicators -->
+                <div class="card mb-4" id="adhd-indicators-card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">ADHD Indicators</h5>
+                    </div>
+                    <div class="card-body" id="adhd-indicators">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="
+                    margin-top: 30px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 0.9rem;
+                "
+            >
+                EEG Analysis Platform v2.1
+            </div>
+        </div>
+
+        <script>
+            function html(...args) {
+                const holder = document.createElement("div");
+                holder.innerHTML = String.raw(...args).trim();
+
+                const children = [...holder.childNodes];
+                console.log(children);
+                if (children.length > 1) {
+                    throw new Error("html should only use a single element");
+                }
+
+                return children[0];
+            }
+        </script>
+
+        <script>
+            const sleep = (time) =>
+                new Promise((r, _) => setTimeout(() => r(), time));
+
+            function putLoading(message) {
+                const result = document.getElementById("result");
+                const child = html`
+                    <div
+                        id="loading-indicator"
+                        class="d-flex flex-column align-items-center gap-2"
+                    >
+                        <div class="spinner-border" id="spinner" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div>
+                            <p>${message}</p>
+                        </div>
+                    </div>
+                `;
+
+                result.appendChild(child);
             }
 
-            result.appendChild(html`<h3>Clinical EEG Analysis Report</h3>`);
+            function clearLoading() {
+                const loadingIndicator =
+                    document.getElementById("loading-indicator");
+                if (loadingIndicator == null) {
+                    return;
+                }
 
-            const toPrint = [
-              {
-                "name": "Raw EEG",
-                "link": "/visualize_eeg/raw",
-                "description": "This is the unprocessed EEG signal as recorded, containing all frequency components and artifacts. It serves as the baseline reference for examining ADHD-related neural activity."
-              },
-              {
-                "name": "Filtered EEG (0.5Hz - 40Hz)",
-                "link": "/visualize_eeg/filtered",
-                "description": "This is the EEG signal after bandpass filtering between 0.5Hz and 40Hz, removing slow drifts and high-frequency noise. This cleaned range is typically used for ADHD research and power spectrum analysis."
-              },
-              {
-                "name": "Delta Waves (0.5Hz - 4Hz)",
-                "link": "/visualize_eeg/delta",
-                "description": "Delta waves represent the slowest brain rhythms, dominant during deep sleep and brain rest. In ADHD research, excessive delta activity may indicate delayed cortical maturation or underarousal, though it is less consistently altered than theta activity."
-              },
-              {
-                "name": "Theta Waves (4Hz - 8Hz)",
-                "link": "/visualize_eeg/theta",
-                "description": "Theta waves are slow oscillations linked to drowsiness, inattention, and memory processing. In ADHD, elevated theta power is one of the most frequently reported findings and contributes to the increased theta/beta ratio seen in many patients."
-              },
-              {
-                "name": "Alpha Waves (8Hz - 12Hz)",
-                "link": "/visualize_eeg/alpha",
-                "description": "Alpha waves are moderate-frequency rhythms associated with relaxed wakefulness and sensory inhibition. In ADHD, altered alpha modulation suggests difficulties in maintaining task-related attention and cortical inhibition."
-              },
-              {
-                "name": "Beta Waves (12Hz - 30Hz)",
-                "link": "/visualize_eeg/beta",
-                "description": "Beta waves are faster rhythms related to alertness, focus, and cognitive control. In ADHD, reduced beta activity has been observed, contributing to higher theta/beta ratios and reflecting lower cortical activation levels."
-              },
-              {
-                "name": "Gamma Waves (30Hz - 40Hz)",
-                "link": "/visualize_eeg/gamma",
-                "description": "Gamma waves are high-frequency oscillations tied to sensory binding, working memory, and cognitive integration. Some ADHD studies show atypical gamma synchronization, suggesting altered neural communication during attention tasks."
-              }
-            ];
-
-            for (const {name, link, description} of toPrint) {
-              const node = html`
-                <div class="container d-flex flex-column gap-2">
-                  <h4>${name}</h4>
-                  <p>${description}</p>
-                  <div class="img-holder"></div>
-                </div>
-              `;
-
-              result.appendChild(node);
-
-              const imageHolder = node.querySelector(".img-holder");
-              fetch(link, {
-                method: "POST",
-                body: form,
-              }).then(e => e.json())
-                .then(e => html`
-                  <img
-                    src=${e.result}
-                    alt="Uploaded Image Preview"
-                    id="eeg-preview"
-                    class="img-fluid"
-                    style="height: 450px"
-                  />`)
-                .then(e => imageHolder.appendChild(e));
+                loadingIndicator.parentNode.removeChild(loadingIndicator);
             }
 
-            // Fetch and display band power analysis
-            await fetchBandPowerAnalysis(form);
-          }
-        } catch (error) {
-          console.log({ error });
-          resultDiv.innerHTML = `<p class='error'>An error occurred while processing the image. Please ensure the image is valid and try again.</p>`;
-        }
-      }
+            function disableSubmitButton() {
+                const submitButton = document.getElementById("submit-btn");
 
-      // Function to fetch and display band power analysis
-      async function fetchBandPowerAnalysis(formData) {
-        try {
-          const response = await fetch("/analyze_bands", {
-            method: "POST",
-            body: formData,
-          });
+                submitButton.setAttribute("disabled", true);
+            }
 
-          if (!response.ok) {
-            console.error('Band analysis failed:', response.status);
-            return;
-          }
+            function enableSubmitButton() {
+                const submitButton = document.getElementById("submit-btn");
 
-          const data = await response.json();
-          displayBandPowerAnalysis(data);
-        } catch (error) {
-          console.error('Error fetching band analysis:', error);
-        }
-      }
+                submitButton.removeAttribute("disabled");
+            }
 
-      // Function to display band power analysis results
-      function displayBandPowerAnalysis(data) {
-        // Show the band analysis section
-        document.getElementById('band-analysis-section').style.display = 'block';
+            function removeIfIdExists(id) {
+                const existingPreview = document.getElementById(id);
+                if (existingPreview != null) {
+                    existingPreview.parentNode.removeChild(existingPreview);
+                }
+            }
 
-        // Define colors for bands
-        const bandColors = {
-          delta: '#9C27B0',
-          theta: '#2196F3',
-          alpha: '#4CAF50',
-          beta: '#FF9800',
-          gamma: '#F44336'
-        };
+            function clearResults() {
+                const result = document.getElementById("result");
 
-        // Display relative power bars
-        const relativePowerDiv = document.getElementById('relative-power-bars');
-        relativePowerDiv.innerHTML = '';
-        
-        const bands = Object.keys(data.average_relative_power);
-        bands.forEach(band => {
-          const percentage = (data.average_relative_power[band] * 100).toFixed(1);
-          const barHtml = `
+                result.innerHTML = "";
+            }
+
+            // Preview image before upload
+            function visualizeEeg(event) {
+                const result = document.getElementById("result");
+
+                clearResults();
+                putLoading("Generating EEG Preview...");
+                disableSubmitButton();
+                setTimeout(async function () {
+                    const form = new FormData(
+                        document.querySelector("#upload-form")
+                    );
+                    const response = await fetch("/visualize_eeg/raw", {
+                        method: "POST",
+                        body: form,
+                    });
+                    const data = await response.json();
+
+                    clearLoading();
+                    if (data.result == null) return;
+
+                    const box = (() => {
+                        const f = event.target.files?.[0];
+                        if (!f) return "";
+                        const ext = f.name.includes(".")
+                            ? f.name.split(".").pop()
+                            : "";
+                        const humanSize = ((s) => {
+                            if (s < 1024) return `${s} B`;
+                            if (s < 1024 * 1024)
+                                return `${
+                                    Math.round((s / 1024) * 100) / 100
+                                } KB`;
+                            return `${
+                                Math.round((s / (1024 * 1024)) * 100) / 100
+                            } MB`;
+                        })(f.size);
+
+                        return html`
+                            <div id="file-information" class="container">
+                                <h4>File Information:</h4>
+                                <p><b>Name:</b> ${f.name}</p>
+                                <p><b>Extension:</b> ${ext}</p>
+                                <p><b>Size:</b> ${humanSize}</p>
+                            </div>
+                        `;
+                    })();
+                    result.appendChild(box);
+
+                    const imgElement = html`
+                        <div class="container">
+                            <h4>Rendered EEG Preview</h4>
+                            <img
+                                src=${data.result}
+                                alt="Uploaded Image Preview"
+                                id="eeg-preview"
+                                class="img-fluid"
+                                style="height: 450px"
+                            />
+                        </div>
+                    `;
+                    result.appendChild(imgElement);
+
+                    enableSubmitButton();
+                }, 0);
+            }
+
+            // Handling result display after prediction
+            async function getPrediction(event) {
+                event.preventDefault(); // Prevent form from submitting normally
+
+                const form = new FormData(
+                    document.querySelector("#upload-form")
+                );
+                clearResults();
+
+                const result = document.getElementById("result");
+                putLoading("Classifying uploaded EEG...");
+
+                await sleep(1000);
+                try {
+                    const response = await fetch("/predict", {
+                        method: "POST",
+                        body: form,
+                    });
+
+                    const data = await response.json();
+
+                    clearLoading();
+                    if (data.error) {
+                        result.innerHTML = `<p class='error'>Error: ${data.error}</p>`;
+                    } else {
+                        const value = data.result;
+
+                        const isAdhdPositive = value > 0;
+                        const isNotAdhdPositive = value < 0;
+                        const confidence = Math.abs(value);
+                        const confidenceString = `${
+                            ~~(confidence * 10000) / 100
+                        }%`;
+
+                        result.appendChild(html`<hr />`);
+
+                        result.appendChild(html`<h3>Model Diagnosis</h3>`);
+                        if (isAdhdPositive) {
+                            result.appendChild(html`
+                                <div class="container">
+                                    <p>
+                                        Predicted Class:
+                                        <span style="color: green">ADHD</span>
+                                    </p>
+                                    <p>
+                                        Confidence:
+                                        <span style="color: orange;"
+                                            >${confidenceString}</span
+                                        >
+                                    </p>
+                                    <p class="disclaimer">
+                                        Disclaimer: This is not a definitive
+                                        diagnosis.
+                                    </p>
+                                </div>
+                            `);
+                        } else if (isNotAdhdPositive) {
+                            result.appendChild(html`
+                                <div class="container">
+                                    <p>
+                                        Predicted Class:
+                                        <span style="color: blue"
+                                            >Non-ADHD</span
+                                        >
+                                    </p>
+                                    <p>
+                                        Confidence:
+                                        <span style="color: orange;"
+                                            >${confidenceString}</span
+                                        >
+                                    </p>
+                                    <p class="disclaimer">
+                                        Disclaimer: This is not a definitive
+                                        diagnosis.
+                                    </p>
+                                </div>
+                            `);
+                        }
+
+                        result.appendChild(
+                            html`<h3>Clinical EEG Analysis Report</h3>`
+                        );
+
+                        const toPrint = [
+                            {
+                                name: "Raw EEG",
+                                link: "/visualize_eeg/raw",
+                                description:
+                                    "This is the unprocessed EEG signal as recorded, containing all frequency components and artifacts. It serves as the baseline reference for examining ADHD-related neural activity.",
+                            },
+                            {
+                                name: "Filtered EEG (0.5Hz - 40Hz)",
+                                link: "/visualize_eeg/filtered",
+                                description:
+                                    "This is the EEG signal after bandpass filtering between 0.5Hz and 40Hz, removing slow drifts and high-frequency noise. This cleaned range is typically used for ADHD research and power spectrum analysis.",
+                            },
+                            {
+                                name: "Delta Waves (0.5Hz - 4Hz)",
+                                link: "/visualize_eeg/delta",
+                                description:
+                                    "Delta waves represent the slowest brain rhythms, dominant during deep sleep and brain rest. In ADHD research, excessive delta activity may indicate delayed cortical maturation or underarousal, though it is less consistently altered than theta activity.",
+                            },
+                            {
+                                name: "Theta Waves (4Hz - 8Hz)",
+                                link: "/visualize_eeg/theta",
+                                description:
+                                    "Theta waves are slow oscillations linked to drowsiness, inattention, and memory processing. In ADHD, elevated theta power is one of the most frequently reported findings and contributes to the increased theta/beta ratio seen in many patients.",
+                            },
+                            {
+                                name: "Alpha Waves (8Hz - 12Hz)",
+                                link: "/visualize_eeg/alpha",
+                                description:
+                                    "Alpha waves are moderate-frequency rhythms associated with relaxed wakefulness and sensory inhibition. In ADHD, altered alpha modulation suggests difficulties in maintaining task-related attention and cortical inhibition.",
+                            },
+                            {
+                                name: "Beta Waves (12Hz - 30Hz)",
+                                link: "/visualize_eeg/beta",
+                                description:
+                                    "Beta waves are faster rhythms related to alertness, focus, and cognitive control. In ADHD, reduced beta activity has been observed, contributing to higher theta/beta ratios and reflecting lower cortical activation levels.",
+                            },
+                            {
+                                name: "Gamma Waves (30Hz - 40Hz)",
+                                link: "/visualize_eeg/gamma",
+                                description:
+                                    "Gamma waves are high-frequency oscillations tied to sensory binding, working memory, and cognitive integration. Some ADHD studies show atypical gamma synchronization, suggesting altered neural communication during attention tasks.",
+                            },
+                        ];
+
+                        for (const { name, link, description } of toPrint) {
+                            const node = html`
+                                <div class="container d-flex flex-column gap-2">
+                                    <h4>${name}</h4>
+                                    <p>${description}</p>
+                                    <div class="img-holder"></div>
+                                </div>
+                            `;
+
+                            result.appendChild(node);
+
+                            const imageHolder =
+                                node.querySelector(".img-holder");
+                            fetch(link, {
+                                method: "POST",
+                                body: form,
+                            })
+                                .then((e) => e.json())
+                                .then(
+                                    (e) => html` <img
+                                        src=${e.result}
+                                        alt="Uploaded Image Preview"
+                                        id="eeg-preview"
+                                        class="img-fluid"
+                                        style="height: 450px"
+                                    />`
+                                )
+                                .then((e) => imageHolder.appendChild(e));
+                        }
+
+                        // Fetch and display band power analysis
+                        await fetchBandPowerAnalysis(form);
+                    }
+                } catch (error) {
+                    console.log({ error });
+                    resultDiv.innerHTML = `<p class='error'>An error occurred while processing the image. Please ensure the image is valid and try again.</p>`;
+                }
+            }
+
+            // Function to fetch and display band power analysis
+            async function fetchBandPowerAnalysis(formData) {
+                try {
+                    const response = await fetch("/analyze_bands", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        console.error("Band analysis failed:", response.status);
+                        return;
+                    }
+
+                    const data = await response.json();
+                    displayBandPowerAnalysis(data);
+                } catch (error) {
+                    console.error("Error fetching band analysis:", error);
+                }
+            }
+
+            // Function to display band power analysis results
+            function displayBandPowerAnalysis(data) {
+                // Show the band analysis section
+                document.getElementById("band-analysis-section").style.display =
+                    "block";
+
+                // Define colors for bands
+                const bandColors = {
+                    delta: "#9C27B0",
+                    theta: "#2196F3",
+                    alpha: "#4CAF50",
+                    beta: "#FF9800",
+                    gamma: "#F44336",
+                };
+
+                // Display relative power bars
+                const relativePowerDiv = document.getElementById(
+                    "relative-power-bars"
+                );
+                relativePowerDiv.innerHTML = "";
+
+                const bands = Object.keys(data.average_relative_power);
+                bands.forEach((band) => {
+                    const percentage = (
+                        data.average_relative_power[band] * 100
+                    ).toFixed(1);
+                    const barHtml = `
             <div class="mb-2">
               <div class="d-flex justify-content-between">
-                <span><strong>${band.charAt(0).toUpperCase() + band.slice(1)}</strong></span>
+                <span><strong>${
+                    band.charAt(0).toUpperCase() + band.slice(1)
+                }</strong></span>
                 <span>${percentage}%</span>
               </div>
               <div class="progress" style="height: 25px;">
                 <div class="progress-bar" role="progressbar" 
-                     style="width: ${percentage}%; background-color: ${bandColors[band]};"
+                     style="width: ${percentage}%; background-color: ${
+                        bandColors[band]
+                    };"
                      aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
                 </div>
               </div>
             </div>
           `;
-          relativePowerDiv.innerHTML += barHtml;
-        });
+                    relativePowerDiv.innerHTML += barHtml;
+                });
 
-        // Display clinical ratios
-        const ratiosDiv = document.getElementById('clinical-ratios');
-        ratiosDiv.innerHTML = '';
-        
-        const ratios = data.band_ratios;
-        Object.keys(ratios).forEach(ratio => {
-          const value = ratios[ratio].toFixed(3);
-          const name = ratio.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          ratiosDiv.innerHTML += `
+                // Display clinical ratios
+                const ratiosDiv = document.getElementById("clinical-ratios");
+                ratiosDiv.innerHTML = "";
+
+                const ratios = data.band_ratios;
+                Object.keys(ratios).forEach((ratio) => {
+                    const value = ratios[ratio].toFixed(3);
+                    const name = ratio
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase());
+                    ratiosDiv.innerHTML += `
             <div class="d-flex justify-content-between mb-2 p-2 border-bottom">
               <span><strong>${name}:</strong></span>
               <span class="badge bg-primary">${value}</span>
             </div>
           `;
-        });
+                });
 
-        // Display band breakdown
-        const breakdownDiv = document.getElementById('band-breakdown');
-        breakdownDiv.innerHTML = '';
-        
-        bands.forEach(band => {
-          const relPower = (data.average_relative_power[band] * 100).toFixed(1);
-          const absPower = data.average_absolute_power[band].toExponential(2);
-          
-          breakdownDiv.innerHTML += `
+                // Display band breakdown
+                const breakdownDiv = document.getElementById("band-breakdown");
+                breakdownDiv.innerHTML = "";
+
+                bands.forEach((band) => {
+                    const relPower = (
+                        data.average_relative_power[band] * 100
+                    ).toFixed(1);
+                    const absPower =
+                        data.average_absolute_power[band].toExponential(2);
+
+                    breakdownDiv.innerHTML += `
             <div class="col-md-4 mb-3">
-              <div class="card h-100" style="border-left: 4px solid ${bandColors[band]};">
+              <div class="card h-100" style="border-left: 4px solid ${
+                  bandColors[band]
+              };">
                 <div class="card-body">
                   <h6 class="card-title" style="color: ${bandColors[band]};">
                     ${band.charAt(0).toUpperCase() + band.slice(1)}
@@ -450,57 +540,69 @@
               </div>
             </div>
           `;
-        });
+                });
 
-        // Display ADHD indicators
-        const indicatorsDiv = document.getElementById('adhd-indicators');
-        const adhdCard = document.getElementById('adhd-indicators-card');
-        const thetaBetaRatio = ratios.theta_beta_ratio;
-        
-        let indicatorHtml = `
-          <h6>Theta/Beta Ratio: <span class="badge bg-info fs-6">${thetaBetaRatio.toFixed(3)}</span></h6>
+                // Display ADHD indicators
+                const indicatorsDiv =
+                    document.getElementById("adhd-indicators");
+                const adhdCard = document.getElementById(
+                    "adhd-indicators-card"
+                );
+                const thetaBetaRatio = ratios.theta_beta_ratio;
+
+                let indicatorHtml = `
+          <h6>Theta/Beta Ratio: <span class="badge bg-info fs-6">${thetaBetaRatio.toFixed(
+              3
+          )}</span></h6>
         `;
-        
-        if (thetaBetaRatio > 4.0) {
-          indicatorHtml += `
+
+                if (thetaBetaRatio > 4.0) {
+                    indicatorHtml += `
             <div class="alert alert-danger mt-2" role="alert">
-              <strong>⚠️ Elevated Ratio (>4.0)</strong><br>
+              <strong>Elevated Ratio (>4.0)</strong><br>
               This elevated theta/beta ratio is commonly associated with ADHD in clinical research.
               Further clinical assessment is recommended.
             </div>
           `;
-          adhdCard.querySelector('.card-header').className = 'card-header bg-danger text-white';
-        } else if (thetaBetaRatio > 3.0) {
-          indicatorHtml += `
+                    adhdCard.querySelector(".card-header").className =
+                        "card-header bg-danger text-white";
+                } else if (thetaBetaRatio > 3.0) {
+                    indicatorHtml += `
             <div class="alert alert-warning mt-2" role="alert">
-              <strong>⚡ Moderately Elevated (3.0-4.0)</strong><br>
+              <strong>Moderately Elevated (3.0-4.0)</strong><br>
               The theta/beta ratio is moderately elevated. This may warrant attention during clinical evaluation.
             </div>
           `;
-          adhdCard.querySelector('.card-header').className = 'card-header bg-warning text-dark';
-        } else {
-          indicatorHtml += `
+                    adhdCard.querySelector(".card-header").className =
+                        "card-header bg-warning text-dark";
+                } else {
+                    indicatorHtml += `
             <div class="alert alert-success mt-2" role="alert">
-              <strong>✓ Normal Range (<3.0)</strong><br>
+              <strong>Normal Range (<3.0)</strong><br>
               The theta/beta ratio is within the typical range for non-ADHD individuals.
             </div>
           `;
-          adhdCard.querySelector('.card-header').className = 'card-header bg-success text-white';
-        }
-        
-        indicatorsDiv.innerHTML = indicatorHtml;
+                    adhdCard.querySelector(".card-header").className =
+                        "card-header bg-success text-white";
+                }
 
-        // Scroll to band analysis section
-        document.getElementById('band-analysis-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+                indicatorsDiv.innerHTML = indicatorHtml;
 
-      // Attach submit event to form
-      document.querySelector("#upload-form").addEventListener("submit", getPrediction);
-    </script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-      crossorigin="anonymous"
-    ></script>
-  </body>
+                // Scroll to band analysis section
+                document
+                    .getElementById("band-analysis-section")
+                    .scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+
+            // Attach submit event to form
+            document
+                .querySelector("#upload-form")
+                .addEventListener("submit", getPrediction);
+        </script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+    </body>
 </html>
