@@ -7,7 +7,7 @@ WINDOW_SECONDS = 4          # Window duration
 OVERLAP = 0.5
 SAMPLES_PER_WINDOW = int (SAMPLE_RATE * WINDOW_SECONDS)     
 WINDOW_STEP = int(SAMPLES_PER_WINDOW * (1-OVERLAP))     # step size for sliding window
-TARGET_FREQUENCY_BINS = np.arrange(2.0,40.5,0.5)        # target frequency bins
+TARGET_FREQUENCY_BINS = np.arange(2.0,40.5,0.5)        # target frequency bins
 ALLOWED_EXTENSIONS = {'csv'}
 
 # Frequency Bands & Ranges (in hz)
