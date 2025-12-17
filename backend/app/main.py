@@ -5,11 +5,16 @@ from .services.file_service import FileService
 from .services.eeg_service import EEGService
 from .services.band_analysis_service import BandAnalysisService
 from .services.visualization_service import VisualizationService
+from .services.clinician_service import ClinicianService
+from .services.subject_service import SubjectService
+from .services.recording_service import RecordingService
+from .services.results_service import ResultsService
 from .db.repositories.results import ResultsRepository
 from .db.repositories.recordings import RecordingsRepository
 from .db.repositories.band_powers import BandPowersRepository
 from .db.repositories.ratios import RatiosRepository
 from .db.repositories.subjects import SubjectsRepository
+from .db.repositories.clinicians import CliniciansRepository
 from .db.connection import get_db_connection
 from .config import SAMPLE_RATE, TARGET_FREQUENCY_BINS
 from .core.error_handle import error_handle
@@ -38,12 +43,17 @@ recordings_repo = RecordingsRepository()
 band_powers_repo = BandPowersRepository()
 ratios_repo = RatiosRepository()
 subjects_repo = SubjectsRepository()
+clinicians_repo = CliniciansRepository()
 
 # Initialize services
 file_service = FileService()
 eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
 visualization_service = VisualizationService()
+clinician_service = ClinicianService(clinicians_repo)
+subject_service = SubjectService(subjects_repo)
+recording_service = RecordingService(recordings_repo, file_service, eeg_service, band_analysis_service)
+results_service = ResultsService(results_repo)
 
 # Initialize model on first request
 @app.before_request
@@ -81,7 +91,7 @@ def process_csv(file):
     # Create mock subject and recording for temporary solution
     logger.debug("Creating mock subject and recording")
     subject_id, recording_id = MockDataGenerator.create_mock_subject_and_recording(
-        subjects_repo, recordings_repo, file.filename
+        subject_service, recording_service, file.filename
     )
     
     # Classify and save results
@@ -105,11 +115,11 @@ def analyze_csv_bands(file):
     # Create mock subject and recording for temporary solution
     logger.debug("Creating mock subject and recording for band analysis")
     subject_id, recording_id = MockDataGenerator.create_mock_subject_and_recording(
-        subjects_repo, recordings_repo, file.filename
+        subject_service, recording_service, file.filename
     )
     
     # Create a placeholder result for band analysis
-    result_id = results_repo.create_result(
+    result_id = results_service.create_result(
         recording_id=recording_id,
         classification='Pending',
         confidence_score=0.0
@@ -153,6 +163,22 @@ def process_file(file):
 def home():
     return render_template('index.html')  # Render the home page with upload form
 
+@app.route('/subjects.html')
+def subjects():
+    return render_template('subjects.html')
+
+@app.route('/clinicians.html')
+def clinicians():
+    return render_template('clinicians.html')
+
+@app.route('/results.html')
+def results():
+    return render_template('results.html')
+
+@app.route('/index.html')
+def index():
+    return render_template('index.html')
+
 @app.route('/visualize_eeg/<eeg_type>', methods=['POST'])
 def visualize_eeg(eeg_type):
     if 'file' not in request.files:
@@ -190,16 +216,70 @@ def predict():
         return jsonify({'error': 'No selected file'}), 400
 
     try:
-        result = process_file(file)
-        if result is None:
-            return jsonify({'error': 'Something went wrong while reading the file.'}), 500
-        if isinstance(result, dict) and 'error' in result:
-            return jsonify({'error': result['error']}), 400
-        return jsonify({'prediction': True, 'result': result}), 200
+        # Extract form data
+        subject_code = request.form.get('subject_code')
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        clinician_name = request.form.get('clinician_name')
+        occupation = request.form.get('occupation')
+        sleep_hours = request.form.get('sleep_hours')
+        food_intake = request.form.get('food_intake')
+        caffeinated = request.form.get('caffeinated')
+        medicated = request.form.get('medicated')
+        medication_intake = request.form.get('medication_intake')
+        notes = request.form.get('notes')
+        
+        # Process file
+        df = file_service.read_csv(file)
+        file_service.validate_eeg_data(df)
+        
+        # Create or get subject
+        if subject_code and age and gender:
+            logger.info(f"Creating subject: {subject_code}, age={age}, gender={gender}")
+            subject_id = subject_service.create_subject(subject_code, int(age), gender)
+        else:
+            # Fallback to mock data if form not filled
+            logger.warning("Subject data missing, using mock data")
+            subject_id, _ = MockDataGenerator.create_mock_subject_and_recording(
+                subject_service, recording_service, file.filename
+            )
+        
+        # Create recording with environmental data
+        logger.info(f"Creating recording for subject {subject_id}")
+        recording_id = recording_service.create_recording(
+            subject_id=subject_id,
+            file_name=file.filename,
+            sleep_hours=float(sleep_hours) if sleep_hours else None,
+            food_intake=food_intake,
+            caffeinated=caffeinated == 'true' if caffeinated else None,
+            medicated=medicated == 'true' if medicated else None,
+            medication_intake=medication_intake,
+            notes=notes
+        )
+        
+        # Classify and save results
+        result = eeg_service.classify_and_save(recording_id, df)
+        
+        # Store clinician info if provided (for future report generation)
+        if clinician_name:
+            logger.info(f"Clinician info provided: {clinician_name}, {occupation}")
+        
+        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+        return jsonify({
+            'prediction': True,
+            'result': {
+                'classification': result['classification'],
+                'confidence_score': result['confidence_score'],
+                'subject_id': subject_id,
+                'recording_id': recording_id,
+                'result_id': result['result_id']
+            }
+        }), 200
     except ValueError as e:
+        logger.error(f"Validation error in predict: {e}")
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        print(f"Error in predict: {str(e)}")
+        logger.error(f"Error in predict: {e}", exc_info=True)
         return jsonify({'error': f'Failed to predict: {str(e)}'}), 500
 
 
@@ -237,6 +317,80 @@ def analyze_bands():
         print(f"Error in analyze_bands: {str(e)}")
         return jsonify({'error': f'Failed to analyze bands: {str(e)}'}), 500
 
+
+# API Endpoints for Management Pages
+
+@app.route('/api/clinicians', methods=['GET'])
+def get_clinicians():
+    """Get all clinicians for datalist autocomplete."""
+    try:
+        clinicians = clinician_service.get_all_clinicians()
+        formatted = clinician_service.format_clinicians_for_frontend(clinicians)
+        return jsonify(formatted), 200
+    except Exception as e:
+        logger.error(f"Error fetching clinicians: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/clinicians', methods=['POST'])
+def create_clinician():
+    """Create a new clinician."""
+    try:
+        data = request.get_json()
+        clinician_id = clinician_service.create_clinician(data)
+        return jsonify({'id': clinician_id, 'message': 'Clinician created successfully'}), 201
+    except Exception as e:
+        logger.error(f"Error creating clinician: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/subjects', methods=['GET'])
+def get_subjects():
+    """Get all subjects."""
+    try:
+        subjects = subject_service.get_all_subjects()
+        # Add recording count for each subject
+        for subject in subjects:
+            recordings = recording_service.get_recordings_by_subject(subject['id'])
+            subject['recording_count'] = len(recordings)
+        return jsonify(subjects), 200
+    except Exception as e:
+        logger.error(f"Error fetching subjects: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/subjects/<int:subject_id>', methods=['GET'])
+def get_subject(subject_id):
+    """Get a specific subject with their recordings."""
+    try:
+        subject = subject_service.get_subject(subject_id)
+        if not subject:
+            return jsonify({'error': 'Subject not found'}), 404
+        recordings = recording_service.get_recordings_by_subject(subject_id)
+        subject['recordings'] = recordings
+        return jsonify(subject), 200
+    except Exception as e:
+        logger.error(f"Error fetching subject {subject_id}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/results', methods=['GET'])
+def get_results():
+    """Get all analysis results with subject and recording details."""
+    try:
+        results = results_service.get_all_results_with_details()
+        return jsonify(results), 200
+    except Exception as e:
+        logger.error(f"Error fetching results: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/results/<int:result_id>', methods=['GET'])
+def get_result(result_id):
+    """Get detailed result including band powers and ratios."""
+    try:
+        result = results_service.get_result_with_full_details(result_id)
+        if not result:
+            return jsonify({'error': 'Result not found'}), 404
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error fetching result {result_id}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     import os

@@ -39,13 +39,13 @@ class MockDataGenerator:
         }
     
     @staticmethod
-    def create_mock_subject_and_recording(subjects_repo, recordings_repo, file_name: str = None):
+    def create_mock_subject_and_recording(subject_service, recording_service, file_name: str = None):
         """
         Create a mock subject and recording in the database.
         
         Args:
-            subjects_repo: SubjectsRepository instance
-            recordings_repo: RecordingsRepository instance
+            subject_service: SubjectService instance
+            recording_service: RecordingService instance
             file_name: Optional file name for the recording
             
         Returns:
@@ -53,7 +53,7 @@ class MockDataGenerator:
         """
         # Create mock subject
         subject_data = MockDataGenerator.generate_subject_data()
-        subject_id = subjects_repo.create_subject(
+        subject_id = subject_service.create_subject(
             subject_code=subject_data['subject_code'],
             age=subject_data['age'],
             sex=subject_data['gender']
@@ -61,7 +61,7 @@ class MockDataGenerator:
         
         # Create mock recording
         recording_data = MockDataGenerator.generate_recording_data(file_name)
-        recording_id = recordings_repo.create_recording(
+        recording_id = recording_service.create_recording(
             subject_id=subject_id,
             file_name=recording_data['file_name'],
             sleep_hours=recording_data['sleep_hours'],

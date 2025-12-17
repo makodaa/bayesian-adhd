@@ -50,7 +50,7 @@ class RecordingsRepository(BaseRepository):
     def get_by_subject(self, subject_id):
         """Get all recordings for a subject."""
         logger.debug(f"Fetching all recordings for subject: {subject_id}")
-        query = "SELECT * FROM recordings WHERE subject_id = %s ORDER BY created_at DESC;"
+        query = "SELECT * FROM recordings WHERE subject_id = %s ORDER BY uploaded_at DESC;"
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)

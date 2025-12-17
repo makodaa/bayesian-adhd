@@ -1,3 +1,4 @@
+from typing import Optional
 from werkzeug.datastructures import FileStorage
 from .file_service import FileService
 from .eeg_service import EEGService
@@ -20,6 +21,25 @@ class RecordingService:
         self.file_service = file_service
         self.eeg_service = eeg_service
         self.band_analysis_service = band_analysis_service
+    
+    def get_recordings_by_subject(self, subject_id: int) -> list:
+        """Get all recordings for a subject."""
+        logger.debug(f"RecordingService: fetching recordings for subject {subject_id}")
+        return self.recordings_repo.get_by_subject(subject_id)
+    
+    def get_recording_by_id(self, recording_id: int) -> Optional[dict]:
+        """Get recording by ID."""
+        logger.debug(f"RecordingService: fetching recording {recording_id}")
+        return self.recordings_repo.get_by_id(recording_id)
+    
+    def create_recording(self, subject_id: int, file_name: str, **kwargs) -> int:
+        """Create a new recording entry."""
+        logger.info(f"RecordingService: creating recording for subject {subject_id}: {file_name}")
+        return self.recordings_repo.create_recording(
+            subject_id=subject_id,
+            file_name=file_name,
+            **kwargs
+        )
 
     def process_and_store(self, subject_id:int, file: FileStorage, clinician_id: int,
                          sleep_hours=None, food_intake=None, caffeinated=None,
