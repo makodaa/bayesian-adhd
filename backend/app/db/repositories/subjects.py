@@ -41,6 +41,24 @@ class SubjectsRepository(BaseRepository):
             logger.error(f"Failed to fetch subject {subject_id}: {e}", exc_info=True)
             raise
     
+    def get_by_subject_code(self, subject_code):
+        """Get subject by subject_code."""
+        logger.debug(f"Fetching subject by code: {subject_code}")
+        query = "SELECT * FROM subjects WHERE subject_code = %s;"
+        try:
+            with self.get_connection() as conn:
+                cursor = self.get_dict_cursor(conn)
+                cursor.execute(query, (subject_code,))
+                result = cursor.fetchone()
+                if result:
+                    logger.debug(f"Subject found with code: {subject_code}")
+                else:
+                    logger.debug(f"Subject not found with code: {subject_code}")
+                return result
+        except Exception as e:
+            logger.error(f"Failed to fetch subject by code {subject_code}: {e}", exc_info=True)
+            raise
+    
     def get_all(self):
         """Get all subjects."""
         logger.debug("Fetching all subjects")

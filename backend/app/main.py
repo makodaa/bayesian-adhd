@@ -172,9 +172,9 @@ def predict():
         df = file_service.read_csv(file)
         file_service.validate_eeg_data(df)
         
-        # Create subject
-        logger.info(f"Creating subject: {subject_code}, age={age}, gender={gender}")
-        subject_id = subject_service.create_subject(subject_code, int(age), gender)
+        # Get or create subject (reuse existing subject if code already exists)
+        logger.info(f"Getting or creating subject: {subject_code}, age={age}, gender={gender}")
+        subject_id = subject_service.get_or_create_subject(subject_code, int(age), gender)
         
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")

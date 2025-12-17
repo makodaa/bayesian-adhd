@@ -15,6 +15,22 @@ class SubjectService:
         logger.info(f"SubjectService: creating subject {subject_code}")
         return self.subjects_repo.create_subject(subject_code, age, sex)
     
+    def get_subject_by_code(self, subject_code: str) -> Optional[dict]:
+        """Get subject by subject code."""
+        logger.debug(f"SubjectService: fetching subject by code {subject_code}")
+        return self.subjects_repo.get_by_subject_code(subject_code)
+    
+    def get_or_create_subject(self, subject_code: str, age: int, sex: str) -> int:
+        """Get existing subject by code or create a new one."""
+        logger.info(f"SubjectService: getting or creating subject {subject_code}")
+        existing = self.get_subject_by_code(subject_code)
+        if existing:
+            logger.info(f"Subject {subject_code} already exists with ID {existing['id']}")
+            return existing['id']
+        else:
+            logger.info(f"Creating new subject {subject_code}")
+            return self.create_subject(subject_code, age, sex)
+    
     def get_subject(self, subject_id:int) -> Optional[dict]:
         """Get subject by ID."""
         logger.debug(f"SubjectService: fetching subject {subject_id}")
