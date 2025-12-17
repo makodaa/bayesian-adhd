@@ -3,602 +3,1288 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BayesianADHD Thesis Prototype</title>
-        <link rel="stylesheet" href="static/styles.css" />
+        <title>BayesianADHD - EEG Analysis Platform</title>
         <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
             rel="stylesheet"
             integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
             crossorigin="anonymous"
         />
+        <style>
+            :root {
+                --primary-color: #5a6c7d;
+                --secondary-color: #6c9bd1;
+                --accent-color: #e89a9c;
+                --success-color: #81c995;
+                --warning-color: #f5c26b;
+                --bg-light: #f5f7fa;
+                --text-dark: #4a5568;
+                --border-color: #d1d5db;
+                --sidebar-width: 250px;
+                --sidebar-collapsed-width: 60px;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--bg-light);
+                color: var(--text-dark);
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                overflow: hidden;
+            }
+
+            .navbar {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                padding: 1rem 2rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: 70px;
+            }
+
+            .navbar-brand {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: white !important;
+            }
+
+            .layout-wrapper {
+                display: flex;
+                height: 100vh;
+                margin-top: 70px;
+            }
+
+            .sidebar {
+                width: var(--sidebar-width);
+                background: white;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+                transition: width 0.3s ease;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 70px);
+            }
+
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-header {
+                padding: 1rem;
+                border-bottom: 1px solid #e9ecef;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .sidebar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: var(--primary-color);
+                padding: 0.5rem;
+                line-height: 1;
+            }
+
+            .sidebar-nav {
+                flex: 1;
+                padding: 1rem 0;
+            }
+
+            .nav-item {
+                list-style: none;
+            }
+
+            .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1.5rem;
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: background 0.2s ease;
+                white-space: nowrap;
+            }
+
+            .nav-link:hover {
+                background: #f8f9fa;
+            }
+
+            .nav-link.active {
+                background: #e9ecef;
+                border-right: 3px solid var(--secondary-color);
+                font-weight: 600;
+            }
+
+            .nav-link svg {
+                min-width: 24px;
+                margin-right: 1rem;
+            }
+
+            .sidebar.collapsed .nav-link span {
+                display: none;
+            }
+
+            .main-container {
+                flex: 1;
+                display: grid;
+                grid-template-columns: 480px 1fr;
+                gap: 1.5rem;
+                padding: 1.5rem;
+                height: calc(100vh - 70px);
+                overflow: hidden;
+            }
+
+            .left-panel {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                padding: 1.5rem;
+                overflow-y: auto;
+                height: 100%;
+            }
+
+            .right-panel {
+                display: grid;
+                grid-template-rows: 1fr 1fr;
+                gap: 1.5rem;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .visualization-panel,
+            .results-panel {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                padding: 1.5rem;
+                overflow-y: auto;
+                min-height: 0;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--primary-color);
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #e0e7ef;
+            }
+
+            .form-label {
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: var(--text-dark);
+                margin-bottom: 0.3rem;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 0.9rem;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 0.5rem;
+            }
+
+            .form-control:focus,
+            .form-select:focus {
+                border-color: var(--secondary-color);
+                box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            }
+
+            .btn-primary {
+                background-color: var(--secondary-color);
+                border: none;
+                padding: 0.6rem 1.5rem;
+                font-weight: 500;
+                border-radius: 4px;
+                transition: all 0.3s ease;
+            }
+
+            .btn-primary:hover:not(:disabled) {
+                background-color: #5a8bc4;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .btn-primary:disabled {
+                background-color: #c5d0db;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            .nav-tabs {
+                border-bottom: 2px solid var(--border-color);
+            }
+
+            .nav-tabs .nav-link {
+                color: var(--text-dark);
+                border: none;
+                border-bottom: 3px solid transparent;
+                padding: 0.7rem 1rem;
+                font-weight: 500;
+                transition: all 0.3s ease;
+            }
+
+            .nav-tabs .nav-link:hover:not(:disabled) {
+                border-bottom-color: var(--secondary-color);
+            }
+
+            .nav-tabs .nav-link.active {
+                color: var(--secondary-color);
+                background: none;
+                border-bottom-color: var(--secondary-color);
+            }
+
+            .nav-tabs .nav-link:disabled {
+                color: #c5d0db;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .tab-content {
+                padding: 1.5rem 0;
+            }
+
+            .visualization-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 300px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                padding: 1rem;
+            }
+
+            .visualization-container img {
+                max-width: 100%;
+                max-height: 400px;
+                border-radius: 4px;
+            }
+
+            .metric-card {
+                background: linear-gradient(135deg, #9fb4d4 0%, #b8a5c9 100%);
+                color: white;
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1rem;
+            }
+
+            .metric-card.adhd {
+                background: linear-gradient(135deg, #f5b5d8 0%, #f59999 100%);
+            }
+
+            .metric-card.non-adhd {
+                background: linear-gradient(135deg, #8ec5fe 0%, #7dd8e8 100%);
+            }
+
+            .metric-label {
+                font-size: 0.85rem;
+                opacity: 0.9;
+                margin-bottom: 0.3rem;
+            }
+
+            .metric-value {
+                font-size: 1.8rem;
+                font-weight: 700;
+            }
+
+            .band-bar {
+                display: flex;
+                align-items: center;
+                margin-bottom: 0.8rem;
+            }
+
+            .band-label {
+                width: 80px;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .band-progress {
+                flex: 1;
+                height: 24px;
+                background: #e9ecef;
+                border-radius: 12px;
+                overflow: hidden;
+                margin: 0 0.8rem;
+            }
+
+            .band-progress-bar {
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding-right: 8px;
+                font-size: 0.75rem;
+                color: white;
+                font-weight: 600;
+                transition: width 0.6s ease;
+            }
+
+            .band-value {
+                width: 60px;
+                text-align: right;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .ratio-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.6rem 0.8rem;
+                margin-bottom: 0.5rem;
+                background: #f8f9fa;
+                border-radius: 4px;
+                border-left: 3px solid var(--secondary-color);
+            }
+
+            .ratio-name {
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .ratio-value {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--secondary-color);
+            }
+
+            .spinner-border {
+                color: var(--secondary-color);
+            }
+
+            .alert-custom {
+                padding: 1rem;
+                border-radius: 6px;
+                margin-top: 1rem;
+            }
+
+            .file-input-wrapper {
+                position: relative;
+                overflow: hidden;
+                display: block;
+            }
+
+            .file-input-wrapper input[type="file"] {
+                position: absolute;
+                left: 0;
+                top: 0;
+                opacity: 0;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+            }
+
+            .file-input-label {
+                display: block;
+                padding: 0.6rem 1rem;
+                background: #f8f9fa;
+                border: 2px dashed var(--border-color);
+                border-radius: 4px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .file-input-label:hover {
+                border-color: var(--secondary-color);
+                background: #e9ecef;
+            }
+
+            .file-input-label.has-file {
+                border-color: var(--success-color);
+                background: #d4edda;
+                color: var(--success-color);
+            }
+
+            .form-section {
+                margin-bottom: 1.5rem;
+                padding-bottom: 1.5rem;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .form-section:last-child {
+                border-bottom: none;
+            }
+
+            small.text-muted {
+                font-size: 0.8rem;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 3rem 1rem;
+                color: #a0aec0;
+            }
+
+            .results-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+        </style>
     </head>
     <body>
-        <div class="container d-flex flex-column align-items-center gap-4">
-            <h1>BayesianADHD</h1>
-            <!-- Form for fupload -->
-            <div
-                class="upload-section d-flex flex-column align-items-center gap-4"
-            >
-                <form
-                    id="upload-form"
-                    action="/predict"
-                    method="POST"
-                    enctype="multipart/form-data"
-                    class="d-flex flex-row align-items-center gap-4 justify-content-between"
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="container-fluid">
+                <span class="navbar-brand"
+                    >BayesianADHD - EEG Analysis Platform</span
                 >
-                    <label for="file" class="btn btn-primary flex-fill"
-                        >Upload an EEG Recording</label
-                    >
-                    <input
-                        type="file"
-                        name="file"
-                        id="file"
-                        accept=".csv"
-                        onchange="visualizeEeg(event)"
-                        required
-                    />
-                    <button
-                        type="submit"
-                        id="submit-btn"
-                        class="btn btn-primary flex-fill"
-                        disabled
-                    >
-                        Upload & Analyze
-                    </button>
-                </form>
-                Supported file types: '.csv'
+                <span class="text-white" style="font-size: 0.85rem">v2.1</span>
             </div>
+        </nav>
 
-            <!-- Dynamic result display -->
-            <div
-                class="result d-flex flex-column align-items-center gap-4"
-                id="result"
-                aria-live="polite"
-            ></div>
+        <div class="layout-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <button class="sidebar-toggle" id="sidebar-toggle">
+                        <span>☰</span>
+                    </button>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul style="padding: 0; margin: 0;">
+                        <li class="nav-item">
+                            <a href="/index.html" class="nav-link active">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                <span>Analysis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/subjects.html" class="nav-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Subjects</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/clinicians.html" class="nav-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Clinicians</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/results.html" class="nav-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
 
-            <!-- Band Power Analysis Section -->
-            <div
-                class="container mt-4"
-                id="band-analysis-section"
-                style="display: none"
-            >
-                <h3 class="text-center mb-3">Frequency Band Power Analysis</h3>
+            <!-- Main Container -->
+            <div class="main-container">
+                <!-- Left Panel: Forms -->
+                <div class="left-panel">
+                <form id="analysis-form" enctype="multipart/form-data">
+                    <!-- Subject Demographics -->
+                    <div class="form-section">
+                        <h5 class="section-title">Subject Demographics</h5>
+                        <div class="mb-3">
+                            <label for="subject-code" class="form-label"
+                                >Subject Code</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="subject-code"
+                                placeholder="e.g., SUB001"
+                                required
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label for="age" class="form-label">Age</label>
+                            <input
+                                type="number"
+                                class="form-control"
+                                id="age"
+                                placeholder="Age in years"
+                                min="1"
+                                max="120"
+                                required
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label for="gender" class="form-label"
+                                >Gender</label
+                            >
+                            <select class="form-select" id="gender" required>
+                                <option value="" selected disabled>
+                                    Select gender
+                                </option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
 
-                <!-- Average Powers -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Average Relative Power (%)</h5>
+                    <!-- Clinician Information -->
+                    <div class="form-section">
+                        <h5 class="section-title">Clinician Information</h5>
+                        <div class="mb-3">
+                            <label for="clinician-name" class="form-label"
+                                >Clinician Name</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="clinician-name"
+                                list="clinician-list"
+                                placeholder="Start typing to search clinicians..."
+                                autocomplete="off"
+                            />
+                            <datalist id="clinician-list">
+                                <!-- Clinicians will be loaded dynamically -->
+                            </datalist>
+                            <small class="text-muted">Select from existing clinicians or enter a new name</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="occupation" class="form-label"
+                                >Occupation</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="occupation"
+                                placeholder="e.g., Neurologist"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Recording Environment -->
+                    <div class="form-section">
+                        <h5 class="section-title">Recording Environment</h5>
+                        <div class="mb-3">
+                            <label for="sleep-hours" class="form-label"
+                                >Sleep Hours</label
+                            >
+                            <input
+                                type="number"
+                                class="form-control"
+                                id="sleep-hours"
+                                placeholder="Hours of sleep"
+                                min="0"
+                                max="24"
+                                step="0.5"
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label for="food-intake" class="form-label"
+                                >Food Intake</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="food-intake"
+                                placeholder="Recent food intake"
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Caffeinated</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        name="caffeinated"
+                                        id="caffeinated-yes"
+                                        value="true"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="caffeinated-yes"
+                                        >Yes</label
+                                    >
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        name="caffeinated"
+                                        id="caffeinated-no"
+                                        value="false"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="caffeinated-no"
+                                        >No</label
+                                    >
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div id="relative-power-bars"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Medicated</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        name="medicated"
+                                        id="medicated-yes"
+                                        value="true"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="medicated-yes"
+                                        >Yes</label
+                                    >
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        name="medicated"
+                                        id="medicated-no"
+                                        value="false"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="medicated-no"
+                                        >No</label
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="medication-intake" class="form-label"
+                                >Medication Details</label
+                            >
+                            <textarea
+                                class="form-control"
+                                id="medication-intake"
+                                rows="2"
+                                placeholder="Medication details if applicable"
+                            ></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label"
+                                >Additional Notes</label
+                            >
+                            <textarea
+                                class="form-control"
+                                id="notes"
+                                rows="3"
+                                placeholder="Any additional observations"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- EEG File Upload -->
+                    <div class="form-section">
+                        <h5 class="section-title">EEG Data Upload</h5>
+                        <div class="mb-3">
+                            <label class="form-label"
+                                >Upload EEG Recording (.csv)</label
+                            >
+                            <div class="file-input-wrapper">
+                                <label class="file-input-label" id="file-label">
+                                    <div>Click to select file</div>
+                                    <small class="text-muted"
+                                        >Supported: .csv files</small
+                                    >
+                                </label>
+                                <input
+                                    type="file"
+                                    name="file"
+                                    id="file"
+                                    accept=".csv"
+                                    required
+                                />
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="mb-0">Clinical Ratios</h5>
+
+                    <!-- Submit Button -->
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                        id="analyze-btn"
+                        disabled
+                    >
+                        Analyze EEG Recording
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Visualization Panel -->
+                <div class="visualization-panel">
+                    <h5 class="section-title">EEG Visualizations</h5>
+                    <ul class="nav nav-tabs" id="eegTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link active"
+                                id="raw-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#raw-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Raw
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="filtered-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#filtered-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Filtered
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="delta-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#delta-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Delta
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="theta-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#theta-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Theta
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="alpha-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#alpha-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Alpha
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="beta-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#beta-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Beta
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link"
+                                id="gamma-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#gamma-pane"
+                                type="button"
+                                role="tab"
+                                disabled
+                            >
+                                Gamma
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="eegTabContent">
+                        <div
+                            class="tab-pane fade show active"
+                            id="raw-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-raw">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
                             </div>
-                            <div class="card-body">
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="filtered-pane"
+                            role="tabpanel"
+                        >
+                            <div
+                                class="visualization-container"
+                                id="viz-filtered"
+                            >
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="delta-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-delta">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="theta-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-theta">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="alpha-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-alpha">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="beta-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-beta">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tab-pane fade"
+                            id="gamma-pane"
+                            role="tabpanel"
+                        >
+                            <div class="visualization-container" id="viz-gamma">
+                                <p class="text-muted">
+                                    Upload an EEG file to view visualizations
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="results-panel">
+                    <h5 class="section-title">Analysis Results</h5>
+                    <div id="results-empty-state" class="empty-state">
+                        <p>
+                            Analysis results will appear here after processing
+                        </p>
+                    </div>
+                    <div id="results-content" style="display: none">
+                        <!-- Model Prediction -->
+                        <div id="prediction-result" class="mb-4"></div>
+
+                        <!-- Band Powers and Ratios -->
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h6 class="mb-3" style="font-weight: 600">
+                                    Relative Band Power
+                                </h6>
+                                <div id="band-power-bars"></div>
+                            </div>
+                            <div class="col-md-5">
+                                <h6 class="mb-3" style="font-weight: 600">
+                                    Clinical Ratios
+                                </h6>
                                 <div id="clinical-ratios"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Band breakdown -->
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Frequency Band Distribution</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row" id="band-breakdown">
-                            <!-- Will be populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ADHD Indicators -->
-                <div class="card mb-4" id="adhd-indicators-card">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">ADHD Indicators</h5>
-                    </div>
-                    <div class="card-body" id="adhd-indicators">
-                        <!-- Will be populated dynamically -->
-                    </div>
-                </div>
-            </div>
-
-            <div
-                style="
-                    margin-top: 30px;
-                    text-align: center;
-                    color: #666;
-                    font-size: 0.9rem;
-                "
-            >
-                EEG Analysis Platform v2.1
             </div>
         </div>
 
         <script>
-            function html(...args) {
-                const holder = document.createElement("div");
-                holder.innerHTML = String.raw(...args).trim();
+            // Sidebar toggle
+            document.getElementById('sidebar-toggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
 
-                const children = [...holder.childNodes];
-                console.log(children);
-                if (children.length > 1) {
-                    throw new Error("html should only use a single element");
+            // Load clinicians for datalist
+            async function loadClinicians() {
+                try {
+                    // This will be connected to your backend API
+                    // const response = await fetch('/api/clinicians');
+                    // const clinicians = await response.json();
+                    
+                    // For now, using placeholder data
+                    const clinicians = [
+                        { id: 1, name: "Dr. Sarah Johnson", occupation: "Neurologist" },
+                        { id: 2, name: "Dr. Michael Chen", occupation: "Psychiatrist" },
+                        { id: 3, name: "Dr. Emily Rodriguez", occupation: "Clinical Psychologist" },
+                    ];
+                    
+                    const datalist = document.getElementById('clinician-list');
+                    clinicians.forEach(clinician => {
+                        const option = document.createElement('option');
+                        option.value = clinician.name;
+                        option.setAttribute('data-occupation', clinician.occupation);
+                        datalist.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading clinicians:', error);
                 }
-
-                return children[0];
             }
+
+            // Auto-fill occupation when clinician is selected
+            document.getElementById('clinician-name').addEventListener('input', function(e) {
+                const selectedName = e.target.value;
+                const datalist = document.getElementById('clinician-list');
+                const options = datalist.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    if (option.value === selectedName) {
+                        const occupation = option.getAttribute('data-occupation');
+                        if (occupation) {
+                            document.getElementById('occupation').value = occupation;
+                        }
+                    }
+                });
+            });
+
+            // Initialize
+            loadClinicians();
         </script>
 
         <script>
-            const sleep = (time) =>
-                new Promise((r, _) => setTimeout(() => r(), time));
+            // State management
+            let analysisData = {
+                file: null,
+                visualizations: {},
+                results: null,
+            };
 
-            function putLoading(message) {
-                const result = document.getElementById("result");
-                const child = html`
-                    <div
-                        id="loading-indicator"
-                        class="d-flex flex-column align-items-center gap-2"
-                    >
-                        <div class="spinner-border" id="spinner" role="status">
+            // Band colors
+            const bandColors = {
+                delta: "#9C27B0",
+                theta: "#2196F3",
+                alpha: "#4CAF50",
+                beta: "#FF9800",
+                gamma: "#F44336",
+            };
+
+            // UI Helper Functions
+            function showElement(id) {
+                const elem = document.getElementById(id);
+                if (elem) elem.style.display = "block";
+            }
+
+            function hideElement(id) {
+                const elem = document.getElementById(id);
+                if (elem) elem.style.display = "none";
+            }
+
+            function setLoadingState(containerId, isLoading) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                if (isLoading) {
+                    container.innerHTML = `
+                        <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <div>
-                            <p>${message}</p>
+                    `;
+                }
+            }
+
+            function displayVisualization(containerId, imageData) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                container.innerHTML = `<img src="${imageData}" alt="EEG Visualization" />`;
+            }
+
+            // File input handler
+            document
+                .getElementById("file")
+                .addEventListener("change", function (e) {
+                    const file = e.target.files[0];
+                    const label = document.getElementById("file-label");
+                    const analyzeBtn = document.getElementById("analyze-btn");
+
+                    if (file) {
+                        analysisData.file = file;
+                        label.classList.add("has-file");
+                        label.innerHTML = `
+                        <div style="font-weight: 600;">${file.name}</div>
+                        <small class="text-muted">${(file.size / 1024).toFixed(
+                            2
+                        )} KB</small>
+                    `;
+                        analyzeBtn.disabled = false;
+                    } else {
+                        analysisData.file = null;
+                        label.classList.remove("has-file");
+                        label.innerHTML = `
+                        <div>Click to select file</div>
+                        <small class="text-muted">Supported: .csv files</small>
+                    `;
+                        analyzeBtn.disabled = true;
+                    }
+                });
+
+            // Enable/disable tabs
+            function setTabsEnabled(enabled) {
+                const tabs = [
+                    "raw-tab",
+                    "filtered-tab",
+                    "delta-tab",
+                    "theta-tab",
+                    "alpha-tab",
+                    "beta-tab",
+                    "gamma-tab",
+                ];
+                tabs.forEach((tabId) => {
+                    const tab = document.getElementById(tabId);
+                    if (tab) {
+                        tab.disabled = !enabled;
+                    }
+                });
+            }
+
+            // Load all visualizations
+            async function loadVisualizations(formData) {
+                const bands = [
+                    "raw",
+                    "filtered",
+                    "delta",
+                    "theta",
+                    "alpha",
+                    "beta",
+                    "gamma",
+                ];
+
+                // Enable tabs
+                setTabsEnabled(true);
+
+                // Load each visualization
+                for (const band of bands) {
+                    const containerId = `viz-${band}`;
+                    setLoadingState(containerId, true);
+
+                    try {
+                        const response = await fetch(`/visualize_eeg/${band}`, {
+                            method: "POST",
+                            body: formData,
+                        });
+                        const data = await response.json();
+
+                        if (data.result) {
+                            displayVisualization(containerId, data.result);
+                            analysisData.visualizations[band] = data.result;
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Error loading ${band} visualization:`,
+                            error
+                        );
+                        document.getElementById(
+                            containerId
+                        ).innerHTML = `<p class="text-danger">Failed to load visualization</p>`;
+                    }
+                }
+            }
+
+            // Display prediction results
+            function displayPrediction(classification, confidenceScore) {
+                const container = document.getElementById("prediction-result");
+                const isADHD = classification === "ADHD";
+                const cardClass = isADHD ? "adhd" : "non-adhd";
+
+                container.innerHTML = `
+                    <div class="metric-card ${cardClass}">
+                        <div class="metric-label">Model Prediction</div>
+                        <div class="metric-value">${classification}</div>
+                        <div style="margin-top: 0.5rem; font-size: 1rem;">
+                            Confidence: ${(confidenceScore * 100).toFixed(2)}%
+                        </div>
+                        <div style="margin-top: 0.8rem; font-size: 0.8rem; opacity: 0.9;">
+                            This is not a definitive diagnosis
                         </div>
                     </div>
                 `;
-
-                result.appendChild(child);
             }
 
-            function clearLoading() {
-                const loadingIndicator =
-                    document.getElementById("loading-indicator");
-                if (loadingIndicator == null) {
-                    return;
-                }
+            // Display band power analysis
+            function displayBandPowers(bandData) {
+                const barsContainer =
+                    document.getElementById("band-power-bars");
+                const bands = Object.keys(bandData.average_relative_power);
 
-                loadingIndicator.parentNode.removeChild(loadingIndicator);
-            }
-
-            function disableSubmitButton() {
-                const submitButton = document.getElementById("submit-btn");
-
-                submitButton.setAttribute("disabled", true);
-            }
-
-            function enableSubmitButton() {
-                const submitButton = document.getElementById("submit-btn");
-
-                submitButton.removeAttribute("disabled");
-            }
-
-            function removeIfIdExists(id) {
-                const existingPreview = document.getElementById(id);
-                if (existingPreview != null) {
-                    existingPreview.parentNode.removeChild(existingPreview);
-                }
-            }
-
-            function clearResults() {
-                const result = document.getElementById("result");
-
-                result.innerHTML = "";
-            }
-
-            // Preview image before upload
-            function visualizeEeg(event) {
-                const result = document.getElementById("result");
-
-                clearResults();
-                putLoading("Generating EEG Preview...");
-                disableSubmitButton();
-                setTimeout(async function () {
-                    const form = new FormData(
-                        document.querySelector("#upload-form")
-                    );
-                    const response = await fetch("/visualize_eeg/raw", {
-                        method: "POST",
-                        body: form,
-                    });
-                    const data = await response.json();
-
-                    clearLoading();
-                    if (data.result == null) return;
-
-                    const box = (() => {
-                        const f = event.target.files?.[0];
-                        if (!f) return "";
-                        const ext = f.name.includes(".")
-                            ? f.name.split(".").pop()
-                            : "";
-                        const humanSize = ((s) => {
-                            if (s < 1024) return `${s} B`;
-                            if (s < 1024 * 1024)
-                                return `${
-                                    Math.round((s / 1024) * 100) / 100
-                                } KB`;
-                            return `${
-                                Math.round((s / (1024 * 1024)) * 100) / 100
-                            } MB`;
-                        })(f.size);
-
-                        return html`
-                            <div id="file-information" class="container">
-                                <h4>File Information:</h4>
-                                <p><b>Name:</b> ${f.name}</p>
-                                <p><b>Extension:</b> ${ext}</p>
-                                <p><b>Size:</b> ${humanSize}</p>
-                            </div>
-                        `;
-                    })();
-                    result.appendChild(box);
-
-                    const imgElement = html`
-                        <div class="container">
-                            <h4>Rendered EEG Preview</h4>
-                            <img
-                                src=${data.result}
-                                alt="Uploaded Image Preview"
-                                id="eeg-preview"
-                                class="img-fluid"
-                                style="height: 450px"
-                            />
-                        </div>
-                    `;
-                    result.appendChild(imgElement);
-
-                    enableSubmitButton();
-                }, 0);
-            }
-
-            // Handling result display after prediction
-            async function getPrediction(event) {
-                event.preventDefault(); // Prevent form from submitting normally
-
-                const form = new FormData(
-                    document.querySelector("#upload-form")
-                );
-                clearResults();
-
-                const result = document.getElementById("result");
-                putLoading("Classifying uploaded EEG...");
-
-                await sleep(1000);
-                try {
-                    const response = await fetch("/predict", {
-                        method: "POST",
-                        body: form,
-                    });
-
-                    const data = await response.json();
-
-                    clearLoading();
-                    if (data.error) {
-                        result.innerHTML = `<p class='error'>Error: ${data.error}</p>`;
-                    } else {
-                        const value = data.result;
-
-                        const isAdhdPositive = value > 0;
-                        const isNotAdhdPositive = value < 0;
-                        const confidence = Math.abs(value);
-                        const confidenceString = `${
-                            ~~(confidence * 10000) / 100
-                        }%`;
-
-                        result.appendChild(html`<hr />`);
-
-                        result.appendChild(html`<h3>Model Diagnosis</h3>`);
-                        if (isAdhdPositive) {
-                            result.appendChild(html`
-                                <div class="container">
-                                    <p>
-                                        Predicted Class:
-                                        <span style="color: green">ADHD</span>
-                                    </p>
-                                    <p>
-                                        Confidence:
-                                        <span style="color: orange;"
-                                            >${confidenceString}</span
-                                        >
-                                    </p>
-                                    <p class="disclaimer">
-                                        Disclaimer: This is not a definitive
-                                        diagnosis.
-                                    </p>
-                                </div>
-                            `);
-                        } else if (isNotAdhdPositive) {
-                            result.appendChild(html`
-                                <div class="container">
-                                    <p>
-                                        Predicted Class:
-                                        <span style="color: blue"
-                                            >Non-ADHD</span
-                                        >
-                                    </p>
-                                    <p>
-                                        Confidence:
-                                        <span style="color: orange;"
-                                            >${confidenceString}</span
-                                        >
-                                    </p>
-                                    <p class="disclaimer">
-                                        Disclaimer: This is not a definitive
-                                        diagnosis.
-                                    </p>
-                                </div>
-                            `);
-                        }
-
-                        result.appendChild(
-                            html`<h3>Clinical EEG Analysis Report</h3>`
-                        );
-
-                        const toPrint = [
-                            {
-                                name: "Raw EEG",
-                                link: "/visualize_eeg/raw",
-                                description:
-                                    "This is the unprocessed EEG signal as recorded, containing all frequency components and artifacts. It serves as the baseline reference for examining ADHD-related neural activity.",
-                            },
-                            {
-                                name: "Filtered EEG (0.5Hz - 40Hz)",
-                                link: "/visualize_eeg/filtered",
-                                description:
-                                    "This is the EEG signal after bandpass filtering between 0.5Hz and 40Hz, removing slow drifts and high-frequency noise. This cleaned range is typically used for ADHD research and power spectrum analysis.",
-                            },
-                            {
-                                name: "Delta Waves (0.5Hz - 4Hz)",
-                                link: "/visualize_eeg/delta",
-                                description:
-                                    "Delta waves represent the slowest brain rhythms, dominant during deep sleep and brain rest. In ADHD research, excessive delta activity may indicate delayed cortical maturation or underarousal, though it is less consistently altered than theta activity.",
-                            },
-                            {
-                                name: "Theta Waves (4Hz - 8Hz)",
-                                link: "/visualize_eeg/theta",
-                                description:
-                                    "Theta waves are slow oscillations linked to drowsiness, inattention, and memory processing. In ADHD, elevated theta power is one of the most frequently reported findings and contributes to the increased theta/beta ratio seen in many patients.",
-                            },
-                            {
-                                name: "Alpha Waves (8Hz - 12Hz)",
-                                link: "/visualize_eeg/alpha",
-                                description:
-                                    "Alpha waves are moderate-frequency rhythms associated with relaxed wakefulness and sensory inhibition. In ADHD, altered alpha modulation suggests difficulties in maintaining task-related attention and cortical inhibition.",
-                            },
-                            {
-                                name: "Beta Waves (12Hz - 30Hz)",
-                                link: "/visualize_eeg/beta",
-                                description:
-                                    "Beta waves are faster rhythms related to alertness, focus, and cognitive control. In ADHD, reduced beta activity has been observed, contributing to higher theta/beta ratios and reflecting lower cortical activation levels.",
-                            },
-                            {
-                                name: "Gamma Waves (30Hz - 40Hz)",
-                                link: "/visualize_eeg/gamma",
-                                description:
-                                    "Gamma waves are high-frequency oscillations tied to sensory binding, working memory, and cognitive integration. Some ADHD studies show atypical gamma synchronization, suggesting altered neural communication during attention tasks.",
-                            },
-                        ];
-
-                        for (const { name, link, description } of toPrint) {
-                            const node = html`
-                                <div class="container d-flex flex-column gap-2">
-                                    <h4>${name}</h4>
-                                    <p>${description}</p>
-                                    <div class="img-holder"></div>
-                                </div>
-                            `;
-
-                            result.appendChild(node);
-
-                            const imageHolder =
-                                node.querySelector(".img-holder");
-                            fetch(link, {
-                                method: "POST",
-                                body: form,
-                            })
-                                .then((e) => e.json())
-                                .then(
-                                    (e) => html` <img
-                                        src=${e.result}
-                                        alt="Uploaded Image Preview"
-                                        id="eeg-preview"
-                                        class="img-fluid"
-                                        style="height: 450px"
-                                    />`
-                                )
-                                .then((e) => imageHolder.appendChild(e));
-                        }
-
-                        // Fetch and display band power analysis
-                        await fetchBandPowerAnalysis(form);
-                    }
-                } catch (error) {
-                    console.log({ error });
-                    resultDiv.innerHTML = `<p class='error'>An error occurred while processing the image. Please ensure the image is valid and try again.</p>`;
-                }
-            }
-
-            // Function to fetch and display band power analysis
-            async function fetchBandPowerAnalysis(formData) {
-                try {
-                    const response = await fetch("/analyze_bands", {
-                        method: "POST",
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        console.error("Band analysis failed:", response.status);
-                        return;
-                    }
-
-                    const data = await response.json();
-                    displayBandPowerAnalysis(data);
-                } catch (error) {
-                    console.error("Error fetching band analysis:", error);
-                }
-            }
-
-            // Function to display band power analysis results
-            function displayBandPowerAnalysis(data) {
-                // Show the band analysis section
-                document.getElementById("band-analysis-section").style.display =
-                    "block";
-
-                // Define colors for bands
-                const bandColors = {
-                    delta: "#9C27B0",
-                    theta: "#2196F3",
-                    alpha: "#4CAF50",
-                    beta: "#FF9800",
-                    gamma: "#F44336",
-                };
-
-                // Display relative power bars
-                const relativePowerDiv = document.getElementById(
-                    "relative-power-bars"
-                );
-                relativePowerDiv.innerHTML = "";
-
-                const bands = Object.keys(data.average_relative_power);
+                let html = "";
                 bands.forEach((band) => {
                     const percentage = (
-                        data.average_relative_power[band] * 100
+                        bandData.average_relative_power[band] * 100
                     ).toFixed(1);
-                    const barHtml = `
-            <div class="mb-2">
-              <div class="d-flex justify-content-between">
-                <span><strong>${
-                    band.charAt(0).toUpperCase() + band.slice(1)
-                }</strong></span>
-                <span>${percentage}%</span>
-              </div>
-              <div class="progress" style="height: 25px;">
-                <div class="progress-bar" role="progressbar" 
-                     style="width: ${percentage}%; background-color: ${
+                    html += `
+                        <div class="band-bar">
+                            <div class="band-label">${
+                                band.charAt(0).toUpperCase() + band.slice(1)
+                            }</div>
+                            <div class="band-progress">
+                                <div class="band-progress-bar" 
+                                     style="width: ${percentage}%; background-color: ${
                         bandColors[band]
-                    };"
-                     aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
-                </div>
-              </div>
-            </div>
-          `;
-                    relativePowerDiv.innerHTML += barHtml;
+                    };">
+                                    ${percentage}%
+                                </div>
+                            </div>
+                            <div class="band-value">${percentage}%</div>
+                        </div>
+                    `;
                 });
 
-                // Display clinical ratios
-                const ratiosDiv = document.getElementById("clinical-ratios");
-                ratiosDiv.innerHTML = "";
-
-                const ratios = data.band_ratios;
-                Object.keys(ratios).forEach((ratio) => {
-                    const value = ratios[ratio].toFixed(3);
-                    const name = ratio
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase());
-                    ratiosDiv.innerHTML += `
-            <div class="d-flex justify-content-between mb-2 p-2 border-bottom">
-              <span><strong>${name}:</strong></span>
-              <span class="badge bg-primary">${value}</span>
-            </div>
-          `;
-                });
-
-                // Display band breakdown
-                const breakdownDiv = document.getElementById("band-breakdown");
-                breakdownDiv.innerHTML = "";
-
-                bands.forEach((band) => {
-                    const relPower = (
-                        data.average_relative_power[band] * 100
-                    ).toFixed(1);
-                    const absPower =
-                        data.average_absolute_power[band].toExponential(2);
-
-                    breakdownDiv.innerHTML += `
-            <div class="col-md-4 mb-3">
-              <div class="card h-100" style="border-left: 4px solid ${
-                  bandColors[band]
-              };">
-                <div class="card-body">
-                  <h6 class="card-title" style="color: ${bandColors[band]};">
-                    ${band.charAt(0).toUpperCase() + band.slice(1)}
-                  </h6>
-                  <p class="card-text mb-1"><small>Relative: ${relPower}%</small></p>
-                  <p class="card-text mb-0"><small>Absolute: ${absPower} μV²</small></p>
-                </div>
-              </div>
-            </div>
-          `;
-                });
-
-                // Display ADHD indicators
-                const indicatorsDiv =
-                    document.getElementById("adhd-indicators");
-                const adhdCard = document.getElementById(
-                    "adhd-indicators-card"
-                );
-                const thetaBetaRatio = ratios.theta_beta_ratio;
-
-                let indicatorHtml = `
-          <h6>Theta/Beta Ratio: <span class="badge bg-info fs-6">${thetaBetaRatio.toFixed(
-              3
-          )}</span></h6>
-        `;
-
-                if (thetaBetaRatio > 4.0) {
-                    indicatorHtml += `
-            <div class="alert alert-danger mt-2" role="alert">
-              <strong>Elevated Ratio (>4.0)</strong><br>
-              This elevated theta/beta ratio is commonly associated with ADHD in clinical research.
-              Further clinical assessment is recommended.
-            </div>
-          `;
-                    adhdCard.querySelector(".card-header").className =
-                        "card-header bg-danger text-white";
-                } else if (thetaBetaRatio > 3.0) {
-                    indicatorHtml += `
-            <div class="alert alert-warning mt-2" role="alert">
-              <strong>Moderately Elevated (3.0-4.0)</strong><br>
-              The theta/beta ratio is moderately elevated. This may warrant attention during clinical evaluation.
-            </div>
-          `;
-                    adhdCard.querySelector(".card-header").className =
-                        "card-header bg-warning text-dark";
-                } else {
-                    indicatorHtml += `
-            <div class="alert alert-success mt-2" role="alert">
-              <strong>Normal Range (<3.0)</strong><br>
-              The theta/beta ratio is within the typical range for non-ADHD individuals.
-            </div>
-          `;
-                    adhdCard.querySelector(".card-header").className =
-                        "card-header bg-success text-white";
-                }
-
-                indicatorsDiv.innerHTML = indicatorHtml;
-
-                // Scroll to band analysis section
-                document
-                    .getElementById("band-analysis-section")
-                    .scrollIntoView({ behavior: "smooth", block: "start" });
+                barsContainer.innerHTML = html;
             }
 
-            // Attach submit event to form
+            // Display clinical ratios
+            function displayClinicalRatios(ratios) {
+                const container = document.getElementById("clinical-ratios");
+
+                let html = "";
+                Object.entries(ratios).forEach(([name, value]) => {
+                    const displayName = name
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase());
+                    html += `
+                        <div class="ratio-item">
+                            <span class="ratio-name">${displayName}</span>
+                            <span class="ratio-value">${value.toFixed(3)}</span>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            // Main form submission handler
             document
-                .querySelector("#upload-form")
-                .addEventListener("submit", getPrediction);
+                .getElementById("analysis-form")
+                .addEventListener("submit", async function (e) {
+                    e.preventDefault();
+
+                    const analyzeBtn = document.getElementById("analyze-btn");
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.innerHTML =
+                        '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append("file", analysisData.file);
+
+                    try {
+                        // Load visualizations in parallel with prediction
+                        const [predictionPromise, vizPromise, bandPromise] =
+                            await Promise.all([
+                                fetch("/predict", {
+                                    method: "POST",
+                                    body: formData,
+                                }),
+                                loadVisualizations(formData),
+                                fetch("/analyze_bands", {
+                                    method: "POST",
+                                    body: formData,
+                                }),
+                            ]);
+
+                        // Process prediction
+                        const predictionData = await predictionPromise.json();
+                        if (predictionData.error) {
+                            alert("Error: " + predictionData.error);
+                            return;
+                        }
+
+                        // Process band analysis
+                        const bandData = await bandPromise.json();
+                        if (bandData.error) {
+                            alert("Error: " + bandData.error);
+                            return;
+                        }
+
+                        // Show results panel
+                        hideElement("results-empty-state");
+                        showElement("results-content");
+
+                        // Display results
+                        const result = predictionData.result || predictionData;
+                        displayPrediction(
+                            result.classification ||
+                                (result > 0 ? "ADHD" : "Non-ADHD"),
+                            result.confidence_score || Math.abs(result)
+                        );
+                        displayBandPowers(bandData);
+                        displayClinicalRatios(bandData.band_ratios);
+
+                        // Store results
+                        analysisData.results = {
+                            prediction: result,
+                            bands: bandData,
+                        };
+                    } catch (error) {
+                        console.error("Analysis error:", error);
+                        alert(
+                            "An error occurred during analysis. Please try again."
+                        );
+                    } finally {
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.innerHTML = "Analyze EEG Recording";
+                    }
+                });
         </script>
+
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
