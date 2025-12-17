@@ -41,6 +41,24 @@ class CliniciansRepository(BaseRepository):
             logger.error(f"Failed to fetch clinician {clinician_id}: {e}", exc_info=True)
             raise
     
+    def get_by_name(self, first_name, last_name):
+        """Get clinician by first and last name."""
+        logger.debug(f"Fetching clinician by name: {first_name} {last_name}")
+        query = "SELECT * FROM clinicians WHERE first_name = %s AND last_name = %s;"
+        try:
+            with self.get_connection() as conn:
+                cursor = self.get_dict_cursor(conn)
+                cursor.execute(query, (first_name, last_name))
+                result = cursor.fetchone()
+                if result:
+                    logger.debug(f"Clinician found: {first_name} {last_name}")
+                else:
+                    logger.debug(f"Clinician not found: {first_name} {last_name}")
+                return result
+        except Exception as e:
+            logger.error(f"Failed to fetch clinician by name: {e}", exc_info=True)
+            raise
+    
     def get_all(self):
         """Get all clinicians."""
         logger.debug("Fetching all clinicians")

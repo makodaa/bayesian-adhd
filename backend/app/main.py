@@ -203,9 +203,12 @@ def predict():
             'band_ratios': band_powers.get('band_ratios', {})
         }
         
-        # Store clinician info if provided (for future report generation)
+        # Store clinician info if provided
+        clinician_id = None
         if clinician_name:
-            logger.info(f"Clinician info provided: {clinician_name}, {occupation}")
+            logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+            clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+            result['clinician_id'] = clinician_id
         
         logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
@@ -216,6 +219,7 @@ def predict():
                 'subject_id': subject_id,
                 'recording_id': recording_id,
                 'result_id': result['result_id'],
+                'clinician_id': result.get('clinician_id'),
                 'band_analysis': result.get('band_analysis', {})
             }
         }), 200
