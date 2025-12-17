@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Results Management - BayesianADHD</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+        />
+        <style>
+            :root {
+                --primary-color: #5a6c7d;
+                --secondary-color: #6c9bd1;
+                --sidebar-width: 250px;
+                --sidebar-collapsed-width: 60px;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f7fa;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            .navbar {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                padding: 0 1rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: 70px;
+                display: flex;
+                align-items: center;
+            }
+
+            .navbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: white !important;
+                margin: 0;
+            }
+
+            .navbar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: white;
+                padding: 0.5rem;
+                margin: 0;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }
+
+            .navbar-toggle:hover {
+                opacity: 0.8;
+            }
+
+            .layout-wrapper {
+                display: flex;
+                height: calc(100vh - 70px);
+                margin-top: 70px;
+                width: 100%;
+            }
+
+            .sidebar {
+                width: var(--sidebar-width);
+                min-width: var(--sidebar-width);
+                background: white;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+            }
+
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed-width);
+                min-width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-nav {
+                flex: 1;
+                padding: 1.5rem 0;
+            }
+
+            .nav-item {
+                list-style: none;
+            }
+
+            .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 0.875rem 1rem;
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 500;
+            }
+
+            .nav-link:hover {
+                background: #f8f9fa;
+            }
+
+            .nav-link.active {
+                background: #e9ecef;
+                border-right: 3px solid var(--secondary-color);
+                font-weight: 600;
+            }
+
+            .nav-link svg {
+                min-width: 24px;
+                margin-right: 1rem;
+                transition: margin 0.3s ease;
+            }
+
+            .nav-link span {
+                opacity: 1;
+                transition: opacity 0.2s ease;
+            }
+
+            .sidebar.collapsed .nav-link {
+                justify-content: center;
+                padding: 0.875rem 0;
+            }
+
+            .sidebar.collapsed .nav-link svg {
+                margin-right: 0;
+            }
+
+            .sidebar.collapsed .nav-link span {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+            }
+
+            .main-content {
+                flex: 1;
+                padding: 2rem;
+                overflow-y: auto;
+                overflow-x: hidden;
+                min-width: 0;
+            }
+
+            .content-header {
+                margin-bottom: 2rem;
+            }
+
+            .content-header h1 {
+                font-size: 2rem;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
+
+            .card {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                margin-bottom: 1.5rem;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .btn-primary {
+                background-color: var(--secondary-color);
+                border: none;
+            }
+
+            .btn-primary:hover {
+                background-color: #5a8bc4;
+            }
+
+            .search-box {
+                max-width: 400px;
+            }
+
+            .badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.85rem;
+            }
+
+            .badge-adhd {
+                background: linear-gradient(135deg, #f5b5d8 0%, #f59999 100%);
+                color: white;
+            }
+
+            .badge-non-adhd {
+                background: linear-gradient(135deg, #8ec5fe 0%, #7dd8e8 100%);
+                color: white;
+            }
+
+            .filter-group {
+                display: flex;
+                gap: 1rem;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="navbar-toggle" id="sidebar-toggle">
+                    <span>☰</span>
+                </button>
+                <span class="navbar-brand">BayesianADHD</span>
+            </div>
+        </nav>
+
+        <div class="layout-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed" id="sidebar">
+                <nav class="sidebar-nav">
+                    <ul style="padding: 0; margin: 0">
+                        <li class="nav-item">
+                            <a href="/index.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                    ></path>
+                                    <polyline
+                                        points="9 22 9 12 15 12 15 22"
+                                    ></polyline>
+                                </svg>
+                                <span>Analysis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/subjects.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Subjects</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/clinicians.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Clinicians</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/results.html" class="nav-link active">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    ></path>
+                                    <polyline
+                                        points="14 2 14 8 20 8"
+                                    ></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="content-header">
+                    <h1>Analysis Results</h1>
+                    <p class="text-muted">View and export analysis results</p>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="filter-group">
+                                    <input
+                                        type="text"
+                                        class="form-control search-box"
+                                        id="search-results"
+                                        placeholder="Search by subject code..."
+                                    />
+                                    <select
+                                        class="form-select"
+                                        id="filter-classification"
+                                        style="max-width: 200px"
+                                    >
+                                        <option value="">
+                                            All Classifications
+                                        </option>
+                                        <option value="ADHD">ADHD</option>
+                                        <option value="Non-ADHD">
+                                            Non-ADHD
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button
+                                    class="btn btn-outline-primary"
+                                    id="export-results-btn"
+                                >
+                                    📥 Export Results
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Code</th>
+                                        <th>Classification</th>
+                                        <th>Confidence</th>
+                                        <th>Clinician</th>
+                                        <th>Analysis Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-table-body">
+                                    <tr>
+                                        <td
+                                            colspan="5"
+                                            class="text-center text-muted"
+                                        >
+                                            No results found. Perform an
+                                            analysis to see results here.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <script>
+            // Sidebar toggle
+            document
+                .getElementById("sidebar-toggle")
+                .addEventListener("click", function () {
+                    document
+                        .getElementById("sidebar")
+                        .classList.toggle("collapsed");
+                });
+
+            let allResults = [];
+
+            // Load results
+            async function loadResults() {
+                try {
+                    const response = await fetch("/api/results");
+                    allResults = await response.json();
+
+                    displayResults(allResults);
+                } catch (error) {
+                    console.error("Error loading results:", error);
+                    alert("Failed to load results");
+                }
+            }
+
+            // Display results in table
+            function displayResults(results) {
+                const tbody = document.getElementById("results-table-body");
+                if (results.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="5" class="text-center text-muted">No results found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = results
+                    .map((result) => {
+                        const badgeClass =
+                            result.predicted_class === "ADHD"
+                                ? "badge-adhd"
+                                : "badge-non-adhd";
+                        const confidence = (
+                            result.confidence_score * 100
+                        ).toFixed(2);
+                        const date = new Date(
+                            result.inferenced_at
+                        ).toLocaleString();
+
+                        return `
+                        <tr>
+                            <td>${result.subject_code}</td>
+                            <td><span class="badge ${badgeClass}">${result.predicted_class}</span></td>
+                            <td>${confidence}%</td>
+                            <td>-</td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                    })
+                    .join("");
+            }
+
+            // View result details
+            function viewResult(resultId) {
+                alert(
+                    `View details for result ${resultId} - Full implementation coming soon`
+                );
+            }
+
+            // Search functionality
+            document
+                .getElementById("search-results")
+                .addEventListener("input", function (e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const filtered = allResults.filter((result) =>
+                        result.subject_code.toLowerCase().includes(searchTerm)
+                    );
+                    displayResults(filtered);
+                });
+
+            // Filter by classification
+            document
+                .getElementById("filter-classification")
+                .addEventListener("change", function (e) {
+                    const classification = e.target.value;
+                    let filtered = allResults;
+
+                    if (classification) {
+                        filtered = allResults.filter(
+                            (result) =>
+                                result.predicted_class === classification
+                        );
+                    }
+
+                    displayResults(filtered);
+                });
+
+            // Export functionality
+            document
+                .getElementById("export-results-btn")
+                .addEventListener("click", function () {
+                    if (allResults.length === 0) {
+                        alert("No results to export");
+                        return;
+                    }
+
+                    // Convert to CSV
+                    const headers = [
+                        "Subject Code",
+                        "Classification",
+                        "Confidence",
+                        "Date",
+                    ];
+                    const csvContent = [
+                        headers.join(","),
+                        ...allResults.map((r) =>
+                            [
+                                r.subject_code,
+                                r.predicted_class,
+                                (r.confidence_score * 100).toFixed(2) + "%",
+                                new Date(r.inferenced_at).toLocaleString(),
+                            ].join(",")
+                        ),
+                    ].join("\\n");
+
+                    // Download
+                    const blob = new Blob([csvContent], { type: "text/csv" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `eeg_results_${
+                        new Date().toISOString().split("T")[0]
+                    }.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                });
+
+            // Initialize
+            loadResults();
+        </script>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+    </body>
+</html>

@@ -37,19 +37,44 @@
             .navbar {
                 background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-                padding: 1rem 2rem;
+                padding: 0 1rem;
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 z-index: 1000;
                 height: 70px;
+                display: flex;
+                align-items: center;
+            }
+
+            .navbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
             }
 
             .navbar-brand {
-                font-size: 1.5rem;
-                font-weight: 700;
+                font-size: 1.25rem;
+                font-weight: 600;
                 color: white !important;
+                margin: 0;
+            }
+
+            .navbar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: white;
+                padding: 0.5rem;
+                margin: 0;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }
+
+            .navbar-toggle:hover {
+                opacity: 0.8;
             }
 
             .layout-wrapper {
@@ -74,27 +99,9 @@
                 width: var(--sidebar-collapsed-width);
             }
 
-            .sidebar-header {
-                padding: 1rem;
-                border-bottom: 1px solid #e9ecef;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .sidebar-toggle {
-                background: none;
-                border: none;
-                font-size: 1.5rem;
-                cursor: pointer;
-                color: var(--primary-color);
-                padding: 0.5rem;
-                line-height: 1;
-            }
-
             .sidebar-nav {
                 flex: 1;
-                padding: 1rem 0;
+                padding: 1.5rem 0;
             }
 
             .nav-item {
@@ -104,11 +111,13 @@
             .nav-link {
                 display: flex;
                 align-items: center;
-                padding: 0.75rem 1.5rem;
+                padding: 0.875rem 1rem;
                 color: var(--primary-color);
                 text-decoration: none;
-                transition: background 0.2s ease;
+                transition: all 0.3s ease;
                 white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 500;
             }
 
             .nav-link:hover {
@@ -124,10 +133,27 @@
             .nav-link svg {
                 min-width: 24px;
                 margin-right: 1rem;
+                transition: margin 0.3s ease;
+            }
+
+            .nav-link span {
+                opacity: 1;
+                transition: opacity 0.2s ease;
+            }
+
+            .sidebar.collapsed .nav-link {
+                justify-content: center;
+                padding: 0.875rem 0;
+            }
+
+            .sidebar.collapsed .nav-link svg {
+                margin-right: 0;
             }
 
             .sidebar.collapsed .nav-link span {
-                display: none;
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
             }
 
             .main-container {
@@ -435,22 +461,17 @@
     <body>
         <!-- Navigation Bar -->
         <nav class="navbar">
-            <div class="container-fluid">
-                <span class="navbar-brand"
-                    >BayesianADHD - EEG Analysis Platform</span
-                >
-                <span class="text-white" style="font-size: 0.85rem">v2.1</span>
+            <div class="navbar-left">
+                <button class="navbar-toggle" id="sidebar-toggle">
+                    <span>☰</span>
+                </button>
+                <span class="navbar-brand">BayesianADHD</span>
             </div>
         </nav>
 
         <div class="layout-wrapper">
             <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <button class="sidebar-toggle" id="sidebar-toggle">
-                        <span>☰</span>
-                    </button>
-                </div>
+            <aside class="sidebar collapsed" id="sidebar">
                 <nav class="sidebar-nav">
                     <ul style="padding: 0; margin: 0;">
                         <li class="nav-item">
@@ -956,11 +977,21 @@
             // Load clinicians for datalist
             async function loadClinicians() {
                 try {
-                    // This will be connected to your backend API
-                    // const response = await fetch('/api/clinicians');
-                    // const clinicians = await response.json();
+                    const response = await fetch('/api/clinicians');
+                    const clinicians = await response.json();
                     
-                    // For now, using placeholder data
+                    const datalist = document.getElementById('clinician-list');
+                    clinicians.forEach(clinician => {
+                        const option = document.createElement('option');
+                        option.value = clinician.name;
+                        option.setAttribute('data-occupation', clinician.occupation);
+                        datalist.appendChild(option);
+                    });
+                    
+                    console.log(`Loaded ${clinicians.length} clinicians`);
+                } catch (error) {
+                    console.error('Error loading clinicians:', error);
+                    // Fallback to placeholder data if API fails
                     const clinicians = [
                         { id: 1, name: "Dr. Sarah Johnson", occupation: "Neurologist" },
                         { id: 2, name: "Dr. Michael Chen", occupation: "Psychiatrist" },
@@ -974,8 +1005,6 @@
                         option.setAttribute('data-occupation', clinician.occupation);
                         datalist.appendChild(option);
                     });
-                } catch (error) {
-                    console.error('Error loading clinicians:', error);
                 }
             }
 
@@ -1221,9 +1250,41 @@
                     analyzeBtn.innerHTML =
                         '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
 
-                    // Prepare form data
+                    // Prepare form data with all fields
                     const formData = new FormData();
                     formData.append("file", analysisData.file);
+                    
+                    // Subject demographics
+                    formData.append("subject_code", document.getElementById("subject-code").value);
+                    formData.append("age", document.getElementById("age").value);
+                    formData.append("gender", document.getElementById("gender").value);
+                    
+                    // Clinician information
+                    formData.append("clinician_name", document.getElementById("clinician-name").value);
+                    formData.append("occupation", document.getElementById("occupation").value);
+                    
+                    // Recording environment
+                    const sleepHours = document.getElementById("sleep-hours").value;
+                    if (sleepHours) formData.append("sleep_hours", sleepHours);
+                    
+                    const foodIntake = document.getElementById("food-intake").value;
+                    if (foodIntake) formData.append("food_intake", foodIntake);
+                    
+                    const caffeinated = document.querySelector('input[name="caffeinated"]:checked');
+                    if (caffeinated) formData.append("caffeinated", caffeinated.value);
+                    
+                    const medicated = document.querySelector('input[name="medicated"]:checked');
+                    if (medicated) formData.append("medicated", medicated.value);
+                    
+                    const medicationIntake = document.getElementById("medication-intake").value;
+                    if (medicationIntake) formData.append("medication_intake", medicationIntake);
+                    
+                    const notes = document.getElementById("notes").value;
+                    if (notes) formData.append("notes", notes);
+                    
+                    // Create separate FormData for visualizations (file only)
+                    const vizFormData = new FormData();
+                    vizFormData.append("file", analysisData.file);
 
                     try {
                         // Load visualizations in parallel with prediction
@@ -1233,10 +1294,10 @@
                                     method: "POST",
                                     body: formData,
                                 }),
-                                loadVisualizations(formData),
+                                loadVisualizations(vizFormData),
                                 fetch("/analyze_bands", {
                                     method: "POST",
-                                    body: formData,
+                                    body: vizFormData,
                                 }),
                             ]);
 
