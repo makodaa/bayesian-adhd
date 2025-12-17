@@ -214,6 +214,138 @@
                 gap: 1rem;
                 align-items: center;
             }
+
+            .modal-header {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                color: white;
+            }
+
+            .modal-header .btn-close {
+                filter: brightness(0) invert(1);
+            }
+
+            .info-section {
+                margin-bottom: 1.5rem;
+            }
+
+            .info-section h6 {
+                color: var(--primary-color);
+                font-weight: 600;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #e9ecef;
+            }
+
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .info-row:last-child {
+                border-bottom: none;
+            }
+
+            .info-label {
+                font-weight: 500;
+                color: #6c757d;
+            }
+
+            .info-value {
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+
+            .band-bar-modal {
+                display: flex;
+                align-items: center;
+                margin-bottom: 0.8rem;
+            }
+
+            .band-label-modal {
+                width: 80px;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .band-progress-modal {
+                flex: 1;
+                height: 24px;
+                background: #e9ecef;
+                border-radius: 12px;
+                overflow: hidden;
+                margin: 0 0.8rem;
+            }
+
+            .band-progress-bar-modal {
+                height: 100%;
+                transition: width 0.6s ease;
+            }
+
+            .band-value-modal {
+                width: 60px;
+                text-align: right;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .ratio-item-modal {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.6rem 0.8rem;
+                margin-bottom: 0.5rem;
+                background: #f8f9fa;
+                border-radius: 4px;
+            }
+
+            .ratio-name-modal {
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .ratio-value-modal {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--secondary-color);
+            }
+
+            .result-card-modal {
+                background: linear-gradient(135deg, #8fa5b8 0%, #a8c5e4 100%);
+                color: white;
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+
+            .result-card-modal.adhd {
+                background: linear-gradient(135deg, #5a6c7d 0%, #4a5568 100%);
+            }
+
+            .result-card-modal.non-adhd {
+                background: linear-gradient(135deg, #8fa5b8 0%, #7a92a8 100%);
+            }
+
+            .result-label-modal {
+                font-size: 0.85rem;
+                opacity: 0.9;
+                margin-bottom: 0.3rem;
+            }
+
+            .result-value-modal {
+                font-size: 1.8rem;
+                font-weight: 700;
+            }
+
+            .clickable-row {
+                cursor: pointer;
+            }
+
+            .clickable-row:hover {
+                background-color: #f8f9fa;
+            }
         </style>
     </head>
     <body>
@@ -395,6 +527,41 @@
             </main>
         </div>
 
+        <!-- Result Details Modal -->
+        <div
+            class="modal fade"
+            id="resultModal"
+            tabindex="-1"
+            aria-labelledby="resultModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="resultModalLabel">
+                            Analysis Result Details
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body" id="modal-body-content">
+                        <div class="text-center">
+                            <div
+                                class="spinner-border text-primary"
+                                role="status"
+                            >
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
             // Sidebar toggle
             document
@@ -443,7 +610,7 @@
                         ).toLocaleString();
 
                         return `
-                        <tr>
+                        <tr class="clickable-row" onclick="viewResult(${result.result_id})">
                             <td>${result.subject_code}</td>
                             <td><span class="badge ${badgeClass}">${result.predicted_class}</span></td>
                             <td>${confidence}%</td>
@@ -455,11 +622,308 @@
                     .join("");
             }
 
+            // Band colors
+            const bandColors = {
+                delta: "#9C27B0",
+                theta: "#2196F3",
+                alpha: "#4CAF50",
+                beta: "#FF9800",
+                gamma: "#F44336",
+            };
+
             // View result details
-            function viewResult(resultId) {
-                alert(
-                    `View details for result ${resultId} - Full implementation coming soon`
+            async function viewResult(resultId) {
+                const modal = new bootstrap.Modal(
+                    document.getElementById("resultModal")
                 );
+                const modalBody = document.getElementById("modal-body-content");
+
+                // Show loading state
+                modalBody.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+
+                modal.show();
+
+                try {
+                    const response = await fetch(`/api/results/${resultId}`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+
+                    // Build modal content
+                    const isADHD = data.predicted_class === "ADHD";
+                    const cardClass = isADHD ? "adhd" : "non-adhd";
+                    const confidence = (data.confidence_score * 100).toFixed(2);
+
+                    // Group band powers by electrode and frequency band
+                    const bandPowersByElectrode = {};
+                    const averageBandPowers = {};
+
+                    if (data.band_powers && data.band_powers.length > 0) {
+                        data.band_powers.forEach((bp) => {
+                            if (!bandPowersByElectrode[bp.electrode]) {
+                                bandPowersByElectrode[bp.electrode] = {};
+                            }
+                            bandPowersByElectrode[bp.electrode][
+                                bp.frequency_band
+                            ] = bp.relative_power;
+
+                            // Calculate average across electrodes
+                            if (!averageBandPowers[bp.frequency_band]) {
+                                averageBandPowers[bp.frequency_band] = [];
+                            }
+                            averageBandPowers[bp.frequency_band].push(
+                                bp.relative_power
+                            );
+                        });
+
+                        // Average the values
+                        Object.keys(averageBandPowers).forEach((band) => {
+                            const values = averageBandPowers[band];
+                            averageBandPowers[band] =
+                                values.reduce((a, b) => a + b, 0) /
+                                values.length;
+                        });
+                    }
+
+                    // Build band power bars
+                    let bandPowerHTML = "";
+                    const bandOrder = [
+                        "delta",
+                        "theta",
+                        "alpha",
+                        "beta",
+                        "gamma",
+                    ];
+                    bandOrder.forEach((band) => {
+                        if (averageBandPowers[band] !== undefined) {
+                            const percentage = (
+                                averageBandPowers[band] * 100
+                            ).toFixed(1);
+                            bandPowerHTML += `
+                                <div class="band-bar-modal">
+                                    <div class="band-label-modal">${
+                                        band.charAt(0).toUpperCase() +
+                                        band.slice(1)
+                                    }</div>
+                                    <div class="band-progress-modal">
+                                        <div class="band-progress-bar-modal" 
+                                             style="width: ${percentage}%; background-color: ${
+                                bandColors[band]
+                            };">
+                                        </div>
+                                    </div>
+                                    <div class="band-value-modal">${percentage}%</div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    // Build ratios
+                    let ratiosHTML = "";
+                    if (data.ratios && data.ratios.length > 0) {
+                        data.ratios.forEach((ratio) => {
+                            const displayName = ratio.ratio_name
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase());
+                            ratiosHTML += `
+                                <div class="ratio-item-modal">
+                                    <span class="ratio-name-modal">${displayName}</span>
+                                    <span class="ratio-value-modal">${ratio.ratio_value.toFixed(
+                                        3
+                                    )}</span>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        ratiosHTML =
+                            '<p class="text-muted">No ratio data available</p>';
+                    }
+
+                    modalBody.innerHTML = `
+                        <!-- Two Column Layout -->
+                        <div class="row">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <!-- Prediction Result -->
+                                <div class="result-card-modal ${cardClass}">
+                                    <div class="result-label-modal">Classification</div>
+                                    <div class="result-value-modal">${
+                                        data.predicted_class
+                                    }</div>
+                                    <div style="margin-top: 0.5rem; font-size: 1rem;">
+                                        Confidence: ${confidence}%
+                                    </div>
+                                </div>
+                                
+                                <!-- Subject Information -->
+                                <div class="info-section">
+                                    <h6>Subject Information</h6>
+                                    <div class="info-row">
+                                        <span class="info-label">Subject Code</span>
+                                        <span class="info-value">${
+                                            data.subject_code
+                                        }</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Age</span>
+                                        <span class="info-value">${
+                                            data.age
+                                        } years</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Gender</span>
+                                        <span class="info-value">${
+                                            data.gender
+                                        }</span>
+                                    </div>
+                                </div>
+                                
+                                ${
+                                    data.clinician_first_name ||
+                                    data.clinician_last_name
+                                        ? `
+                                <!-- Clinician Information -->
+                                <div class="info-section">
+                                    <h6>Clinician Information</h6>
+                                    <div class="info-row">
+                                        <span class="info-label">Name</span>
+                                        <span class="info-value">${[
+                                            data.clinician_first_name,
+                                            data.clinician_middle_name,
+                                            data.clinician_last_name,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" ")}</span>
+                                    </div>
+                                    ${
+                                        data.clinician_occupation
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Occupation</span>
+                                        <span class="info-value">${data.clinician_occupation}</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                </div>
+                                `
+                                        : ""
+                                }
+                                
+                                <!-- Recording Information -->
+                                <div class="info-section">
+                                    <h6>Recording Environment</h6>
+                                    <div class="info-row">
+                                        <span class="info-label">File Name</span>
+                                        <span class="info-value">${
+                                            data.file_name
+                                        }</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Analysis Date</span>
+                                        <span class="info-value">${new Date(
+                                            data.inferenced_at
+                                        ).toLocaleString()}</span>
+                                    </div>
+                                    ${
+                                        data.sleep_hours
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Sleep Hours</span>
+                                        <span class="info-value">${data.sleep_hours} hours</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                    ${
+                                        data.food_intake
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Food Intake</span>
+                                        <span class="info-value">${data.food_intake}</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                    ${
+                                        data.caffeinated !== null
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Caffeinated</span>
+                                        <span class="info-value">${
+                                            data.caffeinated ? "Yes" : "No"
+                                        }</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                    ${
+                                        data.medicated !== null
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Medicated</span>
+                                        <span class="info-value">${
+                                            data.medicated ? "Yes" : "No"
+                                        }</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                    ${
+                                        data.medication_intake
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Medication Details</span>
+                                        <span class="info-value">${data.medication_intake}</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                    ${
+                                        data.notes
+                                            ? `
+                                    <div class="info-row">
+                                        <span class="info-label">Notes</span>
+                                        <span class="info-value">${data.notes}</span>
+                                    </div>
+                                    `
+                                            : ""
+                                    }
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <!-- Band Powers -->
+                                <div class="info-section">
+                                    <h6>Relative Band Power Analysis</h6>
+                                    ${
+                                        bandPowerHTML ||
+                                        '<p class="text-muted">No band power data available</p>'
+                                    }
+                                </div>
+                                
+                                <!-- Clinical Ratios -->
+                                <div class="info-section">
+                                    <h6>Clinical Ratios</h6>
+                                    ${ratiosHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error("Error loading result details:", error);
+                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load result details</div>`;
+                }
             }
 
             // Search functionality

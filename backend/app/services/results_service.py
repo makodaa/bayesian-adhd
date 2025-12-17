@@ -75,10 +75,16 @@ class ResultsService:
             s.id as subject_id,
             s.subject_code,
             s.age,
-            s.gender
+            s.gender,
+            c.first_name as clinician_first_name,
+            c.last_name as clinician_last_name,
+            c.middle_name as clinician_middle_name,
+            c.occupation as clinician_occupation
         FROM results r
         JOIN recordings rec ON r.recording_id = rec.id
         JOIN subjects s ON rec.subject_id = s.id
+        LEFT JOIN reports rep ON rep.result_id = r.id
+        LEFT JOIN clinicians c ON rep.clinician_id = c.id
         WHERE r.id = %s;
         """
         try:
