@@ -1287,31 +1287,20 @@
                     vizFormData.append("file", analysisData.file);
 
                     try {
-                        // Load visualizations in parallel with prediction
-                        const [predictionPromise, vizPromise, bandPromise] =
+                        // Load visualizations in parallel with prediction (which now includes band analysis)
+                        const [predictionPromise, vizPromise] =
                             await Promise.all([
                                 fetch("/predict", {
                                     method: "POST",
                                     body: formData,
                                 }),
                                 loadVisualizations(vizFormData),
-                                fetch("/analyze_bands", {
-                                    method: "POST",
-                                    body: vizFormData,
-                                }),
                             ]);
 
-                        // Process prediction
+                        // Process prediction (now includes band analysis)
                         const predictionData = await predictionPromise.json();
                         if (predictionData.error) {
                             alert("Error: " + predictionData.error);
-                            return;
-                        }
-
-                        // Process band analysis
-                        const bandData = await bandPromise.json();
-                        if (bandData.error) {
-                            alert("Error: " + bandData.error);
                             return;
                         }
 
@@ -1326,8 +1315,11 @@
                                 (result > 0 ? "ADHD" : "Non-ADHD"),
                             result.confidence_score || Math.abs(result)
                         );
+                        
+                        // Band analysis is now included in the prediction response
+                        const bandData = result.band_analysis || {};
                         displayBandPowers(bandData);
-                        displayClinicalRatios(bandData.band_ratios);
+                        displayClinicalRatios(bandData.band_ratios || {});
 
                         // Store results
                         analysisData.results = {

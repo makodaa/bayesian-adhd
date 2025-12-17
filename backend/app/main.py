@@ -82,61 +82,6 @@ def visualize_csv(file, eeg_type: str):
     file_service.validate_eeg_data(df)
     return visualization_service.visualize_df(df, eeg_type)
 
-def process_csv(file):
-    """Process CSV and classify using EEGService"""
-    logger.info(f"Processing CSV file for classification: {file.filename}")
-    df = file_service.read_csv(file)
-    file_service.validate_eeg_data(df)
-    
-    # Create mock subject and recording for temporary solution
-    logger.debug("Creating mock subject and recording")
-    subject_id, recording_id = MockDataGenerator.create_mock_subject_and_recording(
-        subject_service, recording_service, file.filename
-    )
-    
-    # Classify and save results
-    result = eeg_service.classify_and_save(recording_id, df)
-    
-    logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
-    return {
-        'classification': result['classification'],
-        'confidence_score': result['confidence_score'],
-        'subject_id': subject_id,
-        'recording_id': recording_id,
-        'result_id': result['result_id']
-    }
-
-def analyze_csv_bands(file):
-    """Process CSV file and return band power analysis using BandAnalysisService"""
-    logger.info(f"Analyzing band powers for file: {file.filename}")
-    df = file_service.read_csv(file)
-    file_service.validate_eeg_data(df)
-    
-    # Create mock subject and recording for temporary solution
-    logger.debug("Creating mock subject and recording for band analysis")
-    subject_id, recording_id = MockDataGenerator.create_mock_subject_and_recording(
-        subject_service, recording_service, file.filename
-    )
-    
-    # Create a placeholder result for band analysis
-    result_id = results_service.create_result(
-        recording_id=recording_id,
-        classification='Pending',
-        confidence_score=0.0
-    )
-    
-    print("Preprocessing EEG data for band analysis...")
-    band_powers = band_analysis_service.compute_and_save(result_id, df)
-    
-    # Add metadata to response
-    band_powers['metadata'] = {
-        'subject_id': subject_id,
-        'recording_id': recording_id,
-        'result_id': result_id
-    }
-    
-    return band_powers
-
 @error_handle
 def visualize_file(file, eeg_type="raw"):
     """Route file to appropriate visualization handler"""
@@ -147,17 +92,6 @@ def visualize_file(file, eeg_type="raw"):
         return {'error': 'File extension not supported'}
 
     return visualize_csv(file, eeg_type)
-
-@error_handle
-def process_file(file):
-    """Route file to appropriate processing handler"""
-    if file.filename is None:
-        return None
-
-    if not file_service.is_allowed_file(file.filename):
-        return {'error': 'File extension not supported'}
-
-    return process_csv(file)
 
 @app.route('/')
 def home():
@@ -229,20 +163,18 @@ def predict():
         medication_intake = request.form.get('medication_intake')
         notes = request.form.get('notes')
         
+        # Validate required subject data
+        if not subject_code or not age or not gender:
+            logger.error("Missing required subject data")
+            return jsonify({'error': 'Subject code, age, and gender are required'}), 400
+        
         # Process file
         df = file_service.read_csv(file)
         file_service.validate_eeg_data(df)
         
-        # Create or get subject
-        if subject_code and age and gender:
-            logger.info(f"Creating subject: {subject_code}, age={age}, gender={gender}")
-            subject_id = subject_service.create_subject(subject_code, int(age), gender)
-        else:
-            # Fallback to mock data if form not filled
-            logger.warning("Subject data missing, using mock data")
-            subject_id, _ = MockDataGenerator.create_mock_subject_and_recording(
-                subject_service, recording_service, file.filename
-            )
+        # Create subject
+        logger.info(f"Creating subject: {subject_code}, age={age}, gender={gender}")
+        subject_id = subject_service.create_subject(subject_code, int(age), gender)
         
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
@@ -260,6 +192,17 @@ def predict():
         # Classify and save results
         result = eeg_service.classify_and_save(recording_id, df)
         
+        # Compute band powers and ratios for the same recording
+        logger.info(f"Computing band powers for result {result['result_id']}")
+        band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
+        
+        # Add band power summary to result
+        result['band_analysis'] = {
+            'average_absolute_power': band_powers.get('average_absolute_power', {}),
+            'average_relative_power': band_powers.get('average_relative_power', {}),
+            'band_ratios': band_powers.get('band_ratios', {})
+        }
+        
         # Store clinician info if provided (for future report generation)
         if clinician_name:
             logger.info(f"Clinician info provided: {clinician_name}, {occupation}")
@@ -272,7 +215,8 @@ def predict():
                 'confidence_score': result['confidence_score'],
                 'subject_id': subject_id,
                 'recording_id': recording_id,
-                'result_id': result['result_id']
+                'result_id': result['result_id'],
+                'band_analysis': result.get('band_analysis', {})
             }
         }), 200
     except ValueError as e:
@@ -281,41 +225,6 @@ def predict():
     except Exception as e:
         logger.error(f"Error in predict: {e}", exc_info=True)
         return jsonify({'error': f'Failed to predict: {str(e)}'}), 500
-
-
-@app.route('/analyze_bands', methods=['POST'])
-def analyze_bands():
-    """
-    API endpoint to compute absolute and relative power for each frequency band.
-
-    Returns:
-    --------
-    JSON with:
-    - absolute_power: Power in each band for each electrode (μV²)
-    - relative_power: Power as fraction of total (0-1) for each electrode
-    - total_power: Total power across all bands for each electrode
-    - average_absolute_power: Average across all electrodes for each band
-    - average_relative_power: Average relative power across all electrodes
-    - band_ratios: Clinically relevant ratios (theta/beta, etc.)
-    """
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    if not file_service.is_allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed. Please upload a CSV file.'}), 400
-
-    try:
-        result = analyze_csv_bands(file)
-        return jsonify(result), 200
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        print(f"Error in analyze_bands: {str(e)}")
-        return jsonify({'error': f'Failed to analyze bands: {str(e)}'}), 500
 
 
 # API Endpoints for Management Pages
