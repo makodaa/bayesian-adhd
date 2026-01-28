@@ -205,6 +205,71 @@
             background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
             color: white;
         }
+
+        .clickable-row {
+            cursor: pointer;
+        }
+
+        .clickable-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .info-value {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .assessment-table {
+            margin-top: 1rem;
+        }
+
+        .assessment-table th {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .assessment-table-wrapper {
+            max-height: 180px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -314,9 +379,8 @@
                             </thead>
                             <tbody id="subjects-table-body">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">
-                                        No subjects found. Add a subject to
-                                        get started.
+                                    <td colspan="6" class="text-center text-muted">
+                                        No subjects found. Add a subject to get started.
                                     </td>
                                 </tr>
                             </tbody>
@@ -327,48 +391,62 @@
         </main>
     </div>
 
+    <!-- Subject Details Modal -->
+    <div class="modal fade" id="subjectModal" tabindex="-1" aria-labelledby="subjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="subjectModalLabel">
+                        Subject Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Sidebar toggle
-        document
-            .getElementById("sidebar-toggle")
-            .addEventListener("click", function () {
-                document
-                    .getElementById("sidebar")
-                    .classList.toggle("collapsed");
-            });
+        document.getElementById("sidebar-toggle").addEventListener("click", function () {
+            document.getElementById("sidebar").classList.toggle("collapsed");
+        });
+
+        let allSubjects = [];
 
         // Load subjects
         async function loadSubjects() {
             try {
                 const response = await fetch("/api/subjects");
-                const subjects = await response.json();
+                allSubjects = await response.json();
 
-                const tbody = document.getElementById(
-                    "subjects-table-body"
-                );
-                if (subjects.length === 0) {
+                const tbody = document.getElementById("subjects-table-body");
+                if (allSubjects.length === 0) {
                     tbody.innerHTML =
-                        '<tr><td colspan="5" class="text-center text-muted">No subjects found.</td></tr>';
+                        '<tr><td colspan="6" class="text-center text-muted">No subjects found.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = subjects
-                    .map(
-                        (subject) => {
-                            const badgeClass = subject.last_result === 'ADHD' ? 'badge-adhd' : 'badge-non-adhd';
-                            return `
-                                <tr>
-                                    <td>${subject.subject_code}</td>
-                                    <td>${subject.age || "N/A"}</td>
-                                    <td>${subject.gender || "N/A"}</td>
-                                    <td>${subject.recording_count || 0}</td>
-                                    <td><span class="badge ${badgeClass}">${subject.last_result || 'N/A'}</span></td>
-                                    <td>${new Date(subject.last_update).toLocaleString() || 'N/A'}</td>
-                                    
-                                </tr>
-                            `;
-                        }
-                    )
+                tbody.innerHTML = allSubjects
+                    .map((subject) => {
+                        const badgeClass = subject.last_result === 'ADHD' ? 'badge-adhd' : subject.last_result === 'Non-ADHD' ? 'badge-non-adhd' : 'bg-secondary';
+                        return `
+                            <tr class="clickable-row" onclick="viewSubject(${subject.id})">
+                                <td>${subject.subject_code}</td>
+                                <td>${subject.age || "N/A"}</td>
+                                <td>${subject.gender || "N/A"}</td>
+                                <td>${subject.recording_count || 0}</td>
+                                <td><span class="badge ${badgeClass}">${subject.last_result || 'N/A'}</span></td>
+                                <td>${subject.subject_last_update ? new Date(subject.subject_last_update).toLocaleString() : 'N/A'}</td>
+                            </tr>
+                        `;
+                    })
                     .join("");
             } catch (error) {
                 console.error("Error loading subjects:", error);
@@ -377,34 +455,118 @@
         }
 
         // View subject details
-        function viewSubject(subjectId) {
-            window.location.href = `/subjects.html?id=${subjectId}`;
+        async function viewSubject(subjectId) {
+            const modal = new bootstrap.Modal(document.getElementById("subjectModal"));
+            const modalBody = document.getElementById("modal-body-content");
+
+            // Show loading state
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+
+            modal.show();
+
+            try {
+                const response = await fetch(`/api/subjects/${subjectId}/assessments`);
+                const subject = await response.json();
+
+                if (subject.error) {
+                    modalBody.innerHTML = `<div class="alert alert-danger">${subject.error}</div>`;
+                    return;
+                }
+
+                // Build assessments table
+                let assessmentsHTML = "";
+                if (subject.assessments && subject.assessments.length > 0) {
+                    // In the viewSubject function, update the assessments table:
+                    assessmentsHTML = `
+                        <div class="assessment-table-wrapper">
+                            <div class="table-container">
+                                <table class="table table-sm assessment-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Classification</th>
+                                            <th>Confidence</th>
+                                            <th>Clinician</th>
+                                            <th>Analysis Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${subject.assessments
+                            .map((assessment) => {
+                                const badgeClass = assessment.predicted_class === "ADHD" ? "badge-adhd" : "badge-non-adhd";
+                                const confidence = (assessment.confidence_score * 100).toFixed(2);
+                                const date = new Date(assessment.inferenced_at).toLocaleString();
+                                return `
+                                        <tr>
+                                            <td><span class="badge ${badgeClass}">${assessment.predicted_class}</span></td>
+                                            <td>${confidence}%</td>
+                                            <td>${assessment.clinician_name || "N/A"}</td>
+                                            <td>${date}</td>
+                                        </tr>
+                                    `;
+                            })
+                            .join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    assessmentsHTML = '<p class="text-muted">No assessments found.</p>';
+                }
+
+                modalBody.innerHTML = `
+                    <div class="info-section">
+                        <h6>Subject Information</h6>
+                        <div class="info-row">
+                            <span class="info-label">Subject Code</span>
+                            <span class="info-value">${subject.subject_code}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Age</span>
+                            <span class="info-value">${subject.age || "N/A"}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Gender</span>
+                            <span class="info-value">${subject.gender || "N/A"}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Total Assessments</span>
+                            <span class="info-value">${subject.assessments.length}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h6>Assessments</h6>
+                        ${assessmentsHTML}
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Error loading subject details:", error);
+                modalBody.innerHTML = `<div class="alert alert-danger">Failed to load subject details</div>`;
+            }
         }
 
         // Search functionality
-        document
-            .getElementById("search-subjects")
-            .addEventListener("input", function (e) {
-                const searchTerm = e.target.value.toLowerCase();
-                const rows = document.querySelectorAll(
-                    "#subjects-table-body tr"
-                );
+        document.getElementById("search-subjects").addEventListener("input", function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll("#subjects-table-body tr");
 
-                rows.forEach((row) => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm)
-                        ? ""
-                        : "none";
-                });
+            rows.forEach((row) => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? "" : "none";
             });
+        });
 
         // Add subject functionality
-        document
-            .getElementById("add-subject-btn")
-            .addEventListener("click", function () {
-                // Redirect to analysis page to add new subject
-                window.location.href = "/";
-            });
+        document.getElementById("add-subject-btn").addEventListener("click", function () {
+            window.location.href = "/";
+        });
 
         // Initialize
         loadSubjects();

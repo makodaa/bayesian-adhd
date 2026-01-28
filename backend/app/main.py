@@ -246,6 +246,18 @@ def get_clinicians():
     except Exception as e:
         logger.error(f"Error fetching clinicians: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/clinicians/<int:clinician_id>', methods=['GET'])
+def get_clinician_details(clinician_id):
+    """Get clinician details with their assessment results."""
+    try:
+        clinician = clinicians_repo.get_with_assessments(clinician_id)
+        if not clinician:
+            return jsonify({'error': 'Clinician not found'}), 404
+        return jsonify(clinician), 200
+    except Exception as e:
+        logger.error(f"Error fetching clinician details: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/clinicians', methods=['POST'])
 def create_clinician():
@@ -284,6 +296,18 @@ def get_subject(subject_id):
         return jsonify(subject), 200
     except Exception as e:
         logger.error(f"Error fetching subject {subject_id}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/subjects/<int:subject_id>/assessments', methods=['GET'])
+def get_subject_assessments(subject_id):
+    """Get subject details with their assessment results."""
+    try:
+        subject = subjects_repo.get_with_assessments(subject_id)
+        if not subject:
+            return jsonify({'error': 'Subject not found'}), 404
+        return jsonify(subject), 200
+    except Exception as e:
+        logger.error(f"Error fetching subject assessments: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/results', methods=['GET'])

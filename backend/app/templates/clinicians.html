@@ -195,6 +195,81 @@
             border-radius: 12px;
             font-size: 0.85rem;
         }
+
+        .clickable-row {
+            cursor: pointer;
+        }
+
+        .clickable-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .info-value {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .assessment-table {
+            margin-top: 1rem;
+        }
+
+        .assessment-table th {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .badge-adhd {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .badge-non-adhd {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+
+        .assessment-table-wrapper {
+            max-height: 180px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -304,8 +379,7 @@
                             <tbody id="clinicians-table-body">
                                 <tr>
                                     <td colspan="5" class="text-center text-muted">
-                                        No clinicians found. Add a clinician
-                                        to get started.
+                                        No clinicians found. Add a clinician to get started.
                                     </td>
                                 </tr>
                             </tbody>
@@ -316,39 +390,56 @@
         </main>
     </div>
 
+    <!-- Clinician Details Modal -->
+    <div class="modal fade" id="clinicianModal" tabindex="-1" aria-labelledby="clinicianModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clinicianModalLabel">
+                        Clinician Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Sidebar toggle
-        document
-            .getElementById("sidebar-toggle")
-            .addEventListener("click", function () {
-                document
-                    .getElementById("sidebar")
-                    .classList.toggle("collapsed");
-            });
+        document.getElementById("sidebar-toggle").addEventListener("click", function () {
+            document.getElementById("sidebar").classList.toggle("collapsed");
+        });
+
+        let allClinicians = [];
 
         // Load clinicians
         async function loadClinicians() {
             try {
                 const response = await fetch("/api/clinicians");
-                const clinicians = await response.json();
+                allClinicians = await response.json();
 
-                const tbody = document.getElementById(
-                    "clinicians-table-body"
-                );
-                if (clinicians.length === 0) {
+                const tbody = document.getElementById("clinicians-table-body");
+                if (allClinicians.length === 0) {
                     tbody.innerHTML =
                         '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = clinicians
+                tbody.innerHTML = allClinicians
                     .map(
                         (clinician) => `
-                        <tr>
+                        <tr class="clickable-row" onclick="viewClinician(${clinician.id})">
                             <td>${clinician.name}</td>
                             <td>${clinician.occupation || "N/A"}</td>
                             <td>${clinician.assessments_count || "0"}</td>
-                            <td>${new Date(clinician.last_activity).toLocaleString() || "N/A"}</td>
+                            <td>${clinician.last_activity ? new Date(clinician.last_activity).toLocaleString() : "N/A"}</td>
                             <td><span class="badge bg-success">Active</span></td>
                         </tr>
                     `
@@ -361,69 +452,154 @@
         }
 
         // View clinician details
-        function viewClinician(clinicianId) {
-            alert(
-                `View details for clinician ${clinicianId} - Full implementation coming soon`
-            );
+        async function viewClinician(clinicianId) {
+            const modal = new bootstrap.Modal(document.getElementById("clinicianModal"));
+            const modalBody = document.getElementById("modal-body-content");
+
+            // Show loading state
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+
+            modal.show();
+
+            try {
+                const response = await fetch(`/api/clinicians/${clinicianId}`);
+                const clinician = await response.json();
+
+                if (clinician.error) {
+                    modalBody.innerHTML = `<div class="alert alert-danger">${clinician.error}</div>`;
+                    return;
+                }
+
+                // Build clinician info
+                const fullName = [clinician.first_name, clinician.middle_name, clinician.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                // Build assessments table
+                let assessmentsHTML = "";
+                if (clinician.assessments && clinician.assessments.length > 0) {
+                    assessmentsHTML = `
+                        <div class="assessment-table-wrapper">
+                            <div class="table-container">
+                                <table class="table table-sm assessment-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject Code</th>
+                                            <th>Age</th>
+                                            <th>Gender</th>
+                                            <th>Classification</th>
+                                            <th>Confidence</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${clinician.assessments
+                            .map((assessment) => {
+                                const badgeClass = assessment.predicted_class === "ADHD" ? "badge-adhd" : "badge-non-adhd";
+                                const confidence = (assessment.confidence_score * 100).toFixed(2);
+                                const date = new Date(assessment.inferenced_at).toLocaleString();
+                                return `
+                                    <tr>
+                                    <td>${assessment.subject_code}</td>
+                                    <td>${assessment.age || "N/A"}</td>
+                                    <td>${assessment.gender || "N/A"}</td>
+                                    <td><span class="badge ${badgeClass}">${assessment.predicted_class}</span></td>
+                                    <td>${confidence}%</td>
+                                    <td>${date}</td>
+                                    </tr>
+                                `;
+                            })
+                            .join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    assessmentsHTML = '<p class="text-muted">No assessments found.</p>';
+                }
+
+                modalBody.innerHTML = `
+                    <div class="info-section">
+                        <h6>Clinician Information</h6>
+                        <div class="info-row">
+                            <span class="info-label">Name</span>
+                            <span class="info-value">${fullName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Occupation</span>
+                            <span class="info-value">${clinician.occupation || "N/A"}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Total Assessments</span>
+                            <span class="info-value">${clinician.assessments.length}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h6>Assessments</h6>
+                        ${assessmentsHTML}
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Error loading clinician details:", error);
+                modalBody.innerHTML = `<div class="alert alert-danger">Failed to load clinician details</div>`;
+            }
         }
 
         // Search functionality
-        document
-            .getElementById("search-clinicians")
-            .addEventListener("input", function (e) {
-                const searchTerm = e.target.value.toLowerCase();
-                const rows = document.querySelectorAll(
-                    "#clinicians-table-body tr"
-                );
+        document.getElementById("search-clinicians").addEventListener("input", function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll("#clinicians-table-body tr");
 
-                rows.forEach((row) => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm)
-                        ? ""
-                        : "none";
-                });
+            rows.forEach((row) => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? "" : "none";
             });
+        });
 
         // Add clinician functionality
-        document
-            .getElementById("add-clinician-btn")
-            .addEventListener("click", function () {
-                const firstName = prompt("Enter clinician's first name:");
-                if (!firstName) return;
+        document.getElementById("add-clinician-btn").addEventListener("click", function () {
+            const firstName = prompt("Enter clinician's first name:");
+            if (!firstName) return;
 
-                const lastName = prompt("Enter clinician's last name:");
-                if (!lastName) return;
+            const lastName = prompt("Enter clinician's last name:");
+            if (!lastName) return;
 
-                const occupation = prompt(
-                    "Enter occupation (e.g., Neurologist):"
-                );
+            const occupation = prompt("Enter occupation (e.g., Neurologist):");
 
-                fetch("/api/clinicians", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        first_name: firstName,
-                        last_name: lastName,
-                        middle_name: null,
-                        occupation: occupation,
-                    }),
+            fetch("/api/clinicians", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    middle_name: null,
+                    occupation: occupation,
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.error) {
+                        alert("Error: " + data.error);
+                    } else {
+                        alert("Clinician added successfully!");
+                        loadClinicians();
+                    }
                 })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data.error) {
-                            alert("Error: " + data.error);
-                        } else {
-                            alert("Clinician added successfully!");
-                            loadClinicians();
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Error:", error);
-                        alert("Failed to add clinician");
-                    });
-            });
+                .catch((error) => {
+                    console.error("Error:", error);
+                    alert("Failed to add clinician");
+                });
+        });
 
         // Initialize
         loadClinicians();
