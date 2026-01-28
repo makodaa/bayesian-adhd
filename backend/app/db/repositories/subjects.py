@@ -60,12 +60,13 @@ class SubjectsRepository(BaseRepository):
             raise
     
     def get_all(self):
-        """Get all subjects with their latest assessment date."""
+        """Get all subjects with their details."""
         logger.debug("Fetching all subjects")
         query = """
         SELECT 
             s.*,
-            MAX(r.inferenced_at) as last_assessment
+            MAX(r.inferenced_at) as last_update,
+            (array_agg(r.predicted_class ORDER BY r.inferenced_at DESC))[1] as last_result
         FROM subjects s
         LEFT JOIN recordings rec ON s.id = rec.subject_id
         LEFT JOIN results r ON rec.id = r.recording_id

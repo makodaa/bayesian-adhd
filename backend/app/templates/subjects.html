@@ -189,6 +189,22 @@
         .search-box {
             max-width: 400px;
         }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .badge-adhd {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .badge-non-adhd {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
     </style>
 </head>
 
@@ -292,6 +308,7 @@
                                     <th>Age</th>
                                     <th>Gender</th>
                                     <th>Recordings</th>
+                                    <th>Assessment Result</th>
                                     <th>Last Updated</th>
                                 </tr>
                             </thead>
@@ -337,15 +354,20 @@
 
                 tbody.innerHTML = subjects
                     .map(
-                        (subject) => `
-                        <tr>
-                            <td>${subject.subject_code}</td>
-                            <td>${subject.age || "N/A"}</td>
-                            <td>${subject.gender || "N/A"}</td>
-                            <td>${subject.recording_count || 0}</td>
-                            <td>${new Date(subject.last_assessment).toLocaleString() || 'N/A'}</td>
-                        </tr>
-                    `
+                        (subject) => {
+                            const badgeClass = subject.last_result === 'ADHD' ? 'badge-adhd' : 'badge-non-adhd';
+                            return `
+                                <tr>
+                                    <td>${subject.subject_code}</td>
+                                    <td>${subject.age || "N/A"}</td>
+                                    <td>${subject.gender || "N/A"}</td>
+                                    <td>${subject.recording_count || 0}</td>
+                                    <td><span class="badge ${badgeClass}">${subject.last_result || 'N/A'}</span></td>
+                                    <td>${new Date(subject.last_update).toLocaleString() || 'N/A'}</td>
+                                    
+                                </tr>
+                            `;
+                        }
                     )
                     .join("");
             } catch (error) {
