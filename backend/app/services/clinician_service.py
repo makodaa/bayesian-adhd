@@ -69,9 +69,12 @@ class ClinicianService:
             name = f"{c.get('first_name', '')} {c.get('last_name', '')}".strip()
             if c.get('middle_name'):
                 name = f"{c.get('first_name', '')} {c.get('middle_name', '')} {c.get('last_name', '')}".strip()
+            
             formatted.append({
                 'id': c['id'],
                 'name': name,
-                'occupation': c.get('occupation', '')
+                'occupation': c.get('occupation', ''),
+                'assessments_count': c.get('assessments_count', 0),
+                'last_activity': c.get('last_activity')
             })
         return formatted

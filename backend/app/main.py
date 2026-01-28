@@ -175,6 +175,10 @@ def predict():
         # Get or create subject (reuse existing subject if code already exists)
         logger.info(f"Getting or creating subject: {subject_code}, age={age}, gender={gender}")
         subject_id = subject_service.get_or_create_subject(subject_code, int(age), gender)
+
+        # Get or create clinician if provided
+        logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+        clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
         
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
@@ -190,7 +194,7 @@ def predict():
         )
         
         # Classify and save results
-        result = eeg_service.classify_and_save(recording_id, df)
+        result = eeg_service.classify_and_save(recording_id, df, clinician_id=clinician_id)
         
         # Compute band powers and ratios for the same recording
         logger.info(f"Computing band powers for result {result['result_id']}")
@@ -208,8 +212,7 @@ def predict():
         if clinician_name:
             logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
             clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
-            result['clinician_id'] = clinician_id
-        
+            
         logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,

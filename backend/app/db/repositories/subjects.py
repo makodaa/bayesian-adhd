@@ -60,9 +60,18 @@ class SubjectsRepository(BaseRepository):
             raise
     
     def get_all(self):
-        """Get all subjects."""
+        """Get all subjects with their latest assessment date."""
         logger.debug("Fetching all subjects")
-        query = "SELECT * FROM subjects ORDER BY id;"
+        query = """
+        SELECT 
+            s.*,
+            MAX(r.inferenced_at) as last_assessment
+        FROM subjects s
+        LEFT JOIN recordings rec ON s.id = rec.subject_id
+        LEFT JOIN results r ON rec.id = r.recording_id
+        GROUP BY s.id
+        ORDER BY s.id;
+        """
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)

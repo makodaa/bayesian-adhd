@@ -4,18 +4,18 @@ from ...core.logging_config import get_db_logger
 logger = get_db_logger(__name__)
 
 class ResultsRepository(BaseRepository):
-    def create_result(self, recording_id, classification, confidence_score):
+    def create_result(self, recording_id, classification, confidence_score, clinician_id=None):
         """Create a new result and return its ID."""
         logger.info(f"Creating result for recording {recording_id}: classification={classification}, confidence={confidence_score:.4f}")
         query = """
-        INSERT INTO results(recording_id, predicted_class, confidence_score)
-        VALUES (%s, %s, %s)
+        INSERT INTO results(recording_id, clinician_id, predicted_class, confidence_score)
+        VALUES (%s, %s, %s, %s)
         RETURNING id;
         """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, (recording_id, classification, confidence_score))
+                cursor.execute(query, (recording_id, clinician_id, classification, confidence_score))
                 result_id = cursor.fetchone()[0]
                 logger.info(f"Result created successfully with ID: {result_id}")
                 return result_id

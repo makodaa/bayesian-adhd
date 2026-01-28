@@ -60,9 +60,18 @@ class CliniciansRepository(BaseRepository):
             raise
     
     def get_all(self):
-        """Get all clinicians."""
+        """Get all clinicians with their assessment count and latest activity."""
         logger.debug("Fetching all clinicians")
-        query = "SELECT * FROM clinicians ORDER BY id;"
+        query = """
+        SELECT 
+            c.*,
+            COUNT(DISTINCT r.id) as assessments_count,
+            MAX(r.inferenced_at) as last_activity
+        FROM clinicians c
+        LEFT JOIN results r ON c.id = r.clinician_id
+        GROUP BY c.id
+        ORDER BY c.id;
+        """
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)

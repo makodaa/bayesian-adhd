@@ -86,22 +86,23 @@ class EEGService:
                 logger.info(f"Classification result: ADHD with {adhd * 100:.2f}% confidence")
                 return float(adhd)
             else:
-                logger.info(f"Classification result: Control with {control * 100:.2f}% confidence")
+                logger.info(f"Classification result: Non-ADHD with {control * 100:.2f}% confidence")
                 return float(-control)
             
-    def classify_and_save(self, recording_id:int, df:pd.DataFrame)->dict:
+    def classify_and_save(self, recording_id:int, df:pd.DataFrame, clinician_id: int | None = None)->dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
         result_value:float = self.classify(df)
 
-        classification = 'ADHD' if result_value > 0 else 'Control'
+        classification = 'ADHD' if result_value > 0 else 'Non-ADHD'
         confidence = abs(result_value)
         
         logger.info(f"Saving classification result to database: {classification} ({confidence:.4f})")
         result_id = self.results_repo.create_result(
             recording_id = recording_id,
             classification = classification,
-            confidence_score = confidence
+            confidence_score = confidence,
+            clinician_id = clinician_id
         )
 
         logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
@@ -109,5 +110,6 @@ class EEGService:
             'recording_id': recording_id,
             'result_id': result_id,
             'classification': classification,
-            'confidence_score': confidence
+            'confidence_score': confidence,
+            'clinician_id': clinician_id
         }

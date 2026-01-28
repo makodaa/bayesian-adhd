@@ -32,6 +32,7 @@ CREATE TABLE recordings (
 CREATE TABLE results (
     id SERIAL PRIMARY KEY,
     recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+    clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
     confidence_score FLOAT NOT NULL,
     inferenced_at TIMESTAMP DEFAULT NOW()
@@ -50,6 +51,7 @@ CREATE TABLE band_powers (
 CREATE TABLE ratios (
     id SERIAL PRIMARY KEY,
     result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    
     ratio_name VARCHAR(50) NOT NULL,
     ratio_value FLOAT NOT NULL
 );
