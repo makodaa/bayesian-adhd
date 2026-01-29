@@ -52,7 +52,7 @@ class BandAnalysisService:
                 band_mask = (freqs >= low) & (freqs < high)
                 band_power = np.trapezoid(psd[band_mask], freqs[band_mask])
                 absolute_powers[band_name] = float(band_power)
-            
+
             # Compute total power across all bands
             total_power = sum(absolute_powers.values())
 
@@ -86,11 +86,11 @@ class BandAnalysisService:
             'theta_alpha_ratio': float(avg_theta/avg_alpha) if avg_alpha > 0 else 0.0,
             'alpha_theta_ratio': float(avg_alpha/avg_theta) if avg_theta > 0 else 0.0,
         }
-        
+
         logger.info(f"Band power computation complete. Ratios: theta/beta={result['band_ratios']['theta_beta_ratio']:.4f}")
 
         return result
-    
+
     def compute_and_save(self, result_id:int, df:pd.DataFrame) -> dict:
         """Compute band powers and save to database."""
         logger.info(f"Computing and saving band powers for result {result_id}")
@@ -119,7 +119,7 @@ class BandAnalysisService:
                 ratio_name=ratio,
                 ratio_value=value
             )
-        
+
         logger.info(f"Saved {len(powers['band_ratios'])} ratio entries for result {result_id}")
-            
+
         return powers

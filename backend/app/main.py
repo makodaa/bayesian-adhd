@@ -61,9 +61,9 @@ def initialize_model():
     """Initialize ML model before first request."""
     if not hasattr(app, 'model_initialized'):
         try:
-            logger.info("Initializing model and scaler...")
+            logger.info("Initializing model...")
             model_loader.initialize()
-            logger.info("Model and scaler loaded successfully")
+            logger.info("Model loaded successfully")
             app.model_initialized = True
         except FileNotFoundError as e:
             logger.error(f"Could not load model files: {e}", exc_info=True)
@@ -162,20 +162,20 @@ def predict():
         medicated = request.form.get('medicated')
         medication_intake = request.form.get('medication_intake')
         notes = request.form.get('notes')
-        
+
         # Validate required subject data
         if not subject_code or not age or not gender:
             logger.error("Missing required subject data")
             return jsonify({'error': 'Subject code, age, and gender are required'}), 400
-        
+
         # Process file
         df = file_service.read_csv(file)
         file_service.validate_eeg_data(df)
-        
+
         # Get or create subject (reuse existing subject if code already exists)
         logger.info(f"Getting or creating subject: {subject_code}, age={age}, gender={gender}")
         subject_id = subject_service.get_or_create_subject(subject_code, int(age), gender)
-        
+
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
         recording_id = recording_service.create_recording(
@@ -188,29 +188,31 @@ def predict():
             medication_intake=medication_intake,
             notes=notes
         )
-        
+
         # Classify and save results
         result = eeg_service.classify_and_save(recording_id, df)
-        
-        # Compute band powers and ratios for the same recording
-        logger.info(f"Computing band powers for result {result['result_id']}")
-        band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
-        
-        # Add band power summary to result
-        result['band_analysis'] = {
-            'average_absolute_power': band_powers.get('average_absolute_power', {}),
-            'average_relative_power': band_powers.get('average_relative_power', {}),
-            'band_ratios': band_powers.get('band_ratios', {})
-        }
-        
-        # Store clinician info if provided
-        clinician_id = None
-        if clinician_name:
-            logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
-            clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
-            result['clinician_id'] = clinician_id
-        
-        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+
+        print(result)
+
+        # # Compute band powers and ratios for the same recording
+        # logger.info(f"Computing band powers for result {result['result_id']}")
+        # band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
+
+        # # Add band power summary to result
+        # result['band_analysis'] = {
+        #     'average_absolute_power': band_powers.get('average_absolute_power', {}),
+        #     'average_relative_power': band_powers.get('average_relative_power', {}),
+        #     'band_ratios': band_powers.get('band_ratios', {})
+        # }
+
+        # # Store clinician info if provided
+        # clinician_id = None
+        # if clinician_name:
+        #     logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+        #     clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+        #     result['clinician_id'] = clinician_id
+
+        # logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,
             'result': {

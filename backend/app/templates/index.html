@@ -1170,7 +1170,7 @@
                         <div class="metric-label">Model Prediction</div>
                         <div class="metric-value">${classification}</div>
                         <div style="margin-top: 0.5rem; font-size: 1rem;">
-                            Confidence: ${(confidenceScore * 100).toFixed(2)}%
+                            Confidence: ${confidenceScore.toFixed(2)}%
                         </div>
                         <div style="margin-top: 0.8rem; font-size: 0.8rem; opacity: 0.9;">
                             This is not a definitive diagnosis
@@ -1183,6 +1183,7 @@
             function displayBandPowers(bandData) {
                 const barsContainer =
                     document.getElementById("band-power-bars");
+                console.log(bandData);
                 const bands = Object.keys(bandData.average_relative_power);
 
                 let html = "";
@@ -1306,9 +1307,10 @@
                                 (result > 0 ? "ADHD" : "Non-ADHD"),
                             result.confidence_score || Math.abs(result)
                         );
-                        
+
                         // Band analysis is now included in the prediction response
                         const bandData = result.band_analysis || {};
+                        console.log(result);
                         displayBandPowers(bandData);
                         displayClinicalRatios(bandData.band_ratios || {});
 
