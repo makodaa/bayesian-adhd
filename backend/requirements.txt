@@ -2,6 +2,7 @@ flask
 pandas
 numpy
 scipy
+scikit-learn
 mne
 matplotlib
 torch
