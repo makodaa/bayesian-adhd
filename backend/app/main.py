@@ -212,7 +212,7 @@ def predict():
             clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
             result['clinician_id'] = clinician_id
 
-        # logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,
             'result': {

@@ -603,7 +603,7 @@
                                 ? "badge-adhd"
                                 : "badge-non-adhd";
                         const confidence = (
-                            result.confidence_score
+                            result.confidence_score * 100
                         ).toFixed(2);
                         const date = new Date(
                             result.inferenced_at

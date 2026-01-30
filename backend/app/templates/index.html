@@ -1190,14 +1190,17 @@
                     document.getElementById("band-power-bars");
                 console.log('Band data:', bandData);
                 
+                // Use display_bands if available (filtered for frontend), otherwise fall back to full data
+                const displayData = bandData.display_bands || bandData;
+                
                 // Check if bandData and average_relative_power exist
-                if (!bandData || !bandData.average_relative_power) {
+                if (!displayData || !displayData.average_relative_power) {
                     console.warn('No band power data available');
                     barsContainer.innerHTML = '<p class="text-muted">Band power data not available</p>';
                     return;
                 }
                 
-                const bands = Object.keys(bandData.average_relative_power);
+                const bands = Object.keys(displayData.average_relative_power);
                 if (bands.length === 0) {
                     barsContainer.innerHTML = '<p class="text-muted">No band power data available</p>';
                     return;
@@ -1206,7 +1209,7 @@
                 let html = "";
                 bands.forEach((band) => {
                     const percentage = (
-                        bandData.average_relative_power[band] * 100
+                        displayData.average_relative_power[band] * 100
                     ).toFixed(1);
                     html += `
                         <div class="band-bar">

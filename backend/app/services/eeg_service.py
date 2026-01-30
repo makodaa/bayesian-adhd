@@ -186,7 +186,11 @@ class EEGService:
             for band, power in powers.items()
         }
 
+        # Standard bands for frontend display (exclude fast_alpha and high_beta)
+        DISPLAY_BANDS = {'delta', 'theta', 'alpha', 'beta', 'gamma'}
+        
         # Prepare band data for return (matches frontend expectations)
+        # Full data includes all bands for database storage
         band_data = {
             'average_absolute_power': {band: float(power) for band, power in powers.items()},
             'average_relative_power': relative_powers,
@@ -194,6 +198,13 @@ class EEGService:
                 'theta_beta_ratio': float(tbr) if not np.isnan(tbr) else 0.0,
                 'theta_alpha_ratio': float(tar) if not np.isnan(tar) else 0.0,
             }
+        }
+        
+        # Filtered data for frontend display (only standard 5 bands)
+        band_data['display_bands'] = {
+            'average_absolute_power': {band: power for band, power in band_data['average_absolute_power'].items() if band in DISPLAY_BANDS},
+            'average_relative_power': {band: power for band, power in band_data['average_relative_power'].items() if band in DISPLAY_BANDS},
+            'band_ratios': band_data['band_ratios']
         }
 
         # Store power results for model features
@@ -279,25 +290,16 @@ class EEGService:
         classification, confidence, band_data = self.classify(df)
 
         logger.info(f"Saving classification result to database: {classification} ({confidence:.4f})")
-        # result_id = self.results_repo.create_result(
-        #     recording_id=recording_id,
-        #     classification=classification,
-        #     confidence_score=confidence
-        # )
+        result_id = self.results_repo.create_result(
+            recording_id=recording_id,
+            classification=classification,
+            confidence_score=confidence
+        )
 
-        # logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
-        # return {
-        #     'recording_id': recording_id,
-        #     'result_id': result_id,
-        #     'classification': classification,
-        #     'confidence_score': confidence,
-        #     'band_analysis': band_data
-        # }
-
-        logger.info(f"Classification complete for recording {recording_id}, result ID: {None}")
+        logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
         return {
             'recording_id': recording_id,
-            'result_id': None,
+            'result_id': result_id,
             'classification': classification,
             'confidence_score': confidence,
             'band_analysis': band_data
