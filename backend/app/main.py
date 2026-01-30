@@ -176,6 +176,10 @@ def predict():
         logger.info(f"Getting or creating subject: {subject_code}, age={age}, gender={gender}")
         subject_id = subject_service.get_or_create_subject(subject_code, int(age), gender)
 
+        # Get or create clinician if provided
+        logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+        clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+        
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
         recording_id = recording_service.create_recording(
@@ -190,29 +194,26 @@ def predict():
         )
 
         # Classify and save results
-        result = eeg_service.classify_and_save(recording_id, df)
-
-        print(result)
-
-        # # Compute band powers and ratios for the same recording
-        # logger.info(f"Computing band powers for result {result['result_id']}")
-        # band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
-
-        # # Add band power summary to result
-        # result['band_analysis'] = {
-        #     'average_absolute_power': band_powers.get('average_absolute_power', {}),
-        #     'average_relative_power': band_powers.get('average_relative_power', {}),
-        #     'band_ratios': band_powers.get('band_ratios', {})
-        # }
-
-        # # Store clinician info if provided
-        # clinician_id = None
-        # if clinician_name:
-        #     logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
-        #     clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
-        #     result['clinician_id'] = clinician_id
-
-        # logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+        result = eeg_service.classify_and_save(recording_id, df, clinician_id=clinician_id)
+        
+        # Compute band powers and ratios for the same recording
+        logger.info(f"Computing band powers for result {result['result_id']}")
+        band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
+        
+        # Add band power summary to result
+        result['band_analysis'] = {
+            'average_absolute_power': band_powers.get('average_absolute_power', {}),
+            'average_relative_power': band_powers.get('average_relative_power', {}),
+            'band_ratios': band_powers.get('band_ratios', {})
+        }
+        
+        # Store clinician info if provided
+        clinician_id = None
+        if clinician_name:
+            logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+            clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+            
+        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,
             'result': {
@@ -244,6 +245,18 @@ def get_clinicians():
         return jsonify(formatted), 200
     except Exception as e:
         logger.error(f"Error fetching clinicians: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/clinicians/<int:clinician_id>', methods=['GET'])
+def get_clinician_details(clinician_id):
+    """Get clinician details with their assessment results."""
+    try:
+        clinician = clinicians_repo.get_with_assessments(clinician_id)
+        if not clinician:
+            return jsonify({'error': 'Clinician not found'}), 404
+        return jsonify(clinician), 200
+    except Exception as e:
+        logger.error(f"Error fetching clinician details: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/clinicians', methods=['POST'])
@@ -283,6 +296,18 @@ def get_subject(subject_id):
         return jsonify(subject), 200
     except Exception as e:
         logger.error(f"Error fetching subject {subject_id}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/subjects/<int:subject_id>/assessments', methods=['GET'])
+def get_subject_assessments(subject_id):
+    """Get subject details with their assessment results."""
+    try:
+        subject = subjects_repo.get_with_assessments(subject_id)
+        if not subject:
+            return jsonify({'error': 'Subject not found'}), 404
+        return jsonify(subject), 200
+    except Exception as e:
+        logger.error(f"Error fetching subject assessments: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/results', methods=['GET'])

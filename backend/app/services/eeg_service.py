@@ -148,6 +148,30 @@ class EEGService:
     def classify(self, df:pd.DataFrame) -> tuple[str, float]:
         """Classify EEG data for ADHD probability"""
         logger.info(f"Starting EEG classification on {len(df)} samples")
+        logger.info(f"DataFrame columns: {df.columns.tolist()}")
+
+        # Check if columns are numeric (0-18 or 1-19) and rename them to electrode names
+        if list(df.columns) == [str(i) for i in range(19)]:
+            logger.info("Detected numeric column names (0-18), renaming to electrode channels")
+            df.columns = ELECTRODE_CHANNELS
+        elif list(df.columns) == list(range(19)):
+            logger.info("Detected numeric column names (0-18), renaming to electrode channels")
+            df.columns = ELECTRODE_CHANNELS
+        elif list(df.columns) == [str(i) for i in range(1, 20)]:
+            logger.info("Detected numeric column names (1-19), renaming to electrode channels")
+            df.columns = ELECTRODE_CHANNELS
+        elif list(df.columns) == list(range(1, 20)):
+            logger.info("Detected numeric column names (1-19), renaming to electrode channels")
+            df.columns = ELECTRODE_CHANNELS
+        
+        # Check if expected columns exist
+        missing_channels = [ch for ch in ELECTRODE_CHANNELS if ch not in df.columns]
+        if missing_channels:
+            logger.error(f"Missing electrode channels: {missing_channels}")
+            logger.error(f"Available columns: {df.columns.tolist()}")
+            raise ValueError(f"CSV file is missing required electrode channels: {missing_channels}. "
+                            f"Expected channels: {ELECTRODE_CHANNELS}. "
+                            f"Found columns: {df.columns.tolist()}")
         window_count = 0
         n_samples = len(df)
         output = []
@@ -236,7 +260,7 @@ class EEGService:
             adhd_1_name = "ADHD 1"
             adhd_2_name = "ADHD 2"
             adhd_3_name = "ADHD 3"
-            control_name = "Control"
+            control_name = "Non-ADHD"
 
             adhd_1, adhd_2, adhd_3, control = np.sum(predictions, axis=0) / np.sum(predictions)
             maximum = max(adhd_1, adhd_2, adhd_3, control)
@@ -256,30 +280,24 @@ class EEGService:
                 return control_name, conf
 
 
-    def classify_and_save(self, recording_id:int, df:pd.DataFrame)->dict:
+    def classify_and_save(self, recording_id:int, df:pd.DataFrame, clinician_id:int=None)->dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
         classification, confidence = self.classify(df)
 
         logger.info(f"Saving classification result to database: {classification} ({confidence:.4f})")
-        # result_id = self.results_repo.create_result(
-        #     recording_id=recording_id,
-        #     classification=classification,
-        #     confidence_score=confidence
-        # )
+        result_id = self.results_repo.create_result(
+            recording_id = recording_id,
+            classification = classification,
+            confidence_score = confidence,
+            clinician_id = clinician_id
+        )
 
-        # logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
-        # return {
-        #     'recording_id': recording_id,
-        #     'result_id': result_id,
-        #     'classification': classification,
-        #     'confidence_score': confidence
-        # }
-
-        logger.info(f"Classification complete for recording {recording_id}, result ID: {None}")
+        logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
         return {
             'recording_id': recording_id,
-            'result_id': None,
+            'result_id': result_id,
             'classification': classification,
-            'confidence_score': confidence
+            'confidence_score': confidence,
+            'clinician_id': clinician_id
         }

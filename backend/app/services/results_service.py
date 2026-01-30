@@ -15,13 +15,14 @@ class ResultsService:
         logger.debug(f"ResultsService: fetching result {result_id}")
         return self.results_repo.get_by_id(result_id)
     
-    def create_result(self, recording_id: int, classification: str, confidence_score: float) -> int:
+    def create_result(self, recording_id: int, classification: str, confidence_score: float, clinician_id: int | None = None) -> int:
         """Create a new result entry."""
         logger.info(f"ResultsService: creating result for recording {recording_id}")
         return self.results_repo.create_result(
             recording_id=recording_id,
             classification=classification,
-            confidence_score=confidence_score
+            confidence_score=confidence_score,
+            clinician_id=clinician_id
         )
     
     def get_all_results_with_details(self):
@@ -38,10 +39,13 @@ class ResultsService:
             s.id as subject_id,
             s.subject_code,
             s.age,
-            s.gender
+            s.gender,
+            c.first_name,
+            c.last_name
         FROM results r
         JOIN recordings rec ON r.recording_id = rec.id
         JOIN subjects s ON rec.subject_id = s.id
+        LEFT JOIN clinicians c ON r.clinician_id = c.id
         ORDER BY r.inferenced_at DESC;
         """
         try:
@@ -83,8 +87,7 @@ class ResultsService:
         FROM results r
         JOIN recordings rec ON r.recording_id = rec.id
         JOIN subjects s ON rec.subject_id = s.id
-        LEFT JOIN reports rep ON rep.result_id = r.id
-        LEFT JOIN clinicians c ON rep.clinician_id = c.id
+        LEFT JOIN clinicians c ON r.clinician_id = c.id
         WHERE r.id = %s;
         """
         try:

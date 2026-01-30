@@ -32,6 +32,7 @@ CREATE TABLE recordings (
 CREATE TABLE results (
     id SERIAL PRIMARY KEY,
     recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+    clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
     confidence_score FLOAT NOT NULL,
     inferenced_at TIMESTAMP DEFAULT NOW()
@@ -44,7 +45,7 @@ CREATE TABLE band_powers (
     frequency_band VARCHAR(50) NOT NULL,
     absolute_power FLOAT NOT NULL,
     relative_power FLOAT NOT NULL,
-    CHECK (frequency_band IN ('delta', 'theta', 'alpha', 'beta', 'gamma'))
+    CHECK (frequency_band IN ('delta', 'theta', 'alpha', 'beta', 'gamma', 'fast_alpha', 'high_beta'))
 );
 
 CREATE TABLE ratios (

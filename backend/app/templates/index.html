@@ -1,552 +1,549 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BayesianADHD - EEG Analysis Platform</title>
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-            crossorigin="anonymous"
-        />
-        <style>
-            :root {
-                --primary-color: #5a6c7d;
-                --secondary-color: #6c9bd1;
-                --accent-color: #e89a9c;
-                --success-color: #81c995;
-                --warning-color: #f5c26b;
-                --bg-light: #f5f7fa;
-                --text-dark: #4a5568;
-                --border-color: #d1d5db;
-                --sidebar-width: 250px;
-                --sidebar-collapsed-width: 60px;
-            }
-
-            body {
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                background-color: var(--bg-light);
-                color: var(--text-dark);
-                margin: 0;
-                padding: 0;
-                min-height: 100vh;
-                overflow: hidden;
-            }
-
-            .navbar {
-                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-                padding: 0 1rem;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                height: 70px;
-                display: flex;
-                align-items: center;
-            }
-
-            .navbar-left {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
-
-            .navbar-brand {
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: white !important;
-                margin: 0;
-            }
-
-            .navbar-toggle {
-                background: none;
-                border: none;
-                font-size: 1.5rem;
-                cursor: pointer;
-                color: white;
-                padding: 0.5rem;
-                margin: 0;
-                line-height: 1;
-                transition: opacity 0.2s;
-            }
-
-            .navbar-toggle:hover {
-                opacity: 0.8;
-            }
-
-            .layout-wrapper {
-                display: flex;
-                height: 100vh;
-                margin-top: 70px;
-            }
-
-            .sidebar {
-                width: var(--sidebar-width);
-                background: white;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-                transition: width 0.3s ease;
-                overflow-y: auto;
-                overflow-x: hidden;
-                display: flex;
-                flex-direction: column;
-                height: calc(100vh - 70px);
-            }
-
-            .sidebar.collapsed {
-                width: var(--sidebar-collapsed-width);
-            }
-
-            .sidebar-nav {
-                flex: 1;
-                padding: 1.5rem 0;
-            }
-
-            .nav-item {
-                list-style: none;
-            }
-
-            .nav-link {
-                display: flex;
-                align-items: center;
-                padding: 0.875rem 1rem;
-                color: var(--primary-color);
-                text-decoration: none;
-                transition: all 0.3s ease;
-                white-space: nowrap;
-                font-size: 0.95rem;
-                font-weight: 500;
-            }
-
-            .nav-link:hover {
-                background: #f8f9fa;
-            }
-
-            .nav-link.active {
-                background: #e9ecef;
-                border-right: 3px solid var(--secondary-color);
-                font-weight: 600;
-            }
-
-            .nav-link svg {
-                min-width: 24px;
-                margin-right: 1rem;
-                transition: margin 0.3s ease;
-            }
-
-            .nav-link span {
-                opacity: 1;
-                transition: opacity 0.2s ease;
-            }
-
-            .sidebar.collapsed .nav-link {
-                justify-content: center;
-                padding: 0.875rem 0;
-            }
-
-            .sidebar.collapsed .nav-link svg {
-                margin-right: 0;
-            }
-
-            .sidebar.collapsed .nav-link span {
-                opacity: 0;
-                width: 0;
-                overflow: hidden;
-            }
-
-            .main-container {
-                flex: 1;
-                display: grid;
-                grid-template-columns: 480px 1fr;
-                gap: 1.5rem;
-                padding: 1.5rem;
-                height: calc(100vh - 70px);
-                overflow: hidden;
-            }
-
-            .left-panel {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                padding: 1.5rem;
-                overflow-y: auto;
-                height: 100%;
-            }
-
-            .right-panel {
-                display: grid;
-                grid-template-rows: 1fr 1fr;
-                gap: 1.5rem;
-                height: 100%;
-                overflow: hidden;
-            }
-
-            .visualization-panel,
-            .results-panel {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                padding: 1.5rem;
-                overflow-y: auto;
-                min-height: 0;
-            }
-
-            .section-title {
-                font-size: 1.1rem;
-                font-weight: 600;
-                color: var(--primary-color);
-                margin-bottom: 1rem;
-                padding-bottom: 0.5rem;
-                border-bottom: 2px solid #e0e7ef;
-            }
-
-            .form-label {
-                font-size: 0.9rem;
-                font-weight: 500;
-                color: var(--text-dark);
-                margin-bottom: 0.3rem;
-            }
-
-            .form-control,
-            .form-select {
-                font-size: 0.9rem;
-                border: 1px solid var(--border-color);
-                border-radius: 4px;
-                padding: 0.5rem;
-            }
-
-            .form-control:focus,
-            .form-select:focus {
-                border-color: var(--secondary-color);
-                box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-            }
-
-            .btn-primary {
-                background-color: var(--secondary-color);
-                border: none;
-                padding: 0.6rem 1.5rem;
-                font-weight: 500;
-                border-radius: 4px;
-                transition: all 0.3s ease;
-            }
-
-            .btn-primary:hover:not(:disabled) {
-                background-color: #5a8bc4;
-                transform: translateY(-1px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            }
-
-            .btn-primary:disabled {
-                background-color: #c5d0db;
-                cursor: not-allowed;
-                opacity: 0.6;
-            }
-
-            .nav-tabs {
-                border-bottom: 2px solid var(--border-color);
-            }
-
-            .nav-tabs .nav-link {
-                color: var(--text-dark);
-                border: none;
-                border-bottom: 3px solid transparent;
-                padding: 0.7rem 1rem;
-                font-weight: 500;
-                transition: all 0.3s ease;
-            }
-
-            .nav-tabs .nav-link:hover:not(:disabled) {
-                border-bottom-color: var(--secondary-color);
-            }
-
-            .nav-tabs .nav-link.active {
-                color: var(--secondary-color);
-                background: none;
-                border-bottom-color: var(--secondary-color);
-            }
-
-            .nav-tabs .nav-link:disabled {
-                color: #c5d0db;
-                cursor: not-allowed;
-                opacity: 0.5;
-            }
-
-            .tab-content {
-                padding: 1.5rem 0;
-            }
-
-            .visualization-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 300px;
-                background: #f8f9fa;
-                border-radius: 4px;
-                padding: 1rem;
-            }
-
-            .visualization-container img {
-                max-width: 100%;
-                max-height: 400px;
-                border-radius: 4px;
-            }
-
-            .metric-card {
-                background: linear-gradient(135deg, #8fa5b8 0%, #a8c5e4 100%);
-                color: white;
-                padding: 1rem;
-                border-radius: 6px;
-                margin-bottom: 1rem;
-            }
-
-            .metric-card.adhd {
-                background: linear-gradient(135deg, #6a8095 0%, #62718a 100%);
-            }
-
-            .metric-card.non-adhd {
-                background: linear-gradient(135deg, #8fa5b8 0%, #7a92a8 100%);
-            }
-
-            .metric-label {
-                font-size: 0.85rem;
-                opacity: 0.9;
-                margin-bottom: 0.3rem;
-            }
-
-            .metric-value {
-                font-size: 1.8rem;
-                font-weight: 700;
-            }
-
-            .band-bar {
-                display: flex;
-                align-items: center;
-                margin-bottom: 0.8rem;
-            }
-
-            .band-label {
-                width: 80px;
-                font-size: 0.9rem;
-                font-weight: 500;
-            }
-
-            .band-progress {
-                flex: 1;
-                height: 24px;
-                background: #e9ecef;
-                border-radius: 12px;
-                overflow: hidden;
-                margin: 0 0.8rem;
-            }
-
-            .band-progress-bar {
-                height: 100%;
-                transition: width 0.6s ease;
-            }
-
-            .band-value {
-                width: 60px;
-                text-align: right;
-                font-size: 0.9rem;
-                font-weight: 500;
-            }
-
-            .ratio-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.6rem 0.8rem;
-                margin-bottom: 0.5rem;
-                background: #f8f9fa;
-                border-radius: 4px;
-            }
-
-            .ratio-name {
-                font-size: 0.9rem;
-                font-weight: 500;
-            }
-
-            .ratio-value {
-                font-size: 1rem;
-                font-weight: 600;
-                color: var(--secondary-color);
-            }
-
-            .spinner-border {
-                color: var(--secondary-color);
-            }
-
-            .alert-custom {
-                padding: 1rem;
-                border-radius: 6px;
-                margin-top: 1rem;
-            }
-
-            .file-input-wrapper {
-                position: relative;
-                overflow: hidden;
-                display: block;
-            }
-
-            .file-input-wrapper input[type="file"] {
-                position: absolute;
-                left: 0;
-                top: 0;
-                opacity: 0;
-                width: 100%;
-                height: 100%;
-                cursor: pointer;
-            }
-
-            .file-input-label {
-                display: block;
-                padding: 0.6rem 1rem;
-                background: #f8f9fa;
-                border: 2px dashed var(--border-color);
-                border-radius: 4px;
-                text-align: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .file-input-label:hover {
-                border-color: var(--secondary-color);
-                background: #e9ecef;
-            }
-
-            .file-input-label.has-file {
-                border-color: var(--success-color);
-                background: #d4edda;
-                color: var(--success-color);
-            }
-
-            .form-section {
-                margin-bottom: 1.5rem;
-                padding-bottom: 1.5rem;
-                border-bottom: 1px solid #e9ecef;
-            }
-
-            .form-section:last-child {
-                border-bottom: none;
-            }
-
-            small.text-muted {
-                font-size: 0.8rem;
-            }
-
-            .empty-state {
-                text-align: center;
-                padding: 3rem 1rem;
-                color: #a0aec0;
-            }
-
-            .results-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1rem;
-                margin-bottom: 1.5rem;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Navigation Bar -->
-        <nav class="navbar">
-            <div class="navbar-left">
-                <button class="navbar-toggle" id="sidebar-toggle">
-                    <span>☰</span>
-                </button>
-                <span class="navbar-brand">BayesianADHD</span>
-            </div>
-        </nav>
-
-        <div class="layout-wrapper">
-            <!-- Sidebar -->
-            <aside class="sidebar collapsed" id="sidebar">
-                <nav class="sidebar-nav">
-                    <ul style="padding: 0; margin: 0;">
-                        <li class="nav-item">
-                            <a href="/index.html" class="nav-link active">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
-                                <span>Analysis</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/subjects.html" class="nav-link">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Subjects</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/clinicians.html" class="nav-link">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span>Clinicians</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/results.html" class="nav-link">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                                <span>Results</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </aside>
-
-            <!-- Main Container -->
-            <div class="main-container">
-                <!-- Left Panel: Forms -->
-                <div class="left-panel">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BayesianADHD - EEG Analysis Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <style>
+        :root {
+            --primary-color: #5a6c7d;
+            --secondary-color: #6c9bd1;
+            --accent-color: #e89a9c;
+            --success-color: #81c995;
+            --warning-color: #f5c26b;
+            --bg-light: #f5f7fa;
+            --text-dark: #4a5568;
+            --border-color: #d1d5db;
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 60px;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 0 1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 70px;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white !important;
+            margin: 0;
+        }
+
+        .navbar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+            padding: 0.5rem;
+            margin: 0;
+            line-height: 1;
+            transition: opacity 0.2s;
+        }
+
+        .navbar-toggle:hover {
+            opacity: 0.8;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            height: 100vh;
+            margin-top: 70px;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            transition: width 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 70px);
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0;
+        }
+
+        .nav-item {
+            list-style: none;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: #f8f9fa;
+        }
+
+        .nav-link.active {
+            background: #e9ecef;
+            border-right: 3px solid var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .nav-link svg {
+            min-width: 24px;
+            margin-right: 1rem;
+            transition: margin 0.3s ease;
+        }
+
+        .nav-link span {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.875rem 0;
+        }
+
+        .sidebar.collapsed .nav-link svg {
+            margin-right: 0;
+        }
+
+        .sidebar.collapsed .nav-link span {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 480px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        .left-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .right-panel {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 1.5rem;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .visualization-panel,
+        .results-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0e7ef;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #5a8bc4;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:disabled {
+            background-color: #c5d0db;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--text-dark);
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 0.7rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover:not(:disabled) {
+            border-bottom-color: var(--secondary-color);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--secondary-color);
+            background: none;
+            border-bottom-color: var(--secondary-color);
+        }
+
+        .nav-tabs .nav-link:disabled {
+            color: #c5d0db;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .tab-content {
+            padding: 1.5rem 0;
+        }
+
+        .visualization-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 1rem;
+        }
+
+        .visualization-container img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 4px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #8fa5b8 0%, #a8c5e4 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .metric-card.adhd {
+            background: linear-gradient(135deg, #6a8095 0%, #62718a 100%);
+        }
+
+        .metric-card.non-adhd {
+            background: linear-gradient(135deg, #8fa5b8 0%, #7a92a8 100%);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.3rem;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .band-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .band-label {
+            width: 80px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .band-progress {
+            flex: 1;
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 0.8rem;
+        }
+
+        .band-progress-bar {
+            height: 100%;
+            transition: width 0.6s ease;
+        }
+
+        .band-value {
+            width: 60px;
+            text-align: right;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .ratio-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .ratio-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .ratio-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .spinner-border {
+            color: var(--secondary-color);
+        }
+
+        .alert-custom {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 0.6rem 1rem;
+            background: #f8f9fa;
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            border-color: var(--secondary-color);
+            background: #e9ecef;
+        }
+
+        .file-input-label.has-file {
+            border-color: var(--success-color);
+            background: #d4edda;
+            color: var(--success-color);
+        }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        small.text-muted {
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #a0aec0;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control[readonly],
+        .form-select:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <button class="navbar-toggle" id="sidebar-toggle">
+                <span>☰</span>
+            </button>
+            <span class="navbar-brand">BayesianADHD</span>
+        </div>
+    </nav>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar collapsed" id="sidebar">
+            <nav class="sidebar-nav">
+                <ul style="padding: 0; margin: 0;">
+                    <li class="nav-item">
+                        <a href="/index.html" class="nav-link active">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <span>Analysis</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/subjects.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Subjects</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/clinicians.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>Clinicians</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/results.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <span>Results</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Left Panel: Forms -->
+            <div class="left-panel">
                 <form id="analysis-form" enctype="multipart/form-data">
                     <!-- Subject Demographics -->
                     <div class="form-section">
                         <h5 class="section-title">Subject Demographics</h5>
                         <div class="mb-3">
-                            <label for="subject-code" class="form-label"
-                                >Subject Code</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="subject-code"
-                                placeholder="e.g., SUB001"
-                                required
-                            />
+                            <label for="subject-code" class="form-label">Subject Code</label>
+                            <input type="text" class="form-control" id="subject-code" placeholder="e.g., SUB001"
+                                required />
+                            <datalist id="subject-list">
+                                <!-- Subjects will be loaded dynamically -->
+                            </datalist>
+                            <small class="text-muted">Select from existing subjects or enter a new code</small>
                         </div>
                         <div class="mb-3">
                             <label for="age" class="form-label">Age</label>
-                            <input
-                                type="number"
-                                class="form-control"
-                                id="age"
-                                placeholder="Age in years"
-                                min="1"
-                                max="120"
-                                required
-                            />
+                            <input type="number" class="form-control" id="age" placeholder="Age in years" min="1"
+                                max="120" required />
                         </div>
                         <div class="mb-3">
-                            <label for="gender" class="form-label"
-                                >Gender</label
-                            >
+                            <label for="gender" class="form-label">Gender</label>
                             <select class="form-select" id="gender" required>
                                 <option value="" selected disabled>
                                     Select gender
@@ -562,32 +559,17 @@
                     <div class="form-section">
                         <h5 class="section-title">Clinician Information</h5>
                         <div class="mb-3">
-                            <label for="clinician-name" class="form-label"
-                                >Clinician Name</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="clinician-name"
-                                list="clinician-list"
-                                placeholder="Start typing to search clinicians..."
-                                autocomplete="off"
-                            />
+                            <label for="clinician-name" class="form-label">Clinician Name</label>
+                            <input type="text" class="form-control" id="clinician-name" list="clinician-list"
+                                placeholder="Start typing to search clinicians..." />
                             <datalist id="clinician-list">
                                 <!-- Clinicians will be loaded dynamically -->
                             </datalist>
                             <small class="text-muted">Select from existing clinicians or enter a new name</small>
                         </div>
                         <div class="mb-3">
-                            <label for="occupation" class="form-label"
-                                >Occupation</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="occupation"
-                                placeholder="e.g., Neurologist"
-                            />
+                            <label for="occupation" class="form-label">Occupation</label>
+                            <input type="text" class="form-control" id="occupation" placeholder="e.g., Neurologist" />
                         </div>
                     </div>
 
@@ -595,60 +577,26 @@
                     <div class="form-section">
                         <h5 class="section-title">Recording Environment</h5>
                         <div class="mb-3">
-                            <label for="sleep-hours" class="form-label"
-                                >Sleep Hours</label
-                            >
-                            <input
-                                type="number"
-                                class="form-control"
-                                id="sleep-hours"
-                                placeholder="Hours of sleep"
-                                min="0"
-                                max="24"
-                                step="0.5"
-                            />
+                            <label for="sleep-hours" class="form-label">Sleep Hours</label>
+                            <input type="number" class="form-control" id="sleep-hours" placeholder="Hours of sleep"
+                                min="0" max="24" step="0.5" />
                         </div>
                         <div class="mb-3">
-                            <label for="food-intake" class="form-label"
-                                >Food Intake</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="food-intake"
-                                placeholder="Recent food intake"
-                            />
+                            <label for="food-intake" class="form-label">Food Intake</label>
+                            <input type="text" class="form-control" id="food-intake" placeholder="Recent food intake" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Caffeinated</label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input
-                                        class="form-check-input"
-                                        type="radio"
-                                        name="caffeinated"
-                                        id="caffeinated-yes"
-                                        value="true"
-                                    />
-                                    <label
-                                        class="form-check-label"
-                                        for="caffeinated-yes"
-                                        >Yes</label
-                                    >
+                                    <input class="form-check-input" type="radio" name="caffeinated" id="caffeinated-yes"
+                                        value="true" />
+                                    <label class="form-check-label" for="caffeinated-yes">Yes</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input
-                                        class="form-check-input"
-                                        type="radio"
-                                        name="caffeinated"
-                                        id="caffeinated-no"
-                                        value="false"
-                                    />
-                                    <label
-                                        class="form-check-label"
-                                        for="caffeinated-no"
-                                        >No</label
-                                    >
+                                    <input class="form-check-input" type="radio" name="caffeinated" id="caffeinated-no"
+                                        value="false" />
+                                    <label class="form-check-label" for="caffeinated-no">No</label>
                                 </div>
                             </div>
                         </div>
@@ -656,56 +604,26 @@
                             <label class="form-label">Medicated</label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input
-                                        class="form-check-input"
-                                        type="radio"
-                                        name="medicated"
-                                        id="medicated-yes"
-                                        value="true"
-                                    />
-                                    <label
-                                        class="form-check-label"
-                                        for="medicated-yes"
-                                        >Yes</label
-                                    >
+                                    <input class="form-check-input" type="radio" name="medicated" id="medicated-yes"
+                                        value="true" />
+                                    <label class="form-check-label" for="medicated-yes">Yes</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input
-                                        class="form-check-input"
-                                        type="radio"
-                                        name="medicated"
-                                        id="medicated-no"
-                                        value="false"
-                                    />
-                                    <label
-                                        class="form-check-label"
-                                        for="medicated-no"
-                                        >No</label
-                                    >
+                                    <input class="form-check-input" type="radio" name="medicated" id="medicated-no"
+                                        value="false" />
+                                    <label class="form-check-label" for="medicated-no">No</label>
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="medication-intake" class="form-label"
-                                >Medication Details</label
-                            >
-                            <textarea
-                                class="form-control"
-                                id="medication-intake"
-                                rows="2"
-                                placeholder="Medication details if applicable"
-                            ></textarea>
+                            <label for="medication-intake" class="form-label">Medication Details</label>
+                            <textarea class="form-control" id="medication-intake" rows="2"
+                                placeholder="Medication details if applicable"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="notes" class="form-label"
-                                >Additional Notes</label
-                            >
-                            <textarea
-                                class="form-control"
-                                id="notes"
-                                rows="3"
-                                placeholder="Any additional observations"
-                            ></textarea>
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="notes" rows="3"
+                                placeholder="Any additional observations"></textarea>
                         </div>
                     </div>
 
@@ -713,34 +631,19 @@
                     <div class="form-section">
                         <h5 class="section-title">EEG Data Upload</h5>
                         <div class="mb-3">
-                            <label class="form-label"
-                                >Upload EEG Recording (.csv)</label
-                            >
+                            <label class="form-label">Upload EEG Recording (.csv)</label>
                             <div class="file-input-wrapper">
                                 <label class="file-input-label" id="file-label">
                                     <div>Click to select file</div>
-                                    <small class="text-muted"
-                                        >Supported: .csv files</small
-                                    >
+                                    <small class="text-muted">Supported: .csv files</small>
                                 </label>
-                                <input
-                                    type="file"
-                                    name="file"
-                                    id="file"
-                                    accept=".csv"
-                                    required
-                                />
+                                <input type="file" name="file" id="file" accept=".csv" required />
                             </div>
                         </div>
                     </div>
 
                     <!-- Submit Button -->
-                    <button
-                        type="submit"
-                        class="btn btn-primary w-100"
-                        id="analyze-btn"
-                        disabled
-                    >
+                    <button type="submit" class="btn btn-primary w-100" id="analyze-btn" disabled>
                         Analyze EEG Recording
                     </button>
                 </form>
@@ -753,172 +656,92 @@
                     <h5 class="section-title">EEG Visualizations</h5>
                     <ul class="nav nav-tabs" id="eegTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link active"
-                                id="raw-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#raw-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
+                                type="button" role="tab" disabled>
                                 Raw
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="filtered-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#filtered-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="filtered-tab" data-bs-toggle="tab"
+                                data-bs-target="#filtered-pane" type="button" role="tab" disabled>
                                 Filtered
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="delta-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#delta-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="delta-tab" data-bs-toggle="tab" data-bs-target="#delta-pane"
+                                type="button" role="tab" disabled>
                                 Delta
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="theta-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#theta-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="theta-tab" data-bs-toggle="tab" data-bs-target="#theta-pane"
+                                type="button" role="tab" disabled>
                                 Theta
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="alpha-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#alpha-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="alpha-tab" data-bs-toggle="tab" data-bs-target="#alpha-pane"
+                                type="button" role="tab" disabled>
                                 Alpha
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="beta-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#beta-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="beta-tab" data-bs-toggle="tab" data-bs-target="#beta-pane"
+                                type="button" role="tab" disabled>
                                 Beta
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button
-                                class="nav-link"
-                                id="gamma-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#gamma-pane"
-                                type="button"
-                                role="tab"
-                                disabled
-                            >
+                            <button class="nav-link" id="gamma-tab" data-bs-toggle="tab" data-bs-target="#gamma-pane"
+                                type="button" role="tab" disabled>
                                 Gamma
                             </button>
                         </li>
                     </ul>
                     <div class="tab-content" id="eegTabContent">
-                        <div
-                            class="tab-pane fade show active"
-                            id="raw-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade show active" id="raw-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-raw">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="filtered-pane"
-                            role="tabpanel"
-                        >
-                            <div
-                                class="visualization-container"
-                                id="viz-filtered"
-                            >
+                        <div class="tab-pane fade" id="filtered-pane" role="tabpanel">
+                            <div class="visualization-container" id="viz-filtered">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="delta-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade" id="delta-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-delta">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="theta-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade" id="theta-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-theta">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="alpha-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade" id="alpha-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-alpha">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="beta-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade" id="beta-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-beta">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
                             </div>
                         </div>
-                        <div
-                            class="tab-pane fade"
-                            id="gamma-pane"
-                            role="tabpanel"
-                        >
+                        <div class="tab-pane fade" id="gamma-pane" role="tabpanel">
                             <div class="visualization-container" id="viz-gamma">
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
@@ -962,8 +785,58 @@
 
         <script>
             // Sidebar toggle
-            document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            document.getElementById('sidebar-toggle').addEventListener('click', function () {
                 document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            async function loadSubjects() {
+                try {
+                    const response = await fetch('/api/subjects');
+                    const subjects = await response.json();
+
+                    const datalist = document.getElementById('subject-list');
+                    subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.subject_code;
+                        option.setAttribute('data-age', subject.age);
+                        option.setAttribute('data-gender', subject.gender);
+                        datalist.appendChild(option);
+                    });
+
+                    console.log(`Loaded ${subjects.length} subjects`);
+                } catch (error) {
+                    console.error('Error loading subjects:', error);
+                }
+            }
+
+            // Auto-fill age and gender when subject is selected
+            document.getElementById('subject-code').addEventListener('input', function (e) {
+                const selectedCode = e.target.value;
+                const datalist = document.getElementById('subject-list');
+                const options = datalist.querySelectorAll('option');
+
+                let found = false;
+                options.forEach(option => {
+                    if (option.value === selectedCode) {
+                        const age = option.getAttribute('data-age');
+                        const gender = option.getAttribute('data-gender');
+                        if (age) {
+                            document.getElementById('age').value = age;
+                            document.getElementById('age').readOnly = true;
+                        }
+                        if (gender) {
+                            document.getElementById('gender').value = gender;
+                            document.getElementById('gender').disabled = true;
+                        }
+                        found = true;
+                    }
+                });
+
+                // If not found in list, make age and gender editable
+                if (!found) {
+                    document.getElementById('age').readOnly = false;
+                    document.getElementById('gender').disabled = false;
+                }
             });
 
             // Load clinicians for datalist
@@ -971,7 +844,7 @@
                 try {
                     const response = await fetch('/api/clinicians');
                     const clinicians = await response.json();
-                    
+
                     const datalist = document.getElementById('clinician-list');
                     clinicians.forEach(clinician => {
                         const option = document.createElement('option');
@@ -979,7 +852,7 @@
                         option.setAttribute('data-occupation', clinician.occupation);
                         datalist.appendChild(option);
                     });
-                    
+
                     console.log(`Loaded ${clinicians.length} clinicians`);
                 } catch (error) {
                     console.error('Error loading clinicians:', error);
@@ -989,7 +862,7 @@
                         { id: 2, name: "Dr. Michael Chen", occupation: "Psychiatrist" },
                         { id: 3, name: "Dr. Emily Rodriguez", occupation: "Clinical Psychologist" },
                     ];
-                    
+
                     const datalist = document.getElementById('clinician-list');
                     clinicians.forEach(clinician => {
                         const option = document.createElement('option');
@@ -1001,22 +874,31 @@
             }
 
             // Auto-fill occupation when clinician is selected
-            document.getElementById('clinician-name').addEventListener('input', function(e) {
+            document.getElementById('clinician-name').addEventListener('input', function (e) {
                 const selectedName = e.target.value;
                 const datalist = document.getElementById('clinician-list');
                 const options = datalist.querySelectorAll('option');
-                
+
+                let found = false;
                 options.forEach(option => {
                     if (option.value === selectedName) {
                         const occupation = option.getAttribute('data-occupation');
                         if (occupation) {
                             document.getElementById('occupation').value = occupation;
+                            document.getElementById('occupation').readOnly = true;
+                            found = true;
                         }
                     }
                 });
+
+                // If not found in list, make occupation editable
+                if (!found) {
+                    document.getElementById('occupation').readOnly = false;
+                }
             });
 
             // Initialize
+            loadSubjects();
             loadClinicians();
         </script>
 
@@ -1035,6 +917,8 @@
                 alpha: "#4CAF50",
                 beta: "#FF9800",
                 gamma: "#F44336",
+                fast_alpha: "#3F51B5",
+                high_beta: "#00BCD4",
             };
 
             // UI Helper Functions
@@ -1193,14 +1077,12 @@
                     ).toFixed(1);
                     html += `
                         <div class="band-bar">
-                            <div class="band-label">${
-                                band.charAt(0).toUpperCase() + band.slice(1)
-                            }</div>
+                            <div class="band-label">${band.charAt(0).toUpperCase() + band.slice(1)
+                        }</div>
                             <div class="band-progress">
                                 <div class="band-progress-bar" 
-                                     style="width: ${percentage}%; background-color: ${
-                        bandColors[band]
-                    };">
+                                     style="width: ${percentage}%; background-color: ${bandColors[band]
+                        };">
                                 </div>
                             </div>
                             <div class="band-value">${percentage}%</div>
@@ -1245,35 +1127,35 @@
                     // Prepare form data with all fields
                     const formData = new FormData();
                     formData.append("file", analysisData.file);
-                    
+
                     // Subject demographics
                     formData.append("subject_code", document.getElementById("subject-code").value);
                     formData.append("age", document.getElementById("age").value);
                     formData.append("gender", document.getElementById("gender").value);
-                    
+
                     // Clinician information
                     formData.append("clinician_name", document.getElementById("clinician-name").value);
                     formData.append("occupation", document.getElementById("occupation").value);
-                    
+
                     // Recording environment
                     const sleepHours = document.getElementById("sleep-hours").value;
                     if (sleepHours) formData.append("sleep_hours", sleepHours);
-                    
+
                     const foodIntake = document.getElementById("food-intake").value;
                     if (foodIntake) formData.append("food_intake", foodIntake);
-                    
+
                     const caffeinated = document.querySelector('input[name="caffeinated"]:checked');
                     if (caffeinated) formData.append("caffeinated", caffeinated.value);
-                    
+
                     const medicated = document.querySelector('input[name="medicated"]:checked');
                     if (medicated) formData.append("medicated", medicated.value);
-                    
+
                     const medicationIntake = document.getElementById("medication-intake").value;
                     if (medicationIntake) formData.append("medication_intake", medicationIntake);
-                    
+
                     const notes = document.getElementById("notes").value;
                     if (notes) formData.append("notes", notes);
-                    
+
                     // Create separate FormData for visualizations (file only)
                     const vizFormData = new FormData();
                     vizFormData.append("file", analysisData.file);
@@ -1304,7 +1186,7 @@
                         const result = predictionData.result || predictionData;
                         displayPrediction(
                             result.classification ||
-                                (result > 0 ? "ADHD" : "Non-ADHD"),
+                            (result > 0 ? "ADHD" : "Non-ADHD"),
                             result.confidence_score || Math.abs(result)
                         );
 
@@ -1331,10 +1213,9 @@
                 });
         </script>
 
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-            crossorigin="anonymous"
-        ></script>
-    </body>
+            crossorigin="anonymous"></script>
+</body>
+
 </html>
