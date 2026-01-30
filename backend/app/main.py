@@ -205,14 +205,14 @@ def predict():
         #     'band_ratios': band_powers.get('band_ratios', {})
         # }
 
-        # # Store clinician info if provided
-        # clinician_id = None
-        # if clinician_name:
-        #     logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
-        #     clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
-        #     result['clinician_id'] = clinician_id
+        # Store clinician info if provided
+        clinician_id = None
+        if clinician_name:
+            logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
+            clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+            result['clinician_id'] = clinician_id
 
-        # logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,
             'result': {

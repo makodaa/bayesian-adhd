@@ -661,7 +661,7 @@
                     // Build modal content
                     const isADHD = data.predicted_class === "ADHD";
                     const cardClass = isADHD ? "adhd" : "non-adhd";
-                    const confidence = (data.confidence_score * 100).toFixed(2);
+                    const confidence = (data.confidence_score).toFixed(2);
 
                     // Group band powers by electrode and frequency band
                     const bandPowersByElectrode = {};
@@ -976,7 +976,7 @@
                             [
                                 r.subject_code,
                                 r.predicted_class,
-                                (r.confidence_score * 100).toFixed(2) + "%",
+                                (r.confidence_score).toFixed(2) + "%",
                                 new Date(r.inferenced_at).toLocaleString(),
                             ].join(",")
                         ),
