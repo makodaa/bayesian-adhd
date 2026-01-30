@@ -145,7 +145,7 @@ class EEGService:
 
         return band_power
 
-    def classify(self, df:pd.DataFrame) -> tuple[str, float]:
+    def classify(self, df:pd.DataFrame) -> tuple[str, float, dict]:
         """Classify EEG data for ADHD probability"""
         logger.info(f"Starting EEG classification on {len(df)} samples")
         window_count = 0
@@ -154,7 +154,7 @@ class EEGService:
 
         # From now on, the subset_df is just the electrodes.
         df = df[ELECTRODE_CHANNELS]
-        df = self.apply_filter(df, 0.5, 30)
+        df = self.apply_filter(df, 0.5, 60)
         df = self.apply_ica_cleaning_to_dataset(df)
 
         n_samples = len(df)
@@ -179,7 +179,24 @@ class EEGService:
         tbr = powers['theta'] / powers['beta'] if powers['beta'] != 0 else np.nan
         tar = powers['theta'] / powers['alpha'] if powers['alpha'] != 0 else np.nan
 
-        # Store power results
+        # Compute total power and relative powers for frontend display
+        total_power = sum(powers.values())
+        relative_powers = {
+            band: float(power / total_power) if total_power > 0 else 0.0
+            for band, power in powers.items()
+        }
+
+        # Prepare band data for return (matches frontend expectations)
+        band_data = {
+            'average_absolute_power': {band: float(power) for band, power in powers.items()},
+            'average_relative_power': relative_powers,
+            'band_ratios': {
+                'theta_beta_ratio': float(tbr) if not np.isnan(tbr) else 0.0,
+                'theta_alpha_ratio': float(tar) if not np.isnan(tar) else 0.0,
+            }
+        }
+
+        # Store power results for model features
         power_results = {
             'theta': powers['theta'],
             'beta': powers['beta'],
@@ -244,22 +261,22 @@ class EEGService:
 
             if -0.001 <= maximum - adhd_1 <= 0.001:
                 logger.info(f"Classification result: {adhd_1_name} with {conf:.2f}% confidence")
-                return adhd_1_name, conf
+                return adhd_1_name, conf, band_data
             elif -0.001 <= maximum - adhd_2 <= 0.001:
                 logger.info(f"Classification result: {adhd_2_name} with {conf:.2f}% confidence")
-                return adhd_2_name, conf
+                return adhd_2_name, conf, band_data
             elif -0.001 <= maximum - adhd_3 <= 0.001:
                 logger.info(f"Classification result: {adhd_3_name} with {conf:.2f}% confidence")
-                return adhd_3_name, conf
+                return adhd_3_name, conf, band_data
             elif -0.001 <= maximum - control <= 0.001:
                 logger.info(f"Classification result: {control_name} with {conf:.2f}% confidence")
-                return control_name, conf
+                return control_name, conf, band_data
 
 
     def classify_and_save(self, recording_id:int, df:pd.DataFrame)->dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
-        classification, confidence = self.classify(df)
+        classification, confidence, band_data = self.classify(df)
 
         logger.info(f"Saving classification result to database: {classification} ({confidence:.4f})")
         # result_id = self.results_repo.create_result(
@@ -273,7 +290,8 @@ class EEGService:
         #     'recording_id': recording_id,
         #     'result_id': result_id,
         #     'classification': classification,
-        #     'confidence_score': confidence
+        #     'confidence_score': confidence,
+        #     'band_analysis': band_data
         # }
 
         logger.info(f"Classification complete for recording {recording_id}, result ID: {None}")
@@ -281,5 +299,6 @@ class EEGService:
             'recording_id': recording_id,
             'result_id': None,
             'classification': classification,
-            'confidence_score': confidence
+            'confidence_score': confidence,
+            'band_analysis': band_data
         }

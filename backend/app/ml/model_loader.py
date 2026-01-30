@@ -74,8 +74,8 @@ class ModelLoader:
                 dropout=float(self.params['cnn_dropout']),
                 num_classes=4,
                 )
-            import os
-            print(f"The current working directory: %s" % ('\n'.join([str(x) for x in (Path(os.getcwd())).glob('**/*')]),))
+            # import os
+            # print(f"The current working directory: %s" % ('\n'.join([str(x) for x in (Path(os.getcwd())).glob('**/*')]),))
             device = torch.device("cpu")
             logger.debug(f"Loading model weights on device: {device}")
             weights = torch.load(MODEL_PATH, weights_only=True, map_location=device)
