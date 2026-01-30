@@ -58,11 +58,84 @@ class SubjectsRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to fetch subject by code {subject_code}: {e}", exc_info=True)
             raise
+
+    def get_with_assessments(self, subject_id):
+        """Get subject with their assessment results."""
+        logger.debug(f"Fetching subject {subject_id} with assessments")
+        query = """
+        SELECT 
+            s.id,
+            s.subject_code,
+            s.age,
+            s.gender,
+            s.created_at,
+            r.id as result_id,
+            r.predicted_class,
+            r.confidence_score,
+            r.inferenced_at,
+            rec.file_name,
+            c.first_name,
+            c.last_name
+        FROM subjects s
+        LEFT JOIN recordings rec ON s.id = rec.subject_id
+        LEFT JOIN results r ON rec.id = r.recording_id
+        LEFT JOIN clinicians c ON r.clinician_id = c.id
+        WHERE s.id = %s
+        ORDER BY r.inferenced_at DESC;
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = self.get_dict_cursor(conn)
+                cursor.execute(query, (subject_id,))
+                rows = cursor.fetchall()
+                
+                if not rows:
+                    return None
+                
+                subject_data = rows[0]
+                subject = {
+                    'id': subject_data['id'],
+                    'subject_code': subject_data['subject_code'],
+                    'age': subject_data['age'],
+                    'gender': subject_data['gender'],
+                    'created_at': subject_data['created_at'],
+                    'assessments': []
+                }
+                
+                for row in rows:
+                    if row['result_id']:
+                        clinician_name = None
+                        if row['first_name'] or row['last_name']:
+                            clinician_name = f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
+                        
+                        subject['assessments'].append({
+                            'result_id': row['result_id'],
+                            'predicted_class': row['predicted_class'],
+                            'confidence_score': row['confidence_score'],
+                            'inferenced_at': row['inferenced_at'],
+                            'file_name': row['file_name'],
+                            'clinician_name': clinician_name
+                        })
+                
+                return subject
+        except Exception as e:
+            logger.error(f"Failed to fetch subject with assessments: {e}", exc_info=True)
+            raise
     
     def get_all(self):
-        """Get all subjects."""
+        """Get all subjects with their details."""
         logger.debug("Fetching all subjects")
-        query = "SELECT * FROM subjects ORDER BY id;"
+        query = """
+        SELECT 
+            s.*,
+            MAX(r.inferenced_at) as last_update,
+            (array_agg(r.predicted_class ORDER BY r.inferenced_at DESC))[1] as last_result
+        FROM subjects s
+        LEFT JOIN recordings rec ON s.id = rec.subject_id
+        LEFT JOIN results r ON rec.id = r.recording_id
+        GROUP BY s.id
+        ORDER BY s.id;
+        """
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)

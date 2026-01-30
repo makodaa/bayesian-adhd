@@ -58,11 +58,80 @@ class CliniciansRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to fetch clinician by name: {e}", exc_info=True)
             raise
+
+    def get_with_assessments(self, clinician_id):
+        """Get clinician with their assessment results."""
+        logger.debug(f"Fetching clinician {clinician_id} with assessments")
+        query = """
+        SELECT 
+            c.id,
+            c.first_name,
+            c.last_name,
+            c.middle_name,
+            c.occupation,
+            r.id as result_id,
+            r.predicted_class,
+            r.confidence_score,
+            r.inferenced_at,
+            s.subject_code,
+            s.age,
+            s.gender
+        FROM clinicians c
+        LEFT JOIN results r ON c.id = r.clinician_id
+        LEFT JOIN recordings rec ON r.recording_id = rec.id
+        LEFT JOIN subjects s ON rec.subject_id = s.id
+        WHERE c.id = %s
+        ORDER BY r.inferenced_at DESC;
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = self.get_dict_cursor(conn)
+                cursor.execute(query, (clinician_id,))
+                rows = cursor.fetchall()
+                
+                if not rows:
+                    return None
+                
+                clinician_data = rows[0]
+                clinician = {
+                    'id': clinician_data['id'],
+                    'first_name': clinician_data['first_name'],
+                    'last_name': clinician_data['last_name'],
+                    'middle_name': clinician_data['middle_name'],
+                    'occupation': clinician_data['occupation'],
+                    'assessments': []
+                }
+                
+                for row in rows:
+                    if row['result_id']:
+                        clinician['assessments'].append({
+                            'result_id': row['result_id'],
+                            'predicted_class': row['predicted_class'],
+                            'confidence_score': row['confidence_score'],
+                            'inferenced_at': row['inferenced_at'],
+                            'subject_code': row['subject_code'],
+                            'age': row['age'],
+                            'gender': row['gender']
+                        })
+                
+                return clinician
+        except Exception as e:
+            logger.error(f"Failed to fetch clinician with assessments: {e}", exc_info=True)
+            raise
     
     def get_all(self):
-        """Get all clinicians."""
+        """Get all clinicians with their assessment count and latest activity."""
         logger.debug("Fetching all clinicians")
-        query = "SELECT * FROM clinicians ORDER BY id;"
+        query = """
+        SELECT 
+            c.*,
+            COUNT(DISTINCT r.id) as assessments_count,
+            MAX(r.inferenced_at) as last_activity
+        FROM clinicians c
+        LEFT JOIN results r ON c.id = r.clinician_id
+        GROUP BY c.id
+        ORDER BY c.id;
+        """
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)

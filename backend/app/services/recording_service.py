@@ -41,7 +41,7 @@ class RecordingService:
             **kwargs
         )
 
-    def process_and_store(self, subject_id:int, file: FileStorage, clinician_id: int,
+    def process_and_store(self, subject_id:int, file: FileStorage,
                          sleep_hours=None, food_intake=None, caffeinated=None,
                          medicated=None, medication_intake=None,
                          artifacts_noted=None, notes=None) -> dict:

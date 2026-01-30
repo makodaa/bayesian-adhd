@@ -1,486 +1,613 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Clinician Management - BayesianADHD</title>
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-            crossorigin="anonymous"
-        />
-        <style>
-            :root {
-                --primary-color: #5a6c7d;
-                --secondary-color: #6c9bd1;
-                --sidebar-width: 250px;
-                --sidebar-collapsed-width: 60px;
-            }
 
-            body {
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f5f7fa;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-            }
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinician Management - BayesianADHD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <style>
+        :root {
+            --primary-color: #5a6c7d;
+            --secondary-color: #6c9bd1;
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 60px;
+        }
 
-            .navbar {
-                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-                padding: 0 1rem;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                height: 70px;
-                display: flex;
-                align-items: center;
-            }
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
 
-            .navbar-left {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
+        .navbar {
+            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 0 1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 70px;
+            display: flex;
+            align-items: center;
+        }
 
-            .navbar-brand {
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: white !important;
-                margin: 0;
-            }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-            .navbar-toggle {
-                background: none;
-                border: none;
-                font-size: 1.5rem;
-                cursor: pointer;
-                color: white;
-                padding: 0.5rem;
-                margin: 0;
-                line-height: 1;
-                transition: opacity 0.2s;
-            }
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white !important;
+            margin: 0;
+        }
 
-            .navbar-toggle:hover {
-                opacity: 0.8;
-            }
+        .navbar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+            padding: 0.5rem;
+            margin: 0;
+            line-height: 1;
+            transition: opacity 0.2s;
+        }
 
-            .layout-wrapper {
-                display: flex;
-                height: calc(100vh - 70px);
-                margin-top: 70px;
-                width: 100%;
-            }
+        .navbar-toggle:hover {
+            opacity: 0.8;
+        }
 
-            .sidebar {
-                width: var(--sidebar-width);
-                min-width: var(--sidebar-width);
-                background: white;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-                transition: all 0.3s ease;
-                overflow-y: auto;
-                overflow-x: hidden;
-                display: flex;
-                flex-direction: column;
-                flex-shrink: 0;
-            }
+        .layout-wrapper {
+            display: flex;
+            height: calc(100vh - 70px);
+            margin-top: 70px;
+            width: 100%;
+        }
 
-            .sidebar.collapsed {
-                width: var(--sidebar-collapsed-width);
-                min-width: var(--sidebar-collapsed-width);
-            }
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
 
-            .sidebar-nav {
-                flex: 1;
-                padding: 1.5rem 0;
-            }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+            min-width: var(--sidebar-collapsed-width);
+        }
 
-            .nav-item {
-                list-style: none;
-            }
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0;
+        }
 
-            .nav-link {
-                display: flex;
-                align-items: center;
-                padding: 0.875rem 1rem;
-                color: var(--primary-color);
-                text-decoration: none;
-                transition: all 0.3s ease;
-                white-space: nowrap;
-                font-size: 0.95rem;
-                font-weight: 500;
-            }
+        .nav-item {
+            list-style: none;
+        }
 
-            .nav-link:hover {
-                background: #f8f9fa;
-            }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
 
-            .nav-link.active {
-                background: #e9ecef;
-                border-right: 3px solid var(--secondary-color);
-                font-weight: 600;
-            }
+        .nav-link:hover {
+            background: #f8f9fa;
+        }
 
-            .nav-link svg {
-                min-width: 24px;
-                margin-right: 1rem;
-                transition: margin 0.3s ease;
-            }
+        .nav-link.active {
+            background: #e9ecef;
+            border-right: 3px solid var(--secondary-color);
+            font-weight: 600;
+        }
 
-            .nav-link span {
-                opacity: 1;
-                transition: opacity 0.2s ease;
-            }
+        .nav-link svg {
+            min-width: 24px;
+            margin-right: 1rem;
+            transition: margin 0.3s ease;
+        }
 
-            .sidebar.collapsed .nav-link {
-                justify-content: center;
-                padding: 0.875rem 0;
-            }
+        .nav-link span {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
 
-            .sidebar.collapsed .nav-link svg {
-                margin-right: 0;
-            }
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.875rem 0;
+        }
 
-            .sidebar.collapsed .nav-link span {
-                opacity: 0;
-                width: 0;
-                overflow: hidden;
-            }
+        .sidebar.collapsed .nav-link svg {
+            margin-right: 0;
+        }
 
-            .main-content {
-                flex: 1;
-                padding: 2rem;
-                overflow-y: auto;
-                overflow-x: hidden;
-                min-width: 0;
-            }
+        .sidebar.collapsed .nav-link span {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
 
-            .content-header {
-                margin-bottom: 2rem;
-            }
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-width: 0;
+        }
 
-            .content-header h1 {
-                font-size: 2rem;
-                color: var(--primary-color);
-                margin-bottom: 0.5rem;
-            }
+        .content-header {
+            margin-bottom: 2rem;
+        }
 
-            .card {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                margin-bottom: 1.5rem;
-            }
+        .content-header h1 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
 
-            .table-container {
-                overflow-x: auto;
-            }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
 
-            .btn-primary {
-                background-color: var(--secondary-color);
-                border: none;
-            }
+        .table-container {
+            overflow-x: auto;
+        }
 
-            .btn-primary:hover {
-                background-color: #5a8bc4;
-            }
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+        }
 
-            .search-box {
-                max-width: 400px;
-            }
+        .btn-primary:hover {
+            background-color: #5a8bc4;
+        }
 
-            .badge {
-                padding: 0.25rem 0.75rem;
-                border-radius: 12px;
-                font-size: 0.85rem;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Navigation Bar -->
-        <nav class="navbar">
-            <div class="navbar-left">
-                <button class="navbar-toggle" id="sidebar-toggle">
-                    <span>☰</span>
-                </button>
-                <span class="navbar-brand">BayesianADHD</span>
-            </div>
-        </nav>
+        .search-box {
+            max-width: 400px;
+        }
 
-        <div class="layout-wrapper">
-            <!-- Sidebar -->
-            <aside class="sidebar collapsed" id="sidebar">
-                <nav class="sidebar-nav">
-                    <ul style="padding: 0; margin: 0">
-                        <li class="nav-item">
-                            <a href="/index.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                                    ></path>
-                                    <polyline
-                                        points="9 22 9 12 15 12 15 22"
-                                    ></polyline>
-                                </svg>
-                                <span>Analysis</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/subjects.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                                    ></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Subjects</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/clinicians.html" class="nav-link active">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                                    ></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span>Clinicians</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/results.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                    ></path>
-                                    <polyline
-                                        points="14 2 14 8 20 8"
-                                    ></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                                <span>Results</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </aside>
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
 
-            <!-- Main Content -->
-            <main class="main-content">
-                <div class="content-header">
-                    <h1>Clinician Management</h1>
-                    <p class="text-muted">View and manage clinician profiles</p>
-                </div>
+        .clickable-row {
+            cursor: pointer;
+        }
 
-                <!-- Actions Bar -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <input
-                                    type="text"
-                                    class="form-control search-box"
-                                    id="search-clinicians"
-                                    placeholder="Search clinicians..."
-                                />
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <button
-                                    class="btn btn-primary"
-                                    id="add-clinician-btn"
-                                >
-                                    + Add Clinician
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        .clickable-row:hover {
+            background-color: #f8f9fa;
+        }
 
-                <!-- Clinicians Table -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-container">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Occupation</th>
-                                        <th>Assessments</th>
-                                        <th>Last Activity</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clinicians-table-body">
-                                    <tr>
-                                        <td
-                                            colspan="5"
-                                            class="text-center text-muted"
-                                        >
-                                            No clinicians found. Add a clinician
-                                            to get started.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        .modal-header {
+            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .info-value {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .assessment-table {
+            margin-top: 1rem;
+        }
+
+        .assessment-table th {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .badge-adhd {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .badge-non-adhd {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+
+        .assessment-table-wrapper {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <button class="navbar-toggle" id="sidebar-toggle">
+                <span>☰</span>
+            </button>
+            <span class="navbar-brand">BayesianADHD</span>
         </div>
+    </nav>
 
-        <script>
-            // Sidebar toggle
-            document
-                .getElementById("sidebar-toggle")
-                .addEventListener("click", function () {
-                    document
-                        .getElementById("sidebar")
-                        .classList.toggle("collapsed");
-                });
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar collapsed" id="sidebar">
+            <nav class="sidebar-nav">
+                <ul style="padding: 0; margin: 0">
+                    <li class="nav-item">
+                        <a href="/index.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <span>Analysis</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/subjects.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Subjects</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/clinicians.html" class="nav-link active">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>Clinicians</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/results.html" class="nav-link">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <span>Results</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
 
-            // Load clinicians
-            async function loadClinicians() {
-                try {
-                    const response = await fetch("/api/clinicians");
-                    const clinicians = await response.json();
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Clinician Management</h1>
+                <p class="text-muted">View and manage clinician profiles</p>
+            </div>
 
-                    const tbody = document.getElementById(
-                        "clinicians-table-body"
-                    );
-                    if (clinicians.length === 0) {
-                        tbody.innerHTML =
-                            '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
-                        return;
-                    }
+            <!-- Actions Bar -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control search-box" id="search-clinicians"
+                                placeholder="Search clinicians..." />
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-primary" id="add-clinician-btn">
+                                + Add Clinician
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    tbody.innerHTML = clinicians
-                        .map(
-                            (clinician) => `
-                        <tr>
+            <!-- Clinicians Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Occupation</th>
+                                    <th>Assessments</th>
+                                    <th>Last Activity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clinicians-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        No clinicians found. Add a clinician to get started.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Clinician Details Modal -->
+    <div class="modal fade" id="clinicianModal" tabindex="-1" aria-labelledby="clinicianModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clinicianModalLabel">
+                        Clinician Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar toggle
+        document.getElementById("sidebar-toggle").addEventListener("click", function () {
+            document.getElementById("sidebar").classList.toggle("collapsed");
+        });
+
+        let allClinicians = [];
+
+        // Load clinicians
+        async function loadClinicians() {
+            try {
+                const response = await fetch("/api/clinicians");
+                allClinicians = await response.json();
+
+                const tbody = document.getElementById("clinicians-table-body");
+                if (allClinicians.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = allClinicians
+                    .map(
+                        (clinician) => `
+                        <tr class="clickable-row" onclick="viewClinician(${clinician.id})">
                             <td>${clinician.name}</td>
                             <td>${clinician.occupation || "N/A"}</td>
-                            <td>-</td>
-                            <td>-</td>
+                            <td>${clinician.assessments_count || "0"}</td>
+                            <td>${clinician.last_activity ? new Date(clinician.last_activity).toLocaleString() : "N/A"}</td>
                             <td><span class="badge bg-success">Active</span></td>
                         </tr>
                     `
-                        )
-                        .join("");
-                } catch (error) {
-                    console.error("Error loading clinicians:", error);
-                    alert("Failed to load clinicians");
+                    )
+                    .join("");
+            } catch (error) {
+                console.error("Error loading clinicians:", error);
+                alert("Failed to load clinicians");
+            }
+        }
+
+        // View clinician details
+        async function viewClinician(clinicianId) {
+            const modal = new bootstrap.Modal(document.getElementById("clinicianModal"));
+            const modalBody = document.getElementById("modal-body-content");
+
+            // Show loading state
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+
+            modal.show();
+
+            try {
+                const response = await fetch(`/api/clinicians/${clinicianId}`);
+                const clinician = await response.json();
+
+                if (clinician.error) {
+                    modalBody.innerHTML = `<div class="alert alert-danger">${clinician.error}</div>`;
+                    return;
                 }
+
+                // Build clinician info
+                const fullName = [clinician.first_name, clinician.middle_name, clinician.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                // Build assessments table
+                let assessmentsHTML = "";
+                if (clinician.assessments && clinician.assessments.length > 0) {
+                    assessmentsHTML = `
+                        <div class="assessment-table-wrapper">
+                            <div class="table-container">
+                                <table class="table table-sm assessment-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject Code</th>
+                                            <th>Age</th>
+                                            <th>Gender</th>
+                                            <th>Classification</th>
+                                            <th>Confidence</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${clinician.assessments
+                            .map((assessment) => {
+                                const badgeClass = assessment.predicted_class === 'ADHD 1' || assessment.predicted_class === 'ADHD 2' || assessment.predicted_class === 'ADHD 3' ? 'badge-adhd' : 'badge-non-adhd';
+                                const confidence = (assessment.confidence_score * 100).toFixed(2);
+                                const date = new Date(assessment.inferenced_at).toLocaleString();
+                                return `
+                                    <tr>
+                                    <td>${assessment.subject_code}</td>
+                                    <td>${assessment.age || "N/A"}</td>
+                                    <td>${assessment.gender || "N/A"}</td>
+                                    <td><span class="badge ${badgeClass}">${assessment.predicted_class}</span></td>
+                                    <td>${confidence}%</td>
+                                    <td>${date}</td>
+                                    </tr>
+                                `;
+                            })
+                            .join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    assessmentsHTML = '<p class="text-muted">No assessments found.</p>';
+                }
+
+                modalBody.innerHTML = `
+                    <div class="info-section">
+                        <h6>Clinician Information</h6>
+                        <div class="info-row">
+                            <span class="info-label">Name</span>
+                            <span class="info-value">${fullName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Occupation</span>
+                            <span class="info-value">${clinician.occupation || "N/A"}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Total Assessments</span>
+                            <span class="info-value">${clinician.assessments.length}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h6>Assessments</h6>
+                        ${assessmentsHTML}
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Error loading clinician details:", error);
+                modalBody.innerHTML = `<div class="alert alert-danger">Failed to load clinician details</div>`;
             }
+        }
 
-            // View clinician details
-            function viewClinician(clinicianId) {
-                alert(
-                    `View details for clinician ${clinicianId} - Full implementation coming soon`
-                );
-            }
+        // Search functionality
+        document.getElementById("search-clinicians").addEventListener("input", function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll("#clinicians-table-body tr");
 
-            // Search functionality
-            document
-                .getElementById("search-clinicians")
-                .addEventListener("input", function (e) {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = document.querySelectorAll(
-                        "#clinicians-table-body tr"
-                    );
+            rows.forEach((row) => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? "" : "none";
+            });
+        });
 
-                    rows.forEach((row) => {
-                        const text = row.textContent.toLowerCase();
-                        row.style.display = text.includes(searchTerm)
-                            ? ""
-                            : "none";
-                    });
+        // Add clinician functionality
+        document.getElementById("add-clinician-btn").addEventListener("click", function () {
+            const firstName = prompt("Enter clinician's first name:");
+            if (!firstName) return;
+
+            const lastName = prompt("Enter clinician's last name:");
+            if (!lastName) return;
+
+            const occupation = prompt("Enter occupation (e.g., Neurologist):");
+
+            fetch("/api/clinicians", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    middle_name: null,
+                    occupation: occupation,
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.error) {
+                        alert("Error: " + data.error);
+                    } else {
+                        alert("Clinician added successfully!");
+                        loadClinicians();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    alert("Failed to add clinician");
                 });
+        });
 
-            // Add clinician functionality
-            document
-                .getElementById("add-clinician-btn")
-                .addEventListener("click", function () {
-                    const firstName = prompt("Enter clinician's first name:");
-                    if (!firstName) return;
+        // Initialize
+        loadClinicians();
+    </script>
 
-                    const lastName = prompt("Enter clinician's last name:");
-                    if (!lastName) return;
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
 
-                    const occupation = prompt(
-                        "Enter occupation (e.g., Neurologist):"
-                    );
-
-                    fetch("/api/clinicians", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            first_name: firstName,
-                            last_name: lastName,
-                            middle_name: null,
-                            occupation: occupation,
-                        }),
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (data.error) {
-                                alert("Error: " + data.error);
-                            } else {
-                                alert("Clinician added successfully!");
-                                loadClinicians();
-                            }
-                        })
-                        .catch((error) => {
-                            console.error("Error:", error);
-                            alert("Failed to add clinician");
-                        });
-                });
-
-            // Initialize
-            loadClinicians();
-        </script>
-
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-            crossorigin="anonymous"
-        ></script>
-    </body>
 </html>

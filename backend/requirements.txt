@@ -9,3 +9,4 @@ torch
 psycopg2-binary
 werkzeug
 gunicorn
+scikit-learn
