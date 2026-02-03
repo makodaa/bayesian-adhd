@@ -680,6 +680,49 @@
                         '<p class="text-muted">No ratio data available</p>';
                 }
 
+                // Build disclaimers based on recording conditions
+                let disclaimersHTML = "";
+                const disclaimers = [];
+                const sleepNum =
+                    data.sleep_hours !== undefined && data.sleep_hours !== null
+                        ? Number(data.sleep_hours)
+                        : null;
+                const isCaffeinated = data.caffeinated === true;
+                const isMedicated = data.medicated === true;
+
+                if (sleepNum !== null && !isNaN(sleepNum) && sleepNum < 4) {
+                    disclaimers.push(
+                        "The subject has less than 4 hours of sleep which can affect EEG recordings and may affect results."
+                    );
+                }
+                if (isCaffeinated) {
+                    disclaimers.push(
+                        "The subject has recent caffeine intake which can alter EEG recordings and may affect analysis."
+                    );
+                }
+                if (isMedicated) {
+                    disclaimers.push(
+                        "The subject is medicated which can impact EEG recordings and may affect analysis."
+                    );
+                }
+
+                // Render Recording Notes header, persistent disclaimer (standalone), and recording-specific yellow alert below
+                disclaimersHTML = `
+                    <div class="info-section">
+                        <h6>Recording Notes</h6>
+                        <div id="persistent-disclaimer-modal" style="background:#fff3cd;border:1px solid #e9ecef;padding:0.75rem;border-radius:6px;margin-bottom:0.5rem;">
+                            <p style="margin:0"><strong>Important:</strong> This system does not provide a definitive diagnosis. Results are for informational purposes only and must not be used as the sole basis for clinical decisions.</p>
+                        </div>
+                        ${disclaimers.length > 0 ? `
+                            <div class="alert-custom" style="background:#fff3cd;border:1px solid #ffeeba;padding:0.75rem;border-radius:6px;">
+                                <ul style="margin:0.5rem 0 0 1rem;padding:0">
+                                    ${disclaimers.map((d) => `<li style=\"margin:0.25rem 0\">${d}</li>`).join("")}
+                                </ul>
+                            </div>
+                        ` : ""}
+                    </div>
+                `;
+
                 modalBody.innerHTML = `
                         <!-- Two Column Layout -->
                         <div class="row">
@@ -833,6 +876,7 @@
                                     <h6>Clinical Ratios</h6>
                                     ${ratiosHTML}
                                 </div>
+                                ${disclaimersHTML}
                             </div>
                         </div>
                     `;

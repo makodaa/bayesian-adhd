@@ -762,7 +762,6 @@
                     <div id="results-content" style="display: none">
                         <!-- Model Prediction -->
                         <div id="prediction-result" class="mb-4"></div>
-
                         <!-- Band Powers and Ratios -->
                         <div class="row">
                             <div class="col-md-7">
@@ -777,6 +776,15 @@
                                 </h6>
                                 <div id="clinical-ratios"></div>
                             </div>
+                        </div>
+                        <div id="analysis-disclaimers">
+                            <div id="persistent-disclaimer" class="alert-custom"
+                                style="background:#fff3cd;border:1px solid #ffeeba;margin-bottom:0.5rem;">
+                                <strong>Important:</strong> This system does not provide a definitive diagnosis. Results
+                                are for informational purposes only and must not be used as the sole basis for clinical
+                                decisions.
+                            </div>
+                            <div id="recording-disclaimers"></div>
                         </div>
                     </div>
                 </div>
@@ -846,7 +854,7 @@
                     const clinicians = await response.json();
 
                     const datalist = document.getElementById('clinician-list');
-                    data.forEach(clinician => {
+                    clinicians.forEach(clinician => {
                         const option = document.createElement('option');
                         option.value = clinician.name;
                         option.setAttribute('data-occupation', clinician.occupation);
@@ -1056,9 +1064,6 @@
                         <div style="margin-top: 0.5rem; font-size: 1rem;">
                             Confidence: ${confidenceScore.toFixed(2)}%
                         </div>
-                        <div style="margin-top: 0.8rem; font-size: 0.8rem; opacity: 0.9;">
-                            This is not a definitive diagnosis
-                        </div>
                     </div>
                 `;
             }
@@ -1068,17 +1073,17 @@
                 const barsContainer =
                     document.getElementById("band-power-bars");
                 console.log('Band data:', bandData);
-                
+
                 // Use display_bands if available (filtered for frontend), otherwise fall back to full data
                 const displayData = bandData.display_bands || bandData;
-                
+
                 // Check if bandData and average_relative_power exist
                 if (!displayData || !displayData.average_relative_power) {
                     console.warn('No band power data available');
                     barsContainer.innerHTML = '<p class="text-muted">Band power data not available</p>';
                     return;
                 }
-                
+
                 const bands = Object.keys(displayData.average_relative_power);
                 if (bands.length === 0) {
                     barsContainer.innerHTML = '<p class="text-muted">No band power data available</p>';
@@ -1111,7 +1116,7 @@
             // Display clinical ratios
             function displayClinicalRatios(ratios) {
                 const container = document.getElementById("clinical-ratios");
-                
+
                 // Check if ratios exist
                 if (!ratios || Object.keys(ratios).length === 0) {
                     console.warn('No clinical ratios data available');
@@ -1217,6 +1222,38 @@
                         console.log(result);
                         displayBandPowers(bandData);
                         displayClinicalRatios(bandData.band_ratios || {});
+
+                        // Display disclaimers based on recording conditions
+                        const recordingDisclaimers = document.getElementById("recording-disclaimers");
+                        let disclaimers = [];
+
+                        const sleepNum = sleepHours ? Number(sleepHours) : null;
+                        const isCaffeinated = caffeinated && caffeinated.value === "true";
+                        const isMedicated = medicated && medicated.value === "true";
+
+                        if (sleepNum !== null && !isNaN(sleepNum) && sleepNum < 4) {
+                            disclaimers.push("The subject has less than 4 hours of sleep which can affect EEG recordings and may affect results.");
+                        }
+                        if (isCaffeinated) {
+                            disclaimers.push("The subject has recent caffeine intake which can alter EEG recordings and may affect analysis.");
+                        }
+                        if (isMedicated) {
+                            disclaimers.push("The subject is medicated which can impact EEG recordings and may affect analysis.");
+                        }
+
+                        // Always show persistent disclaimer inside recording notes area
+                        let html = `<div class="alert-custom" style="background:#fff3cd;border:1px solid #ffeeba;">`;
+
+                        if (disclaimers.length > 0) {
+                            html += `<strong>Recording notes:</strong><ul style="margin:0.5rem 0 0 1rem;padding:0">`;
+                            disclaimers.forEach(msg => {
+                                html += `<li style="margin:0.25rem 0">${msg}</li>`;
+                            });
+                            html += `</ul>`;
+                        }
+
+                        html += `</div>`;
+                        recordingDisclaimers.innerHTML = html;
 
                         // Store results
                         analysisData.results = {
