@@ -464,6 +464,13 @@
             </button>
             <span class="navbar-brand">BayesianADHD</span>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
+            <span style="color: white; font-weight: 500;" id="clinician-name"></span>
+            <button id="logout-btn"
+                style="background: rgba(255, 255, 255, 0.2); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">
+                Logout
+            </button>
+        </div>
     </nav>
 
     <div class="layout-wrapper">
@@ -559,17 +566,17 @@
                     <div class="form-section">
                         <h5 class="section-title">Clinician Information</h5>
                         <div class="mb-3">
-                            <label for="clinician-name" class="form-label">Clinician Name</label>
-                            <input type="text" class="form-control" id="clinician-name" list="clinician-list"
-                                placeholder="Start typing to search clinicians..." />
+                            <label for="clinician-input" class="form-label">Clinician Name</label>
+                            <input type="text" name="clinician_name" class="form-control" id="clinician-input"
+                                list="clinician-list" placeholder="Clinician" readonly />
                             <datalist id="clinician-list">
                                 <!-- Clinicians will be loaded dynamically -->
                             </datalist>
-                            <small class="text-muted">Select from existing clinicians or enter a new name</small>
                         </div>
                         <div class="mb-3">
                             <label for="occupation" class="form-label">Occupation</label>
-                            <input type="text" class="form-control" id="occupation" placeholder="e.g., Neurologist" />
+                            <input type="text" name="occupation" class="form-control" id="occupation"
+                                placeholder="e.g., Neurologist" readonly />
                         </div>
                     </div>
 
@@ -792,6 +799,64 @@
         </div>
 
         <script>
+            // Load clinician name from server session and setup logout
+            document.addEventListener('DOMContentLoaded', async function () {
+                try {
+                    const resp = await fetch('/api/me');
+                    if (!resp.ok) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    const me = await resp.json();
+                    const clinicianName = me.clinician_name || 'Clinician';
+                    const clinicianOccupation = me.clinician_occupation || '';
+
+                    // cache for compatibility with existing code
+                    sessionStorage.setItem('clinician_name', clinicianName);
+                    sessionStorage.setItem('clinician_occupation', clinicianOccupation);
+
+                    // navbar display
+                    const navName = document.getElementById('clinician-name');
+                    if (navName) navName.textContent = clinicianName;
+
+                    // form inputs (read-only)
+                    const clinicianInput = document.getElementById('clinician-input');
+                    if (clinicianInput) {
+                        clinicianInput.value = clinicianName;
+                    }
+                    const occupationInput = document.getElementById('occupation');
+                    if (occupationInput) {
+                        occupationInput.value = clinicianOccupation;
+                    }
+
+                    // Setup logout button
+                    const logoutBtn = document.getElementById('logout-btn');
+                    if (logoutBtn) {
+                        logoutBtn.addEventListener('click', async function () {
+                            try {
+                                const response = await fetch('/api/logout', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+
+                                if (response.ok) {
+                                    sessionStorage.clear();
+                                    window.location.href = '/login.html';
+                                } else {
+                                    window.location.href = '/login.html';
+                                }
+                            } catch (error) {
+                                console.error('Error during logout:', error);
+                                window.location.href = '/login.html';
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error fetching current clinician:', error);
+                    window.location.href = '/login.html';
+                }
+            });
+
             // Sidebar toggle
             document.getElementById('sidebar-toggle').addEventListener('click', function () {
                 document.getElementById('sidebar').classList.toggle('collapsed');
@@ -908,6 +973,51 @@
             // Initialize
             loadSubjects();
             loadClinicians();
+        </script>
+
+        <script>
+            // Attach password visibility toggles to any password inputs on the page
+            (function attachPasswordToggles() {
+                const pwdInputs = document.querySelectorAll('input[type="password"]');
+                pwdInputs.forEach((input) => {
+                    // don't add duplicate toggles
+                    if (input.dataset.hasToggle) return;
+                    input.dataset.hasToggle = '1';
+
+                    const wrapper = document.createElement('div');
+                    wrapper.style.position = 'relative';
+
+                    // Insert wrapper before input
+                    input.parentNode.insertBefore(wrapper, input);
+                    wrapper.appendChild(input);
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.setAttribute('aria-label', 'Show password');
+                    btn.style.position = 'absolute';
+                    btn.style.right = '8px';
+                    btn.style.top = '50%';
+                    btn.style.transform = 'translateY(-50%)';
+                    btn.style.background = 'none';
+                    btn.style.border = 'none';
+                    btn.style.padding = '4px';
+                    btn.style.cursor = 'pointer';
+
+                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+
+                    btn.addEventListener('click', function () {
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/></svg>';
+                        } else {
+                            input.type = 'password';
+                            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                        }
+                    });
+
+                    wrapper.appendChild(btn);
+                });
+            })();
         </script>
 
         <script>

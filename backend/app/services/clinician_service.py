@@ -12,8 +12,9 @@ class ClinicianService:
         return self.clinicians_repo.create_clinician(
             first_name=data['first_name'],
             last_name=data['last_name'],
-            middle_name=data['middle_name'],
-            occupation=data['occupation']
+            middle_name=data.get('middle_name'),
+            occupation=data.get('occupation'),
+            password=data.get('password')
         )
     
     def get_all_clinicians(self) -> list:
@@ -75,6 +76,7 @@ class ClinicianService:
                 'name': name,
                 'occupation': c.get('occupation', ''),
                 'assessments_count': c.get('assessments_count', 0),
-                'last_activity': c.get('last_activity')
+                'last_activity': c.get('last_activity'),
+                'is_active': c.get('is_active', False)
             })
         return formatted

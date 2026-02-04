@@ -12,8 +12,19 @@ CREATE TABLE clinicians (
     last_name VARCHAR(50),
     middle_name VARCHAR(50),
     occupation VARCHAR(50),
+    password_hash VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Track active clinician sessions
+CREATE TABLE clinician_sessions (
+    clinician_id INTEGER PRIMARY KEY REFERENCES clinicians(id) ON DELETE CASCADE,
+    logged_in_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Insert Admin Clinician with password adminclinician123
+INSERT INTO clinicians (first_name, last_name, middle_name, occupation, password_hash)
+VALUES ('Admin', 'Clinician', '', 'Administrator', 'scrypt:32768:8:1$W2H7WyHgIQs6dzbI$25d334197247946f01845eb3f8a041e9711b8b2be04c3cd3876c228fbe1bbfa718ef843c7dfd49f1fabcbd0e2c7dbd339a4c1a7c120202c094c5a01aa439fecb');
 
 CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,

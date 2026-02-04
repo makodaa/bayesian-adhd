@@ -355,6 +355,13 @@
             </button>
             <span class="navbar-brand">BayesianADHD</span>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
+            <span style="color: white; font-weight: 500;" id="clinician-name"></span>
+            <button id="logout-btn"
+                style="background: rgba(255, 255, 255, 0.2); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">
+                Logout
+            </button>
+        </div>
     </nav>
 
     <div class="layout-wrapper">
@@ -497,6 +504,33 @@
     </div>
 
     <script>
+        // Load clinician name and setup logout
+        document.addEventListener('DOMContentLoaded', function () {
+            const clinicianName = sessionStorage.getItem('clinician_name') || 'Clinician';
+            document.getElementById('clinician-name').textContent = clinicianName;
+
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        sessionStorage.clear();
+                        window.location.href = '/login.html';
+                    } else {
+                        window.location.href = '/login.html';
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                    window.location.href = '/login.html';
+                }
+            });
+        });
+
         // Sidebar toggle
         document
             .getElementById("sidebar-toggle")

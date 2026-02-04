@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from pathlib import Path
 from .ml.model_loader import ModelLoader
 from .services.file_service import FileService
@@ -6,6 +6,7 @@ from .services.eeg_service import EEGService
 from .services.band_analysis_service import BandAnalysisService
 from .services.visualization_service import VisualizationService
 from .services.clinician_service import ClinicianService
+from .services.clinician_auth_service import ClinicianAuthService
 from .services.subject_service import SubjectService
 from .services.recording_service import RecordingService
 from .services.results_service import ResultsService
@@ -34,6 +35,11 @@ app = Flask(
     static_folder=str(_here / "static"),
 )
 
+# Configure session
+app.secret_key = 'bayesian-adhd-secret-key-2024'
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+
 # Initialize model loader
 model_loader = ModelLoader()
 
@@ -51,11 +57,27 @@ eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
 visualization_service = VisualizationService()
 clinician_service = ClinicianService(clinicians_repo)
+clinician_auth_service = ClinicianAuthService(clinicians_repo)
 subject_service = SubjectService(subjects_repo)
 recording_service = RecordingService(recordings_repo, file_service, eeg_service, band_analysis_service)
 results_service = ResultsService(results_repo)
 
-# Initialize model on first request
+
+# Authentication decorator
+def login_required(f):
+    """Decorator to require login for protected routes."""
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'clinician_id' not in session:
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+
+# Initialize the model on first request
 @app.before_request
 def initialize_model():
     """Initialize ML model before first request."""
@@ -95,25 +117,138 @@ def visualize_file(file, eeg_type="raw"):
 
 @app.route('/')
 def home():
-    return render_template('index.html')  # Render the home page with upload form
+    """Redirect to login if not authenticated, otherwise to index."""
+    if 'clinician_id' not in session:
+        return redirect(url_for('login_page'))
+    return redirect(url_for('index'))
+
+
+@app.route('/login.html')
+def login_page():
+    """Render the login page."""
+    if 'clinician_id' in session:
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """API endpoint for clinician login."""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            logger.warning("Login attempt with missing credentials")
+            return jsonify({'error': 'Username and password are required'}), 400
+        
+        # Authenticate clinician
+        clinician = clinician_auth_service.authenticate(username, password)
+        
+        if clinician:
+            # Prevent concurrent logins for the same clinician from different sessions
+            try:
+                already_active = clinicians_repo.is_active(clinician['id'])
+            except Exception:
+                already_active = False
+
+            # If clinician already active and this request does not belong to the same session, deny login
+            if already_active and session.get('clinician_id') != clinician['id']:
+                logger.warning(f"Denied login for already-active clinician: {username}")
+                return jsonify({'error': 'Clinician already logged in elsewhere'}), 403
+
+            # Store clinician info in session
+            session['clinician_id'] = clinician['id']
+            session['clinician_name'] = clinician_auth_service.get_clinician_display_name(clinician)
+            # store occupation for display in frontend
+            session['clinician_occupation'] = clinician.get('occupation') if clinician.get('occupation') else ''
+            session.permanent = True
+            # Mark clinician as active
+            clinicians_repo.set_active(clinician['id'])
+            logger.info(f"Clinician logged in successfully: {username}")
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'clinician_id': clinician['id'],
+                'clinician_name': session['clinician_name'],
+                'clinician_occupation': session.get('clinician_occupation', '')
+            }), 200
+        else:
+            logger.warning(f"Failed login attempt for: {username}")
+            return jsonify({'error': 'Invalid username or password'}), 401
+    
+    except Exception as e:
+        logger.error(f"Error in login endpoint: {e}", exc_info=True)
+        return jsonify({'error': 'An error occurred during login'}), 500
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    """API endpoint for clinician logout."""
+    try:
+        clinician_name = session.get('clinician_name', 'Unknown')
+        clinician_id = session.get('clinician_id')
+        if clinician_id:
+            clinicians_repo.set_inactive(clinician_id)
+        session.clear()
+        logger.info(f"Clinician logged out: {clinician_name}")
+        return jsonify({'success': True, 'message': 'Logged out successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error in logout endpoint: {e}", exc_info=True)
+        return jsonify({'error': 'An error occurred during logout'}), 500
+
+
+@app.route('/api/me', methods=['GET'])
+def api_me():
+    """Return currently authenticated clinician info from session."""
+    try:
+        if 'clinician_id' not in session:
+            return jsonify({'error': 'not_authenticated'}), 401
+
+        return jsonify({
+            'clinician_id': session.get('clinician_id'),
+            'clinician_name': session.get('clinician_name'),
+            'clinician_occupation': session.get('clinician_occupation', '')
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in /api/me: {e}", exc_info=True)
+        return jsonify({'error': 'An error occurred fetching session info'}), 500
+
+
+@app.route('/logout')
+def logout():
+    """Logout route that redirects to login page."""
+    clinician_name = session.get('clinician_name', 'Unknown')
+    clinician_id = session.get('clinician_id')
+    if clinician_id:
+        clinicians_repo.set_inactive(clinician_id)
+    session.clear()
+    logger.info(f"Clinician logged out: {clinician_name}")
+    return redirect(url_for('login_page'))
 
 @app.route('/subjects.html')
+@login_required
 def subjects():
     return render_template('subjects.html')
 
 @app.route('/clinicians.html')
+@login_required
 def clinicians():
     return render_template('clinicians.html')
 
 @app.route('/results.html')
+@login_required
 def results():
     return render_template('results.html')
 
 @app.route('/index.html')
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/visualize_eeg/<eeg_type>', methods=['POST'])
+@login_required
 def visualize_eeg(eeg_type):
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -141,6 +276,7 @@ def visualize_eeg(eeg_type):
         return jsonify({'error': f'Failed to visualize: {str(e)}'}), 500
 
 @app.route('/predict', methods=['POST'])
+@login_required
 def predict():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -260,10 +396,20 @@ def get_clinician_details(clinician_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/clinicians', methods=['POST'])
+@login_required
 def create_clinician():
-    """Create a new clinician."""
+    """Create a new clinician (admin only)."""
     try:
+        if session.get('clinician_name') != 'Admin Clinician':
+            return jsonify({'error': 'Only the administrator can add clinicians'}), 403
+
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Missing request body'}), 400
+
+        if not data.get('password'):
+            return jsonify({'error': 'Password is required for new clinicians'}), 400
+
         clinician_id = clinician_service.create_clinician(data)
         return jsonify({'id': clinician_id, 'message': 'Clinician created successfully'}), 201
     except Exception as e:

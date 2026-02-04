@@ -282,6 +282,13 @@
             </button>
             <span class="navbar-brand">BayesianADHD</span>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
+            <span style="color: white; font-weight: 500;" id="clinician-name"></span>
+            <button id="logout-btn"
+                style="background: rgba(255, 255, 255, 0.2); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">
+                Logout
+            </button>
+        </div>
     </nav>
 
     <div class="layout-wrapper">
@@ -411,7 +418,116 @@
         </div>
     </div>
 
+    <!-- Add Clinician Modal -->
+    <div class="modal fade" id="addClinicianModal" tabindex="-1" aria-labelledby="addClinicianModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addClinicianModalLabel">Add Clinician</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-clinician-form">
+                        <div class="mb-3">
+                            <label class="form-label">First name</label>
+                            <input type="text" id="add-first-name" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Last name</label>
+                            <input type="text" id="add-last-name" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Occupation</label>
+                            <input type="text" id="add-occupation" class="form-control" />
+                        </div>
+                        <div class="mb-3" style="position:relative;">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="add-password" class="form-control" required />
+                            <button type="button" id="toggle-add-password" aria-label="Show password"
+                                style="position:absolute; right:8px; top:38px; background:none; border:none; padding:4px; cursor:pointer;">
+                                <svg id="add-eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="mb-3" style="position:relative;">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" id="add-password-confirm" class="form-control" required />
+                            <button type="button" id="toggle-add-password-confirm" aria-label="Show confirm password"
+                                style="position:absolute; right:8px; top:38px; background:none; border:none; padding:4px; cursor:pointer;">
+                                <svg id="add-confirm-eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="add-clinician-error" class="text-danger" style="display:none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="submit-add-clinician" class="btn btn-primary">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Load clinician name from server session and setup logout
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                const resp = await fetch('/api/me');
+                if (!resp.ok) {
+                    // Not authenticated - redirect to login
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const me = await resp.json();
+                const clinicianName = me.clinician_name || 'Clinician';
+                const clinicianOccupation = me.clinician_occupation || '';
+                // keep sessionStorage for backward compatibility
+                sessionStorage.setItem('clinician_name', clinicianName);
+                sessionStorage.setItem('clinician_occupation', clinicianOccupation);
+
+                document.getElementById('clinician-name').textContent = clinicianName;
+
+                const addClinicianBtn = document.getElementById('add-clinician-btn');
+                if (addClinicianBtn && clinicianName !== 'Admin Clinician') {
+                    addClinicianBtn.style.display = 'none';
+                }
+
+                document.getElementById('logout-btn').addEventListener('click', async function () {
+                    try {
+                        const response = await fetch('/api/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            sessionStorage.clear();
+                            window.location.href = '/login.html';
+                        } else {
+                            window.location.href = '/login.html';
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error);
+                        window.location.href = '/login.html';
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching current clinician:', error);
+                window.location.href = '/login.html';
+            }
+        });
+
         // Sidebar toggle
         document.getElementById("sidebar-toggle").addEventListener("click", function () {
             document.getElementById("sidebar").classList.toggle("collapsed");
@@ -425,6 +541,8 @@
                 const response = await fetch("/api/clinicians");
                 allClinicians = await response.json();
 
+                const loggedInClinician = sessionStorage.getItem('clinician_name') || '';
+
                 const tbody = document.getElementById("clinicians-table-body");
                 if (allClinicians.length === 0) {
                     tbody.innerHTML =
@@ -434,15 +552,20 @@
 
                 tbody.innerHTML = allClinicians
                     .map(
-                        (clinician) => `
+                        (clinician) => {
+                            const isActive = !!clinician.is_active;
+                            const statusClass = isActive ? 'bg-success' : 'bg-secondary';
+                            const statusText = isActive ? 'Active' : 'Inactive';
+                            return `
                         <tr class="clickable-row" onclick="viewClinician(${clinician.id})">
                             <td>${clinician.name}</td>
                             <td>${clinician.occupation || "N/A"}</td>
                             <td>${clinician.assessments_count || "0"}</td>
                             <td>${clinician.last_activity ? new Date(clinician.last_activity).toLocaleString() : "N/A"}</td>
-                            <td><span class="badge bg-success">Active</span></td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
                         </tr>
-                    `
+                    `;
+                        }
                     )
                     .join("");
             } catch (error) {
@@ -564,41 +687,99 @@
             });
         });
 
-        // Add clinician functionality
+        // Add clinician functionality - show modal for admin
         document.getElementById("add-clinician-btn").addEventListener("click", function () {
-            const firstName = prompt("Enter clinician's first name:");
-            if (!firstName) return;
+            const clinicianName = sessionStorage.getItem('clinician_name') || 'Clinician';
+            if (clinicianName !== 'Admin Clinician') {
+                alert('Only the administrator can add clinicians.');
+                return;
+            }
 
-            const lastName = prompt("Enter clinician's last name:");
-            if (!lastName) return;
+            const modalEl = document.getElementById('addClinicianModal');
+            const modal = new bootstrap.Modal(modalEl);
+            // clear form
+            document.getElementById('add-first-name').value = '';
+            document.getElementById('add-last-name').value = '';
+            document.getElementById('add-occupation').value = '';
+            document.getElementById('add-password').value = '';
+            document.getElementById('add-clinician-error').style.display = 'none';
+            modal.show();
+        });
 
-            const occupation = prompt("Enter occupation (e.g., Neurologist):");
+        // Toggle add-clinician password visibility (both password and confirm)
+        (function () {
+            function toggleAddPassword() {
+                const pwd = document.getElementById('add-password');
+                const pwdConfirm = document.getElementById('add-password-confirm');
+                const eye = document.getElementById('add-eye-icon');
+                const confirmEye = document.getElementById('add-confirm-eye-icon');
+                const show = pwd.type === 'password';
+                pwd.type = show ? 'text' : 'password';
+                if (pwdConfirm) pwdConfirm.type = show ? 'text' : 'password';
+                const eyeOff = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/>';
+                const eyeOn = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                if (eye) eye.innerHTML = show ? eyeOff : eyeOn;
+                if (confirmEye) confirmEye.innerHTML = show ? eyeOff : eyeOn;
+            }
 
-            fetch("/api/clinicians", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName,
-                    middle_name: null,
-                    occupation: occupation,
-                }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.error) {
-                        alert("Error: " + data.error);
-                    } else {
-                        alert("Clinician added successfully!");
-                        loadClinicians();
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error:", error);
-                    alert("Failed to add clinician");
+            const btn = document.getElementById('toggle-add-password');
+            if (btn) btn.addEventListener('click', toggleAddPassword);
+            const btn2 = document.getElementById('toggle-add-password-confirm');
+            if (btn2) btn2.addEventListener('click', toggleAddPassword);
+        })();
+
+        // Submit add clinician form
+        document.getElementById('submit-add-clinician').addEventListener('click', async function () {
+            const firstName = document.getElementById('add-first-name').value.trim();
+            const lastName = document.getElementById('add-last-name').value.trim();
+            const occupation = document.getElementById('add-occupation').value.trim();
+            const password = document.getElementById('add-password').value;
+            const passwordConfirmElem = document.getElementById('add-password-confirm');
+            const passwordConfirm = passwordConfirmElem ? passwordConfirmElem.value : '';
+            const errorDiv = document.getElementById('add-clinician-error');
+
+            if (!firstName || !lastName || !password) {
+                errorDiv.textContent = 'First name, last name and password are required.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                errorDiv.textContent = 'Password and confirmation do not match.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/clinicians', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        middle_name: null,
+                        occupation: occupation,
+                        password: password
+                    })
                 });
+
+                const data = await resp.json();
+                if (!resp.ok) {
+                    errorDiv.textContent = data.error || 'Failed to add clinician.';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                // Success
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addClinicianModal'));
+                modal.hide();
+                alert('Clinician added successfully!');
+                loadClinicians();
+            } catch (err) {
+                console.error('Error adding clinician:', err);
+                errorDiv.textContent = 'An error occurred while adding clinician.';
+                errorDiv.style.display = 'block';
+            }
         });
 
         // Initialize
