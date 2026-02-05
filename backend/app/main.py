@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response
 from pathlib import Path
 from .ml.model_loader import ModelLoader
 from .services.file_service import FileService
@@ -10,6 +10,7 @@ from .services.clinician_auth_service import ClinicianAuthService
 from .services.subject_service import SubjectService
 from .services.recording_service import RecordingService
 from .services.results_service import ResultsService
+from .services.pdf_service import PDFReportService
 from .db.repositories.results import ResultsRepository
 from .db.repositories.recordings import RecordingsRepository
 from .db.repositories.band_powers import BandPowersRepository
@@ -61,6 +62,7 @@ clinician_auth_service = ClinicianAuthService(clinicians_repo)
 subject_service = SubjectService(subjects_repo)
 recording_service = RecordingService(recordings_repo, file_service, eeg_service, band_analysis_service)
 results_service = ResultsService(results_repo)
+pdf_service = PDFReportService()
 
 
 # Authentication decorator
@@ -477,6 +479,52 @@ def get_result(result_id):
     except Exception as e:
         logger.error(f"Error fetching result {result_id}: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/results/<int:result_id>/pdf', methods=['GET'])
+@login_required
+def generate_result_pdf(result_id):
+    """Generate and download PDF report for a result."""
+    try:
+        # Get full result details
+        result = results_service.get_result_with_full_details(result_id)
+        if not result:
+            return jsonify({'error': 'Result not found'}), 404
+        
+        # Get current clinician info from session
+        clinician_id = session.get('clinician_id')
+        clinician_data = {}
+        if clinician_id:
+            clinician = clinicians_repo.get_by_id(clinician_id)
+            if clinician:
+                clinician_data = {
+                    'first_name': clinician.get('first_name', ''),
+                    'middle_name': clinician.get('middle_name', ''),
+                    'last_name': clinician.get('last_name', ''),
+                    'occupation': clinician.get('occupation', '')
+                }
+        
+        # Generate PDF
+        pdf_bytes = pdf_service.generate_report(result, clinician_data)
+        
+        # Create filename
+        subject_code = result.get('subject_code', 'unknown').replace(' ', '_')
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"EEG_Report_{subject_code}_{timestamp}.pdf"
+        
+        logger.info(f"Generated PDF report for result {result_id}, size: {len(pdf_bytes)} bytes")
+        
+        return Response(
+            pdf_bytes,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Length': str(len(pdf_bytes))
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error generating PDF for result {result_id}: {e}", exc_info=True)
+        return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
 
 if __name__ == '__main__':
     import os

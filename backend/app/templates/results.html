@@ -499,6 +499,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="download-pdf-btn" disabled>
+                        <span id="pdf-btn-text">Download PDF Report</span>
+                        <span id="pdf-btn-spinner" class="spinner-border spinner-border-sm ms-2" role="status" style="display: none;">
+                            <span class="visually-hidden">Loading...</span>
+                        </span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -541,6 +550,7 @@
             });
 
         let allResults = [];
+        let currentResultId = null;  // Track currently displayed result for PDF download
 
         // Load results
         async function loadResults() {
@@ -605,6 +615,11 @@
                 document.getElementById("resultModal")
             );
             const modalBody = document.getElementById("modal-body-content");
+            const downloadBtn = document.getElementById("download-pdf-btn");
+
+            // Reset state
+            currentResultId = null;
+            downloadBtn.disabled = true;
 
             // Show loading state
             modalBody.innerHTML = `
@@ -625,6 +640,10 @@
                     modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
                     return;
                 }
+
+                // Enable PDF download
+                currentResultId = resultId;
+                downloadBtn.disabled = false;
 
                 // Build modal content
                 const isADHD = data.predicted_class === "ADHD";
@@ -986,6 +1005,62 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
             });
+
+        // PDF Download handler
+        document.getElementById("download-pdf-btn").addEventListener("click", async function () {
+            if (!currentResultId) {
+                alert("No result selected");
+                return;
+            }
+
+            const btn = this;
+            const btnText = document.getElementById("pdf-btn-text");
+            const spinner = document.getElementById("pdf-btn-spinner");
+
+            // Show loading state
+            btn.disabled = true;
+            btnText.textContent = "Generating PDF...";
+            spinner.style.display = "inline-block";
+
+            try {
+                const response = await fetch(`/api/results/${currentResultId}/pdf`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to generate PDF");
+                }
+
+                // Get the blob and create download link
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                
+                // Extract filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get("Content-Disposition");
+                let filename = `EEG_Report_${currentResultId}.pdf`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("Error downloading PDF:", error);
+                alert("Failed to download PDF: " + error.message);
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                btnText.textContent = "Download PDF Report";
+                spinner.style.display = "none";
+            }
+        });
 
         // Initialize
         loadResults();
