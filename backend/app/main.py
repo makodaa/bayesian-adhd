@@ -244,6 +244,11 @@ def clinicians():
 def results():
     return render_template('results.html')
 
+@app.route('/about.html')
+@login_required
+def about():
+    return render_template('about.html')
+
 @app.route('/index.html')
 @login_required
 def index():
@@ -514,6 +519,45 @@ def generate_result_pdf(result_id):
     except Exception as e:
         logger.error(f"Error generating PDF for result {result_id}: {e}", exc_info=True)
         return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
+
+
+@app.route('/api/model/info', methods=['GET'])
+@login_required
+def api_model_info():
+    """Return model architecture and hyperparameter information."""
+    import json
+    
+    try:
+        # Load best parameters from JSON file
+        params_path = Path(__file__).parent.parent / 'best_parameters.json'
+        params = {}
+        if params_path.exists():
+            with open(params_path, 'r') as f:
+                params = json.load(f)
+        
+        # Get model stats if model is loaded
+        total_params = 0
+        trainable_params = 0
+        if hasattr(app, 'model_initialized') and app.model_initialized:
+            try:
+                model = model_loader.model
+                if model is not None:
+                    total_params = sum(p.numel() for p in model.parameters())
+                    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            except Exception as e:
+                logger.warning(f"Could not get model stats: {e}")
+        
+        return jsonify({
+            'params': params,
+            'total_params': total_params,
+            'trainable_params': trainable_params,
+            'model_loaded': getattr(app, 'model_initialized', False)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting model info: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to get model info'}), 500
+
 
 if __name__ == '__main__':
     import os

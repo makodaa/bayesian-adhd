@@ -371,7 +371,7 @@ class PDFReportService:
         # Determine ADHD subtype
         adhd_subtypes = {
             'Combined / C (ADHD-C)': 'ADHD Combined Presentation (ADHD-C)',
-            'Hyperactive-Impulsive (ADHD-HI)': 'ADHD Hyperactive-Impulsive Presentation (ADHD-HI)',
+            'Hyperactive-Impulsive (ADHD-H)': 'ADHD Hyperactive-Impulsive Presentation (ADHD-H)',
             'Inattentive (ADHD-I)': 'ADHD Inattentive Presentation (ADHD-I)',
         }
         

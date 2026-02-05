@@ -286,7 +286,7 @@ class EEGService:
             print("="*100)
 
             adhd_1_name = "Combined / C (ADHD-C)"
-            adhd_2_name = "Hyperactive-Impulsive (ADHD-HI)"
+            adhd_2_name = "Hyperactive-Impulsive (ADHD-H)"
             adhd_3_name = "Inattentive (ADHD-I)"
             control_name = "Non-ADHD"
 

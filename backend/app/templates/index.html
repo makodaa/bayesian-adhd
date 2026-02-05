@@ -523,6 +523,7 @@
                             <span>Results</span>
                         </a>
                     </li>
+                    <!--
                     <li class="nav-item">
                         <a href="/about.html" class="nav-link">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -534,6 +535,7 @@
                             <span>About</span>
                         </a>
                     </li>
+                    -->
                 </ul>
             </nav>
         </aside>
@@ -1183,7 +1185,7 @@
                         <div class="metric-label">Model Prediction</div>
                         <div class="metric-value">${classification}</div>
                         <div style="margin-top: 0.5rem; font-size: 1rem;">
-                            Confidence: ${confidenceScore.toFixed(2)}%
+                            Confidence: ${(confidenceScore * 100).toFixed(2)}%
                         </div>
                     </div>
                 `;
@@ -1362,19 +1364,18 @@
                             disclaimers.push("The subject is medicated which can impact EEG recordings and may affect analysis.");
                         }
 
-                        // Always show persistent disclaimer inside recording notes area
-                        let html = `<div class="alert-custom" style="background:#fff3cd;border:1px solid #ffeeba;">`;
-
+                        // Only show recording notes if there are specific disclaimers
                         if (disclaimers.length > 0) {
+                            let html = `<div class="alert-custom" style="background:#fff3cd;border:1px solid #ffeeba;">`;
                             html += `<strong>Recording notes:</strong><ul style="margin:0.5rem 0 0 1rem;padding:0">`;
                             disclaimers.forEach(msg => {
                                 html += `<li style="margin:0.25rem 0">${msg}</li>`;
                             });
-                            html += `</ul>`;
+                            html += `</ul></div>`;
+                            recordingDisclaimers.innerHTML = html;
+                        } else {
+                            recordingDisclaimers.innerHTML = '';
                         }
-
-                        html += `</div>`;
-                        recordingDisclaimers.innerHTML = html;
 
                         // Store results
                         analysisData.results = {

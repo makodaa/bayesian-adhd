@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>About - BayesianADHD Model</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            crossorigin="anonymous"
+        />
+        <style>
+            :root {
+                --primary-color: #5a6c7d;
+                --secondary-color: #6c9bd1;
+                --accent-color: #e89a9c;
+                --success-color: #81c995;
+                --warning-color: #f5c26b;
+                --bg-light: #f5f7fa;
+                --text-dark: #4a5568;
+                --border-color: #d1d5db;
+                --sidebar-width: 250px;
+                --sidebar-collapsed-width: 60px;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--bg-light);
+                color: var(--text-dark);
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+
+            .navbar {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                padding: 0 1rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: 70px;
+                display: flex;
+                align-items: center;
+            }
+
+            .navbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: white !important;
+                margin: 0;
+            }
+
+            .navbar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: white;
+                padding: 0.5rem;
+                margin: 0;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }
+
+            .navbar-toggle:hover {
+                opacity: 0.8;
+            }
+
+            .layout-wrapper {
+                display: flex;
+                height: 100vh;
+                margin-top: 70px;
+            }
+
+            .sidebar {
+                width: var(--sidebar-width);
+                background: white;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+                transition: width 0.3s ease;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 70px);
+            }
+
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-nav {
+                flex: 1;
+                padding: 1.5rem 0;
+            }
+
+            .nav-item {
+                list-style: none;
+            }
+
+            .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 0.875rem 1rem;
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 500;
+            }
+
+            .nav-link:hover {
+                background: #f8f9fa;
+            }
+
+            .nav-link.active {
+                background: #e9ecef;
+                border-right: 3px solid var(--secondary-color);
+                font-weight: 600;
+            }
+
+            .nav-link svg {
+                min-width: 24px;
+                margin-right: 1rem;
+                transition: margin 0.3s ease;
+            }
+
+            .nav-link span {
+                opacity: 1;
+                transition: opacity 0.2s ease;
+            }
+
+            .sidebar.collapsed .nav-link {
+                justify-content: center;
+                padding: 0.875rem 0;
+            }
+
+            .sidebar.collapsed .nav-link svg {
+                margin-right: 0;
+            }
+
+            .sidebar.collapsed .nav-link span {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+            }
+
+            .main-content {
+                flex: 1;
+                padding: 1rem;
+                overflow-y: auto;
+                height: calc(100vh - 70px);
+            }
+
+            .page-header {
+                margin-bottom: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--primary-color);
+                margin-bottom: 0.25rem;
+            }
+
+            .page-subtitle {
+                color: #718096;
+                font-size: 1rem;
+            }
+
+            .card {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                border: none;
+                margin-bottom: 1rem;
+            }
+
+            .card-header {
+                background: linear-gradient(135deg, #8fa5b8 0%, #a8c5e4 100%);
+                color: white;
+                font-weight: 600;
+                padding: 0.75rem 1rem;
+                border-radius: 12px 12px 0 0 !important;
+                border: none;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            /* Vertical Architecture Visualization */
+            .architecture-flow {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                padding: 1.5rem;
+                background: white;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                position: relative;
+            }
+
+            .arch-step {
+                display: flex;
+                gap: 1rem;
+                position: relative;
+                padding-bottom: 1.5rem;
+            }
+
+            .arch-step:last-child {
+                padding-bottom: 0;
+            }
+
+            .arch-step::before {
+                content: '';
+                position: absolute;
+                left: 24px;
+                top: 48px;
+                bottom: 0;
+                width: 2px;
+                background: #e2e8f0;
+                z-index: 1;
+            }
+
+            .arch-step:last-child::before {
+                display: none;
+            }
+
+            .arch-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: white;
+                border: 2px solid var(--secondary-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2;
+                flex-shrink: 0;
+                color: var(--secondary-color);
+                font-weight: bold;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+
+            .arch-content {
+                flex: 1;
+                background: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+                transition: all 0.2s ease;
+            }
+
+            .arch-content:hover {
+                transform: translateX(4px);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                border-color: var(--secondary-color);
+            }
+
+            .arch-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .arch-meta {
+                font-size: 0.8rem;
+                color: white;
+                background: var(--secondary-color);
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+            }
+
+            .arch-desc {
+                font-size: 0.95rem;
+                color: var(--text-dark);
+                line-height: 1.5;
+                margin-bottom: 0.5rem;
+            }
+
+            .arch-detail {
+                font-size: 0.85rem;
+                color: #718096;
+                font-family: monospace;
+                background: white;
+                padding: 0.5rem;
+                border-radius: 4px;
+                border: 1px solid #edf2f7;
+                display: inline-block;
+            }
+
+            /* Parameter Grid */
+            .param-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .param-item {
+                background: white;
+                padding: 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                border-left: 4px solid var(--secondary-color);
+            }
+
+            .param-label {
+                font-size: 0.8rem;
+                color: #718096;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 0.25rem;
+            }
+
+            .param-value {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--primary-color);
+            }
+
+            /* Stats Cards */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .stat-card {
+                background: white;
+                color: var(--text-dark);
+                padding: 1rem;
+                border-radius: 10px;
+                text-align: center;
+                border: 1px solid var(--border-color);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 0.25rem;
+                color: var(--primary-color);
+            }
+
+            .stat-label {
+                font-size: 0.85rem;
+                color: #718096;
+            }
+
+            /* Image Container */
+            .image-container {
+                text-align: center;
+                padding: 1rem;
+                background: #f8f9fa;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+            }
+
+            .image-container img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 6px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .image-placeholder {
+                background: #e2e8f0;
+                border: 2px dashed #a0aec0;
+                border-radius: 8px;
+                padding: 3rem;
+                text-align: center;
+                color: #718096;
+            }
+
+            .image-placeholder svg {
+                margin-bottom: 1rem;
+                opacity: 0.5;
+            }
+
+            /* Section Headers */
+            .section-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
+                padding-bottom: 0.75rem;
+                border-bottom: 2px solid #e2e8f0;
+            }
+
+            .section-header h5 {
+                margin: 0;
+                font-weight: 600;
+                color: var(--primary-color);
+            }
+
+            .section-icon {
+                width: 32px;
+                height: 32px;
+                background: var(--secondary-color);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }
+
+            /* Table Styles */
+            .info-table {
+                width: 100%;
+            }
+
+            .info-table th {
+                background: #f8f9fa;
+                padding: 0.75rem 1rem;
+                text-align: left;
+                font-weight: 600;
+                color: var(--primary-color);
+                border-bottom: 2px solid #e2e8f0;
+            }
+
+            .info-table td {
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .info-table tr:last-child td {
+                border-bottom: none;
+            }
+
+            /* Placeholder Card */
+            .placeholder-card {
+                background: white;
+                border: 2px dashed #cbd5e0;
+                border-radius: 12px;
+                padding: 3rem 1.5rem;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                min-height: 300px;
+                transition: all 0.3s ease;
+            }
+
+            .placeholder-card:hover {
+                border-color: var(--secondary-color);
+                background: #f8fafc;
+            }
+
+            .placeholder-icon {
+                width: 64px;
+                height: 64px;
+                color: #a0aec0;
+                margin-bottom: 1rem;
+                opacity: 0.6;
+            }
+
+            .placeholder-title {
+                font-weight: 600;
+                color: var(--text-dark);
+                margin-bottom: 0.5rem;
+                font-size: 1.1rem;
+            }
+
+            .placeholder-text {
+                color: #718096;
+                font-size: 0.9rem;
+                max-width: 250px;
+                margin: 0 auto;
+            }
+
+            /* Feature List */
+            .feature-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .feature-list li {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                background: white;
+                transition: transform 0.2s ease;
+            }
+
+            .feature-list li:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            }
+
+            .feature-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                background: var(--secondary-color);
+                color: white;
+                border-radius: 50%;
+                font-size: 0.8rem;
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+
+            /* Tabs */
+            .nav-tabs {
+                border-bottom: 2px solid #e2e8f0;
+            }
+
+            .nav-tabs .nav-link {
+                color: var(--text-dark);
+                border: none;
+                border-bottom: 3px solid transparent;
+                padding: 0.75rem 1.25rem;
+                font-weight: 500;
+            }
+
+            .nav-tabs .nav-link:hover {
+                border-bottom-color: var(--secondary-color);
+            }
+
+            .nav-tabs .nav-link.active {
+                color: var(--secondary-color);
+                background: none;
+                border-bottom-color: var(--secondary-color);
+            }
+
+            .tab-content {
+                padding-top: 1.5rem;
+            }
+
+            /* Badge */
+            .badge-custom {
+                background: var(--secondary-color);
+                color: white;
+                padding: 0.35rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            /* Responsive */
+            @media (max-width: 768px) {
+                .arch-row {
+                    flex-direction: column;
+                }
+
+                .arch-arrow {
+                    transform: rotate(90deg);
+                }
+
+                .param-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="navbar-toggle" id="sidebar-toggle">
+                    <span>☰</span>
+                </button>
+                <span class="navbar-brand">BayesianADHD</span>
+            </div>
+            <div
+                style="
+                    margin-left: auto;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                "
+            >
+                <span
+                    style="color: white; font-weight: 500"
+                    id="clinician-name"
+                ></span>
+                <button
+                    id="logout-btn"
+                    style="
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 1px solid white;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.3s ease;
+                    "
+                >
+                    Logout
+                </button>
+            </div>
+        </nav>
+
+        <div class="layout-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed" id="sidebar">
+                <nav class="sidebar-nav">
+                    <ul style="padding: 0; margin: 0">
+                        <li class="nav-item">
+                            <a href="/index.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                    ></path>
+                                    <polyline
+                                        points="9 22 9 12 15 12 15 22"
+                                    ></polyline>
+                                </svg>
+                                <span>Analysis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/subjects.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Subjects</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/clinicians.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Clinicians</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/results.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    ></path>
+                                    <polyline
+                                        points="14 2 14 8 20 8"
+                                    ></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                        <!--
+                        <li class="nav-item">
+                            <a href="/about.html" class="nav-link active">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path
+                                        d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                    ></path>
+                                    <line
+                                        x1="12"
+                                        y1="17"
+                                        x2="12.01"
+                                        y2="17"
+                                    ></line>
+                                </svg>
+                                <span>About</span>
+                            </a>
+                        </li>
+                        -->
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="page-header">
+                    <h1 class="page-title">About the Model</h1>
+                    <p class="page-subtitle">
+                        CNN-LSTM Hybrid Architecture with Bayesian Optimization
+                        for EEG-based ADHD Classification
+                    </p>
+                </div>
+
+                <!-- Model Overview Stats -->
+                <div class="stats-grid" id="model-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-params">--</div>
+                        <div class="stat-label">Total Parameters</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Output Classes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">19</div>
+                        <div class="stat-label">EEG Channels</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">7</div>
+                        <div class="stat-label">Band Features</div>
+                    </div>
+                </div>
+
+                <!-- Architecture Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            style="
+                                display: inline;
+                                vertical-align: middle;
+                                margin-right: 8px;
+                            "
+                        >
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Model Architecture
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">
+                            The model employs a dual-stream architecture that
+                            combines convolutional neural networks for spatial
+                            feature extraction with LSTM networks for temporal
+                            pattern recognition. This hybrid approach captures
+                            both the spatial distribution of brain activity
+                            across electrodes and the temporal dynamics of EEG
+                            signals.
+                        </p>
+
+                        <!-- Visual Architecture Flow -->
+                        <div class="architecture-flow">
+                            <!-- Input Step -->
+                            <div class="arch-step">
+                                <div class="arch-icon">1</div>
+                                <div class="arch-content">
+                                    <div class="arch-title">
+                                        Input Processing
+                                    </div>
+                                    <div class="arch-desc">
+                                        The system processes EEG signals from 19 standard electrode locations. It cleans the data and analyzes specific frequency bands (Delta, Theta, Alpha, Beta, Gamma) known to be relevant for ADHD diagnosis.
+                                    </div>
+                                    <div class="arch-detail">
+                                        Input: 19-Channel EEG + Frequency Band Analysis
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Spatial Analysis -->
+                            <div class="arch-step">
+                                <div class="arch-icon">2</div>
+                                <div class="arch-content">
+                                    <div class="arch-title">
+                                        Spatial Analysis
+                                    </div>
+                                    <div class="arch-desc">
+                                        The model scans the brain's activity map to identify spatial patterns across different regions. This mimics how a clinician might look for localized abnormalities or connectivity issues between brain areas.
+                                    </div>
+                                    <div class="arch-detail">
+                                        Function: Identifies regional activity patterns
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Temporal Analysis -->
+                            <div class="arch-step">
+                                <div class="arch-icon">3</div>
+                                <div class="arch-content">
+                                    <div class="arch-title">
+                                        Temporal Analysis
+                                    </div>
+                                    <div class="arch-desc">
+                                        The system analyzes how these brain activity patterns change over time. It looks for sequences and dynamic changes that are characteristic of different attention states using advanced sequence modeling.
+                                    </div>
+                                    <div class="arch-detail">
+                                        Function: Tracks brain activity changes over time
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Classification -->
+                            <div class="arch-step">
+                                <div class="arch-icon">4</div>
+                                <div class="arch-content">
+                                    <div class="arch-title">
+                                        Classification
+                                    </div>
+                                    <div class="arch-desc">
+                                        Based on the identified spatial and temporal patterns, the model calculates the probability of each category to aid clinical decision making.
+                                    </div>
+                                    <div class="arch-detail">
+                                        Output: Probability of ADHD Subtypes vs Control
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs for Details -->
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="detailTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link active"
+                                    id="params-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#params"
+                                    type="button"
+                                >
+                                    Optimized Parameters
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link"
+                                    id="training-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#training"
+                                    type="button"
+                                >
+                                    Training Results
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link"
+                                    id="features-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#features"
+                                    type="button"
+                                >
+                                    Key Features
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="detailTabsContent">
+                            <!-- Optimized Parameters Tab -->
+                            <div
+                                class="tab-pane fade show active"
+                                id="params"
+                                role="tabpanel"
+                            >
+                                <div class="section-header">
+                                    <div class="section-icon">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="3"
+                                            ></circle>
+                                            <path
+                                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <h5>
+                                        Hyperparameters (Bayesian Optimized)
+                                    </h5>
+                                    <span class="badge-custom"
+                                        >TPE Algorithm</span
+                                    >
+                                </div>
+                                <p class="text-muted mb-3">
+                                    These parameters were found using
+                                    Tree-structured Parzen Estimator (TPE) with
+                                    iterative convergence-based optimization.
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-3">
+                                            CNN Configuration
+                                        </h6>
+                                        <div class="param-grid">
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Conv1 Filters
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-kernels-1"
+                                                >
+                                                    64
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Conv1 Kernel
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-kernel-1"
+                                                >
+                                                    5×5
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Conv2 Filters
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-kernels-2"
+                                                >
+                                                    16
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Conv2 Kernel
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-kernel-2"
+                                                >
+                                                    5×5
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    CNN Dense
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-dense"
+                                                >
+                                                    32
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    CNN Dropout
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-cnn-dropout"
+                                                >
+                                                    0.052
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-muted mb-3">
+                                            LSTM & Training
+                                        </h6>
+                                        <div class="param-grid">
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    LSTM Hidden
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-lstm-hidden"
+                                                >
+                                                    96
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    LSTM Layers
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-lstm-layers"
+                                                >
+                                                    4
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    LSTM Dense
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-lstm-dense"
+                                                >
+                                                    64
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Batch Size
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-batch-size"
+                                                >
+                                                    32
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Learning Rate
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-lr"
+                                                >
+                                                    6.42e-5
+                                                </div>
+                                            </div>
+                                            <div class="param-item">
+                                                <div class="param-label">
+                                                    Optimizer
+                                                </div>
+                                                <div
+                                                    class="param-value"
+                                                    id="param-optimizer"
+                                                >
+                                                    SGD
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Training Results Tab -->
+                            <div
+                                class="tab-pane fade"
+                                id="training"
+                                role="tabpanel"
+                            >
+                                <div class="section-header">
+                                    <div class="section-icon">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <line
+                                                x1="18"
+                                                y1="20"
+                                                x2="18"
+                                                y2="10"
+                                            ></line>
+                                            <line
+                                                x1="12"
+                                                y1="20"
+                                                x2="12"
+                                                y2="4"
+                                            ></line>
+                                            <line
+                                                x1="6"
+                                                y1="20"
+                                                x2="6"
+                                                y2="14"
+                                            ></line>
+                                        </svg>
+                                    </div>
+                                    <h5>Training Visualizations</h5>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="image-container">
+                                            <img src="/static/images/Training Curve Comparison.png" alt="Training Curve Comparison">
+                                            <div class="mt-2 text-muted small">Training & Validation Loss</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="image-container">
+                                            <img src="/static/images/Confusion Matrix Comparison.png" alt="Confusion Matrix">
+                                            <div class="mt-2 text-muted small">Confusion Matrix</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="image-container">
+                                            <img src="/static/images/Bayesian Optimization Run Convergence.png" alt="Bayesian Optimization">
+                                            <div class="mt-2 text-muted small">Bayesian Optimization Convergence</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="image-container">
+                                            <img src="/static/images/Performance Comparison.png" alt="Performance Comparison">
+                                            <div class="mt-2 text-muted small">Model Performance Comparison</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Key Features Tab -->
+                            <div
+                                class="tab-pane fade"
+                                id="features"
+                                role="tabpanel"
+                            >
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="section-header">
+                                            <div class="section-icon">
+                                                <svg
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <polyline
+                                                        points="22 12 18 12 15 21 9 3 6 12 2 12"
+                                                    ></polyline>
+                                                </svg>
+                                            </div>
+                                            <h5>Architecture Features</h5>
+                                        </div>
+                                        <ul class="feature-list">
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Dual-Stream
+                                                        Architecture</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Combines raw EEG
+                                                        spatial-temporal
+                                                        features with engineered
+                                                        frequency band
+                                                        powers</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >CNN Spatial
+                                                        Extraction</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Conv2D layers capture
+                                                        spatial patterns across
+                                                        19 EEG electrodes</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >LSTM Temporal
+                                                        Modeling</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Multi-layer LSTM
+                                                        captures sequential
+                                                        patterns in EEG time
+                                                        series</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Feature Fusion</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Concatenates CNN-LSTM
+                                                        output with band power
+                                                        features for
+                                                        classification</small
+                                                    >
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="section-header">
+                                            <div class="section-icon">
+                                                <svg
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <path d="M12 20h9"></path>
+                                                    <path
+                                                        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                                                    ></path>
+                                                </svg>
+                                            </div>
+                                            <h5>Training Features</h5>
+                                        </div>
+                                        <ul class="feature-list">
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Bayesian Hyperparameter
+                                                        Optimization</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Tree-structured Parzen
+                                                        Estimator (TPE) for
+                                                        efficient parameter
+                                                        search</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Iterative
+                                                        Convergence</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Multiple BO searches
+                                                        until standard deviation
+                                                        of results
+                                                        converges</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Early Stopping</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >Prevents overfitting
+                                                        with configurable
+                                                        patience
+                                                        parameter</small
+                                                    >
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <span class="feature-icon"
+                                                    >✓</span
+                                                >
+                                                <div>
+                                                    <strong
+                                                        >Cross-Validation</strong
+                                                    ><br />
+                                                    <small class="text-muted"
+                                                        >K-Fold and
+                                                        Leave-One-Subject-Out
+                                                        (LOSOCV) for robust
+                                                        evaluation</small
+                                                    >
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <div class="section-header">
+                                        <div class="section-icon">
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                            >
+                                                <path
+                                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                                                ></path>
+                                            </svg>
+                                        </div>
+                                        <h5>Classification Classes</h5>
+                                    </div>
+                                    <table class="info-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Class ID</th>
+                                                <th>Label</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>0</td>
+                                                <td><strong>Combined / C</strong></td>
+                                                <td>
+                                                    Combined Presentation (ADHD-C)
+                                                    (Inattentive + Hyperactive-Impulsive)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>1</td>
+                                                <td><strong>Hyperactive-Impulsive</strong></td>
+                                                <td>
+                                                    Predominantly Hyperactive-Impulsive Presentation (ADHD-H)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td><strong>Inattentive</strong></td>
+                                                <td>
+                                                    Predominantly Inattentive Presentation (ADHD-I)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td>
+                                                    <strong>Non-ADHD</strong>
+                                                </td>
+                                                <td>
+                                                    Neurotypical Control Group
+                                                    (No diagnosis)
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Info -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-0">
+                            <strong>BayesianADHD</strong> - EEG-based ADHD
+                            Classification Platform<br />
+                            <small
+                                >Model trained with PyTorch | Hyperparameter
+                                optimization with Hyperopt</small
+                            >
+                        </p>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            crossorigin="anonymous"
+        ></script>
+        <script>
+            // Sidebar toggle
+            const sidebar = document.getElementById("sidebar");
+            const toggleBtn = document.getElementById("sidebar-toggle");
+
+            toggleBtn.addEventListener("click", () => {
+                sidebar.classList.toggle("collapsed");
+            });
+
+            // Load clinician name
+            document.addEventListener("DOMContentLoaded", async () => {
+                try {
+                    const response = await fetch("/api/clinician/current");
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById(
+                            "clinician-name"
+                        ).textContent = `Dr. ${data.first_name} ${data.last_name}`;
+                    }
+                } catch (error) {
+                    console.log("Could not load clinician info");
+                }
+
+                // Load model info
+                loadModelInfo();
+            });
+
+            // Logout handler
+            document
+                .getElementById("logout-btn")
+                .addEventListener("click", async () => {
+                    try {
+                        await fetch("/api/logout", { method: "POST" });
+                        window.location.href = "/login.html";
+                    } catch (error) {
+                        console.error("Logout error:", error);
+                        window.location.href = "/login.html";
+                    }
+                });
+
+            // Load model parameters and stats
+            async function loadModelInfo() {
+                try {
+                    const response = await fetch("/api/model/info");
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        // Update stats
+                        if (data.total_params) {
+                            document.getElementById("stat-params").textContent =
+                                formatNumber(data.total_params);
+                        }
+
+                        // Update parameters
+                        if (data.params) {
+                            const p = data.params;
+
+                            // CNN params
+                            updateElement(
+                                "param-cnn-kernels-1",
+                                p.cnn_kernels_1
+                            );
+                            updateElement(
+                                "param-cnn-kernel-1",
+                                `${p.cnn_kernel_size_1}×${p.cnn_kernel_size_1}`
+                            );
+                            updateElement(
+                                "param-cnn-kernels-2",
+                                p.cnn_kernels_2
+                            );
+                            updateElement(
+                                "param-cnn-kernel-2",
+                                `${p.cnn_kernel_size_2}×${p.cnn_kernel_size_2}`
+                            );
+                            updateElement("param-cnn-dense", p.cnn_dense);
+                            updateElement(
+                                "param-cnn-dropout",
+                                p.cnn_dropout?.toFixed(3) ||
+                                    p.dropout?.toFixed(3)
+                            );
+
+                            // LSTM params
+                            updateElement(
+                                "param-lstm-hidden",
+                                p.lstm_hidden_size
+                            );
+                            updateElement("param-lstm-layers", p.lstm_layers);
+                            updateElement("param-lstm-dense", p.lstm_dense);
+
+                            // Training params
+                            updateElement("param-batch-size", p.batch_size);
+                            updateElement(
+                                "param-lr",
+                                p.learning_rate?.toExponential(2)
+                            );
+                            updateElement(
+                                "param-optimizer",
+                                p.optimizer?.toUpperCase()
+                            );
+
+                            // Update architecture diagram
+                            updateElement(
+                                "conv1-detail",
+                                `${p.cnn_kernels_1} filters, ${p.cnn_kernel_size_1}×${p.cnn_kernel_size_1}`
+                            );
+                            updateElement(
+                                "conv2-detail",
+                                `${p.cnn_kernels_2} filters, ${p.cnn_kernel_size_2}×${p.cnn_kernel_size_2}`
+                            );
+                            updateElement(
+                                "cnn-dense-detail",
+                                `${p.cnn_dense} units`
+                            );
+                            updateElement(
+                                "lstm-detail",
+                                `${p.lstm_layers} layers, ${p.lstm_hidden_size} hidden`
+                            );
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error loading model info:", error);
+                }
+            }
+
+            function updateElement(id, value) {
+                const el = document.getElementById(id);
+                if (el && value !== undefined && value !== null) {
+                    el.textContent = value;
+                }
+            }
+
+            function formatNumber(num) {
+                if (num >= 1000000) {
+                    return (num / 1000000).toFixed(2) + "M";
+                } else if (num >= 1000) {
+                    return (num / 1000).toFixed(1) + "K";
+                }
+                return num.toString();
+            }
+        </script>
+    </body>
+</html>
