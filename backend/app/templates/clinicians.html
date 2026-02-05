@@ -624,7 +624,7 @@
                                     <tbody>
                                         ${clinician.assessments
                             .map((assessment) => {
-                                const badgeClass = assessment.predicted_class === 'ADHD 1' || assessment.predicted_class === 'ADHD 2' || assessment.predicted_class === 'ADHD 3' ? 'badge-adhd' : 'badge-non-adhd';
+                                const badgeClass = assessment.predicted_class === 'Combined / C (ADHD-C)' || assessment.predicted_class === 'Hyperactive-Impulsive (ADHD-HI)' || assessment.predicted_class === 'Inattentive (ADHD-I)' ? 'badge-adhd' : 'badge-non-adhd';
                                 const confidence = (assessment.confidence_score * 100).toFixed(2);
                                 const date = new Date(assessment.inferenced_at).toLocaleString();
                                 return `

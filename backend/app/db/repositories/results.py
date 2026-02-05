@@ -6,7 +6,7 @@ logger = get_db_logger(__name__)
 class ResultsRepository(BaseRepository):
     def create_result(self, recording_id, classification, confidence_score, clinician_id=None):
         """Create a new result and return its ID."""
-        logger.info(f"Creating result for recording {recording_id}: classification={classification}, confidence={confidence_score:.4f}")
+        logger.info(f"Creating result for recording {recording_id}: classification={classification}, confidence={confidence_score*100:.2f}%")
         query = """
         INSERT INTO results(recording_id, clinician_id, predicted_class, confidence_score)
         VALUES (%s, %s, %s, %s)

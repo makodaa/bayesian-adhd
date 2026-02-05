@@ -368,22 +368,30 @@ class PDFReportService:
     
     def _get_clinical_interpretation(self, predicted_class: str, confidence_pct: float) -> str:
         """Generate clinical interpretation text based on prediction and confidence."""
-        is_adhd = 'ADHD' in predicted_class.upper() and 'NON' not in predicted_class.upper()
+        # Determine ADHD subtype
+        adhd_subtypes = {
+            'Combined / C (ADHD-C)': 'ADHD Combined Presentation (ADHD-C)',
+            'Hyperactive-Impulsive (ADHD-HI)': 'ADHD Hyperactive-Impulsive Presentation (ADHD-HI)',
+            'Inattentive (ADHD-I)': 'ADHD Inattentive Presentation (ADHD-I)',
+        }
+        
+        is_adhd = predicted_class in adhd_subtypes
+        subtype_description = adhd_subtypes.get(predicted_class, '')
         
         if is_adhd:
             if confidence_pct >= 80:
-                return ("The EEG analysis findings strongly support clinical suspicion of ADHD. "
+                return (f"The EEG analysis findings strongly support clinical suspicion of {subtype_description}. "
                        "The observed patterns are consistent with those typically associated with "
-                       "Attention Deficit Hyperactivity Disorder. Further clinical evaluation is recommended "
+                       "this ADHD presentation. Further clinical evaluation is recommended "
                        "to confirm diagnosis.")
             elif confidence_pct >= 60:
-                return ("The EEG analysis may support clinical suspicion of ADHD. "
+                return (f"The EEG analysis may support clinical suspicion of {subtype_description}. "
                        "The observed brainwave patterns show characteristics that are sometimes "
-                       "associated with Attention Deficit Hyperactivity Disorder. Comprehensive clinical "
+                       "associated with this ADHD presentation. Comprehensive clinical "
                        "assessment is advised.")
             else:
-                return ("The EEG analysis findings should be interpreted with caution; "
-                       "patterns may be suggestive of ADHD. Due to the lower confidence level, "
+                return (f"The EEG analysis findings should be interpreted with caution; "
+                       f"patterns may be suggestive of {subtype_description}. Due to the lower confidence level, "
                        "additional testing and thorough clinical evaluation are strongly recommended.")
         else:
             if confidence_pct >= 80:

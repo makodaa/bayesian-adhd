@@ -345,7 +345,7 @@ def predict():
             'band_ratios': band_powers.get('band_ratios', {})
         }
         
-        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
+        logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']*100:.2f}%)")
         return jsonify({
             'prediction': True,
             'result': {
