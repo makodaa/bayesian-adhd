@@ -1,586 +1,822 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Clinician Management - BayesianADHD</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+        />
+        <style>
+            :root {
+                --primary-color: #5a6c7d;
+                --secondary-color: #6c9bd1;
+                --sidebar-width: 250px;
+                --sidebar-collapsed-width: 60px;
+            }
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Clinician Management - BayesianADHD</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
-    <style>
-        :root {
-            --primary-color: #5a6c7d;
-            --secondary-color: #6c9bd1;
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 60px;
-        }
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f7fa;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
 
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
+            .navbar {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                padding: 0 1rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: 70px;
+                display: flex;
+                align-items: center;
+            }
 
-        .navbar {
-            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            padding: 0 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: 70px;
-            display: flex;
-            align-items: center;
-        }
+            .navbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+            .navbar-brand {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: white !important;
+                margin: 0;
+            }
 
-        .navbar-brand {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: white !important;
-            margin: 0;
-        }
+            .navbar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: white;
+                padding: 0.5rem;
+                margin: 0;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }
 
-        .navbar-toggle {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: white;
-            padding: 0.5rem;
-            margin: 0;
-            line-height: 1;
-            transition: opacity 0.2s;
-        }
+            .navbar-toggle:hover {
+                opacity: 0.8;
+            }
 
-        .navbar-toggle:hover {
-            opacity: 0.8;
-        }
+            .layout-wrapper {
+                display: flex;
+                height: calc(100vh - 70px);
+                margin-top: 70px;
+                width: 100%;
+            }
 
-        .layout-wrapper {
-            display: flex;
-            height: calc(100vh - 70px);
-            margin-top: 70px;
-            width: 100%;
-        }
+            .sidebar {
+                width: var(--sidebar-width);
+                min-width: var(--sidebar-width);
+                background: white;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+            }
 
-        .sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            background: white;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed-width);
+                min-width: var(--sidebar-collapsed-width);
+            }
 
-        .sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
-            min-width: var(--sidebar-collapsed-width);
-        }
+            .sidebar-nav {
+                flex: 1;
+                padding: 1.5rem 0;
+            }
 
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-        }
+            .nav-item {
+                list-style: none;
+            }
 
-        .nav-item {
-            list-style: none;
-        }
+            .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 0.875rem 1rem;
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 500;
+            }
 
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.875rem 1rem;
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
+            .nav-link:hover {
+                background: #f8f9fa;
+            }
 
-        .nav-link:hover {
-            background: #f8f9fa;
-        }
+            .nav-link.active {
+                background: #e9ecef;
+                border-right: 3px solid var(--secondary-color);
+                font-weight: 600;
+            }
 
-        .nav-link.active {
-            background: #e9ecef;
-            border-right: 3px solid var(--secondary-color);
-            font-weight: 600;
-        }
+            .nav-link svg {
+                min-width: 24px;
+                margin-right: 1rem;
+                transition: margin 0.3s ease;
+            }
 
-        .nav-link svg {
-            min-width: 24px;
-            margin-right: 1rem;
-            transition: margin 0.3s ease;
-        }
+            .nav-link span {
+                opacity: 1;
+                transition: opacity 0.2s ease;
+            }
 
-        .nav-link span {
-            opacity: 1;
-            transition: opacity 0.2s ease;
-        }
+            .sidebar.collapsed .nav-link {
+                justify-content: center;
+                padding: 0.875rem 0;
+            }
 
-        .sidebar.collapsed .nav-link {
-            justify-content: center;
-            padding: 0.875rem 0;
-        }
+            .sidebar.collapsed .nav-link svg {
+                margin-right: 0;
+            }
 
-        .sidebar.collapsed .nav-link svg {
-            margin-right: 0;
-        }
+            .sidebar.collapsed .nav-link span {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+            }
 
-        .sidebar.collapsed .nav-link span {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-        }
+            .main-content {
+                flex: 1;
+                padding: 2rem;
+                overflow-y: auto;
+                overflow-x: hidden;
+                min-width: 0;
+            }
 
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-width: 0;
-        }
+            .content-header {
+                margin-bottom: 2rem;
+            }
 
-        .content-header {
-            margin-bottom: 2rem;
-        }
+            .content-header h1 {
+                font-size: 2rem;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
 
-        .content-header h1 {
-            font-size: 2rem;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
+            .card {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                margin-bottom: 1.5rem;
+            }
 
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
-        }
+            .table-container {
+                overflow-x: auto;
+            }
 
-        .table-container {
-            overflow-x: auto;
-        }
+            .btn-primary {
+                background-color: var(--secondary-color);
+                border: none;
+            }
 
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border: none;
-        }
+            .btn-primary:hover {
+                background-color: #5a8bc4;
+            }
 
-        .btn-primary:hover {
-            background-color: #5a8bc4;
-        }
+            .search-box {
+                max-width: 400px;
+            }
 
-        .search-box {
-            max-width: 400px;
-        }
+            .badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.85rem;
+            }
 
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-        }
+            .clickable-row {
+                cursor: pointer;
+            }
 
-        .clickable-row {
-            cursor: pointer;
-        }
+            .clickable-row:hover {
+                background-color: #f8f9fa;
+            }
 
-        .clickable-row:hover {
-            background-color: #f8f9fa;
-        }
+            .modal-header {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                color: white;
+            }
 
-        .modal-header {
-            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-            color: white;
-        }
+            .modal-header .btn-close {
+                filter: brightness(0) invert(1);
+            }
 
-        .modal-header .btn-close {
-            filter: brightness(0) invert(1);
-        }
+            .info-section {
+                margin-bottom: 1.5rem;
+            }
 
-        .info-section {
-            margin-bottom: 1.5rem;
-        }
+            .info-section h6 {
+                color: var(--primary-color);
+                font-weight: 600;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #e9ecef;
+            }
 
-        .info-section h6 {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e9ecef;
-        }
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
+            .info-row:last-child {
+                border-bottom: none;
+            }
 
-        .info-row:last-child {
-            border-bottom: none;
-        }
+            .info-label {
+                font-weight: 500;
+                color: #6c757d;
+            }
 
-        .info-label {
-            font-weight: 500;
-            color: #6c757d;
-        }
+            .info-value {
+                color: var(--primary-color);
+                font-weight: 500;
+            }
 
-        .info-value {
-            color: var(--primary-color);
-            font-weight: 500;
-        }
+            .assessment-table {
+                margin-top: 1rem;
+            }
 
-        .assessment-table {
-            margin-top: 1rem;
-        }
+            .assessment-table th {
+                background-color: #f8f9fa;
+                color: var(--primary-color);
+                font-weight: 600;
+            }
 
-        .assessment-table th {
-            background-color: #f8f9fa;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
+            .badge-adhd {
+                background-color: #c9846a;
+                color: white;
+            }
 
-        .badge-adhd {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-        }
+            .badge-non-adhd {
+                background-color: #6c9bd1;
+                color: white;
+            }
 
-        .badge-non-adhd {
-            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-            color: white;
-        }
+            .assessment-table-wrapper {
+                max-height: 180px;
+                overflow-y: auto;
+            }
+        </style>
+    </head>
 
-        .assessment-table-wrapper {
-            max-height: 180px;
-            overflow-y: auto;
-        }
-    </style>
-</head>
-
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-left">
-            <button class="navbar-toggle" id="sidebar-toggle">
-                <span>☰</span>
-            </button>
-            <span class="navbar-brand">BayesianADHD</span>
-        </div>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
-            <span style="color: white; font-weight: 500;" id="clinician-name"></span>
-            <button id="logout-btn"
-                style="background: rgba(255, 255, 255, 0.2); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">
-                Logout
-            </button>
-        </div>
-    </nav>
-
-    <div class="layout-wrapper">
-        <!-- Sidebar -->
-        <aside class="sidebar collapsed" id="sidebar">
-            <nav class="sidebar-nav">
-                <ul style="padding: 0; margin: 0">
-                    <li class="nav-item">
-                        <a href="/index.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                            </svg>
-                            <span>Analysis</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/subjects.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            <span>Subjects</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/clinicians.html" class="nav-link active">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span>Clinicians</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/results.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <span>Results</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="content-header">
-                <h1>Clinician Management</h1>
-                <p class="text-muted">View and manage clinician profiles</p>
+    <body>
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="navbar-toggle" id="sidebar-toggle">
+                    <span>☰</span>
+                </button>
+                <span class="navbar-brand">BayesianADHD</span>
             </div>
-
-            <!-- Actions Bar -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <input type="text" class="form-control search-box" id="search-clinicians"
-                                placeholder="Search clinicians..." />
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <button class="btn btn-primary" id="add-clinician-btn">
-                                + Add Clinician
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div
+                style="
+                    margin-left: auto;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                "
+            >
+                <span
+                    style="color: white; font-weight: 500"
+                    id="clinician-name"
+                ></span>
+                <button
+                    id="logout-btn"
+                    style="
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 1px solid white;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.3s ease;
+                    "
+                >
+                    Logout
+                </button>
             </div>
+        </nav>
 
-            <!-- Clinicians Table -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-container">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Occupation</th>
-                                    <th>Assessments</th>
-                                    <th>Last Activity</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clinicians-table-body">
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">
-                                        No clinicians found. Add a clinician to get started.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Clinician Details Modal -->
-    <div class="modal fade" id="clinicianModal" tabindex="-1" aria-labelledby="clinicianModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="clinicianModalLabel">
-                        Clinician Details
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="modal-body-content">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Clinician Modal -->
-    <div class="modal fade" id="addClinicianModal" tabindex="-1" aria-labelledby="addClinicianModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addClinicianModalLabel">Add Clinician</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="add-clinician-form">
-                        <div class="mb-3">
-                            <label class="form-label">First name</label>
-                            <input type="text" id="add-first-name" class="form-control" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Last name</label>
-                            <input type="text" id="add-last-name" class="form-control" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Occupation</label>
-                            <input type="text" id="add-occupation" class="form-control" />
-                        </div>
-                        <div class="mb-3" style="position:relative;">
-                            <label class="form-label">Password</label>
-                            <input type="password" id="add-password" class="form-control" required />
-                            <button type="button" id="toggle-add-password" aria-label="Show password"
-                                style="position:absolute; right:8px; top:38px; background:none; border:none; padding:4px; cursor:pointer;">
-                                <svg id="add-eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
+        <div class="layout-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed" id="sidebar">
+                <nav class="sidebar-nav">
+                    <ul style="padding: 0; margin: 0">
+                        <li class="nav-item">
+                            <a href="/index.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                    ></path>
+                                    <polyline
+                                        points="9 22 9 12 15 12 15 22"
+                                    ></polyline>
                                 </svg>
-                            </button>
-                        </div>
-                        <div class="mb-3" style="position:relative;">
-                            <label class="form-label">Confirm Password</label>
-                            <input type="password" id="add-password-confirm" class="form-control" required />
-                            <button type="button" id="toggle-add-password-confirm" aria-label="Show confirm password"
-                                style="position:absolute; right:8px; top:38px; background:none; border:none; padding:4px; cursor:pointer;">
-                                <svg id="add-confirm-eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
+                                <span>Analysis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/subjects.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                            </button>
-                        </div>
-                        <div id="add-clinician-error" class="text-danger" style="display:none;"></div>
-                    </form>
+                                <span>Subjects</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/clinicians.html" class="nav-link active">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Clinicians</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/results.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    ></path>
+                                    <polyline
+                                        points="14 2 14 8 20 8"
+                                    ></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/about.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path
+                                        d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                    ></path>
+                                    <line
+                                        x1="12"
+                                        y1="17"
+                                        x2="12.01"
+                                        y2="17"
+                                    ></line>
+                                </svg>
+                                <span>About</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="content-header">
+                    <h1>Clinician Management</h1>
+                    <p class="text-muted">View and manage clinician profiles</p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="submit-add-clinician" class="btn btn-primary">Create</button>
+
+                <!-- Actions Bar -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <input
+                                    type="text"
+                                    class="form-control search-box"
+                                    id="search-clinicians"
+                                    placeholder="Search clinicians..."
+                                />
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button
+                                    class="btn btn-primary"
+                                    id="add-clinician-btn"
+                                >
+                                    + Add Clinician
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinicians Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Occupation</th>
+                                        <th>Assessments</th>
+                                        <th>Last Activity</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clinicians-table-body">
+                                    <tr>
+                                        <td
+                                            colspan="5"
+                                            class="text-center text-muted"
+                                        >
+                                            No clinicians found. Add a clinician
+                                            to get started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Clinician Details Modal -->
+        <div
+            class="modal fade"
+            id="clinicianModal"
+            tabindex="-1"
+            aria-labelledby="clinicianModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="clinicianModalLabel">
+                            Clinician Details
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body" id="modal-body-content">
+                        <div class="text-center">
+                            <div
+                                class="spinner-border text-primary"
+                                role="status"
+                            >
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        // Load clinician name from server session and setup logout
-        document.addEventListener('DOMContentLoaded', async function () {
-            try {
-                const resp = await fetch('/api/me');
-                if (!resp.ok) {
-                    // Not authenticated - redirect to login
-                    window.location.href = '/login.html';
-                    return;
-                }
-                const me = await resp.json();
-                const clinicianName = me.clinician_name || 'Clinician';
-                const clinicianOccupation = me.clinician_occupation || '';
-                // keep sessionStorage for backward compatibility
-                sessionStorage.setItem('clinician_name', clinicianName);
-                sessionStorage.setItem('clinician_occupation', clinicianOccupation);
+        <!-- Add Clinician Modal -->
+        <div
+            class="modal fade"
+            id="addClinicianModal"
+            tabindex="-1"
+            aria-labelledby="addClinicianModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addClinicianModalLabel">
+                            Add Clinician
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-clinician-form">
+                            <div class="mb-3">
+                                <label class="form-label">First name</label>
+                                <input
+                                    type="text"
+                                    id="add-first-name"
+                                    class="form-control"
+                                    required
+                                />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Last name</label>
+                                <input
+                                    type="text"
+                                    id="add-last-name"
+                                    class="form-control"
+                                    required
+                                />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Occupation</label>
+                                <input
+                                    type="text"
+                                    id="add-occupation"
+                                    class="form-control"
+                                />
+                            </div>
+                            <div class="mb-3" style="position: relative">
+                                <label class="form-label">Password</label>
+                                <input
+                                    type="password"
+                                    id="add-password"
+                                    class="form-control"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    id="toggle-add-password"
+                                    aria-label="Show password"
+                                    style="
+                                        position: absolute;
+                                        right: 8px;
+                                        top: 38px;
+                                        background: none;
+                                        border: none;
+                                        padding: 4px;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    <svg
+                                        id="add-eye-icon"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path
+                                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                        ></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mb-3" style="position: relative">
+                                <label class="form-label"
+                                    >Confirm Password</label
+                                >
+                                <input
+                                    type="password"
+                                    id="add-password-confirm"
+                                    class="form-control"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    id="toggle-add-password-confirm"
+                                    aria-label="Show confirm password"
+                                    style="
+                                        position: absolute;
+                                        right: 8px;
+                                        top: 38px;
+                                        background: none;
+                                        border: none;
+                                        padding: 4px;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    <svg
+                                        id="add-confirm-eye-icon"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path
+                                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                        ></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div
+                                id="add-clinician-error"
+                                class="text-danger"
+                                style="display: none"
+                            ></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            id="submit-add-clinician"
+                            class="btn btn-primary"
+                        >
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                document.getElementById('clinician-name').textContent = clinicianName;
+        <script>
+            // Load clinician name from server session and setup logout
+            document.addEventListener("DOMContentLoaded", async function () {
+                try {
+                    const resp = await fetch("/api/me");
+                    if (!resp.ok) {
+                        // Not authenticated - redirect to login
+                        window.location.href = "/login.html";
+                        return;
+                    }
+                    const me = await resp.json();
+                    const clinicianName = me.clinician_name || "Clinician";
+                    const clinicianOccupation = me.clinician_occupation || "";
+                    // keep sessionStorage for backward compatibility
+                    sessionStorage.setItem("clinician_name", clinicianName);
+                    sessionStorage.setItem(
+                        "clinician_occupation",
+                        clinicianOccupation
+                    );
 
-                const addClinicianBtn = document.getElementById('add-clinician-btn');
-                if (addClinicianBtn && clinicianName !== 'Admin Clinician') {
-                    addClinicianBtn.style.display = 'none';
-                }
+                    document.getElementById("clinician-name").textContent =
+                        clinicianName;
 
-                document.getElementById('logout-btn').addEventListener('click', async function () {
-                    try {
-                        const response = await fetch('/api/logout', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
+                    const addClinicianBtn =
+                        document.getElementById("add-clinician-btn");
+                    if (
+                        addClinicianBtn &&
+                        clinicianName !== "Admin Clinician"
+                    ) {
+                        addClinicianBtn.style.display = "none";
+                    }
+
+                    document
+                        .getElementById("logout-btn")
+                        .addEventListener("click", async function () {
+                            try {
+                                const response = await fetch("/api/logout", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                });
+
+                                if (response.ok) {
+                                    sessionStorage.clear();
+                                    window.location.href = "/login.html";
+                                } else {
+                                    window.location.href = "/login.html";
+                                }
+                            } catch (error) {
+                                console.error("Error during logout:", error);
+                                window.location.href = "/login.html";
                             }
                         });
-
-                        if (response.ok) {
-                            sessionStorage.clear();
-                            window.location.href = '/login.html';
-                        } else {
-                            window.location.href = '/login.html';
-                        }
-                    } catch (error) {
-                        console.error('Error during logout:', error);
-                        window.location.href = '/login.html';
-                    }
-                });
-            } catch (error) {
-                console.error('Error fetching current clinician:', error);
-                window.location.href = '/login.html';
-            }
-        });
-
-        // Sidebar toggle
-        document.getElementById("sidebar-toggle").addEventListener("click", function () {
-            document.getElementById("sidebar").classList.toggle("collapsed");
-        });
-
-        let allClinicians = [];
-
-        // Load clinicians
-        async function loadClinicians() {
-            try {
-                const response = await fetch("/api/clinicians");
-                allClinicians = await response.json();
-
-                const loggedInClinician = sessionStorage.getItem('clinician_name') || '';
-
-                const tbody = document.getElementById("clinicians-table-body");
-                if (allClinicians.length === 0) {
-                    tbody.innerHTML =
-                        '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
-                    return;
+                } catch (error) {
+                    console.error("Error fetching current clinician:", error);
+                    window.location.href = "/login.html";
                 }
+            });
 
-                tbody.innerHTML = allClinicians
-                    .map(
-                        (clinician) => {
+            // Sidebar toggle
+            document
+                .getElementById("sidebar-toggle")
+                .addEventListener("click", function () {
+                    document
+                        .getElementById("sidebar")
+                        .classList.toggle("collapsed");
+                });
+
+            let allClinicians = [];
+
+            // Load clinicians
+            async function loadClinicians() {
+                try {
+                    const response = await fetch("/api/clinicians");
+                    allClinicians = await response.json();
+
+                    const loggedInClinician =
+                        sessionStorage.getItem("clinician_name") || "";
+
+                    const tbody = document.getElementById(
+                        "clinicians-table-body"
+                    );
+                    if (allClinicians.length === 0) {
+                        tbody.innerHTML =
+                            '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = allClinicians
+                        .map((clinician) => {
                             const isActive = !!clinician.is_active;
-                            const statusClass = isActive ? 'bg-success' : 'bg-secondary';
-                            const statusText = isActive ? 'Active' : 'Inactive';
+                            const statusClass = isActive
+                                ? "bg-success"
+                                : "bg-secondary";
+                            const statusText = isActive ? "Active" : "Inactive";
                             return `
-                        <tr class="clickable-row" onclick="viewClinician(${clinician.id})">
+                        <tr class="clickable-row" onclick="viewClinician(${
+                            clinician.id
+                        })">
                             <td>${clinician.name}</td>
                             <td>${clinician.occupation || "N/A"}</td>
                             <td>${clinician.assessments_count || "0"}</td>
-                            <td>${clinician.last_activity ? new Date(clinician.last_activity).toLocaleString() : "N/A"}</td>
+                            <td>${
+                                clinician.last_activity
+                                    ? new Date(
+                                          clinician.last_activity
+                                      ).toLocaleString()
+                                    : "N/A"
+                            }</td>
                             <td><span class="badge ${statusClass}">${statusText}</span></td>
                         </tr>
                     `;
-                        }
-                    )
-                    .join("");
-            } catch (error) {
-                console.error("Error loading clinicians:", error);
-                alert("Failed to load clinicians");
+                        })
+                        .join("");
+                } catch (error) {
+                    console.error("Error loading clinicians:", error);
+                    alert("Failed to load clinicians");
+                }
             }
-        }
 
-        // View clinician details
-        async function viewClinician(clinicianId) {
-            const modal = new bootstrap.Modal(document.getElementById("clinicianModal"));
-            const modalBody = document.getElementById("modal-body-content");
+            // View clinician details
+            async function viewClinician(clinicianId) {
+                const modal = new bootstrap.Modal(
+                    document.getElementById("clinicianModal")
+                );
+                const modalBody = document.getElementById("modal-body-content");
 
-            // Show loading state
-            modalBody.innerHTML = `
+                // Show loading state
+                modalBody.innerHTML = `
                 <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -588,26 +824,35 @@
                 </div>
             `;
 
-            modal.show();
+                modal.show();
 
-            try {
-                const response = await fetch(`/api/clinicians/${clinicianId}`);
-                const clinician = await response.json();
+                try {
+                    const response = await fetch(
+                        `/api/clinicians/${clinicianId}`
+                    );
+                    const clinician = await response.json();
 
-                if (clinician.error) {
-                    modalBody.innerHTML = `<div class="alert alert-danger">${clinician.error}</div>`;
-                    return;
-                }
+                    if (clinician.error) {
+                        modalBody.innerHTML = `<div class="alert alert-danger">${clinician.error}</div>`;
+                        return;
+                    }
 
-                // Build clinician info
-                const fullName = [clinician.first_name, clinician.middle_name, clinician.last_name]
-                    .filter(Boolean)
-                    .join(" ");
+                    // Build clinician info
+                    const fullName = [
+                        clinician.first_name,
+                        clinician.middle_name,
+                        clinician.last_name,
+                    ]
+                        .filter(Boolean)
+                        .join(" ");
 
-                // Build assessments table
-                let assessmentsHTML = "";
-                if (clinician.assessments && clinician.assessments.length > 0) {
-                    assessmentsHTML = `
+                    // Build assessments table
+                    let assessmentsHTML = "";
+                    if (
+                        clinician.assessments &&
+                        clinician.assessments.length > 0
+                    ) {
+                        assessmentsHTML = `
                         <div class="assessment-table-wrapper">
                             <div class="table-container">
                                 <table class="table table-sm assessment-table">
@@ -623,32 +868,48 @@
                                     </thead>
                                     <tbody>
                                         ${clinician.assessments
-                            .map((assessment) => {
-                                const badgeClass = assessment.predicted_class === 'Combined / C (ADHD-C)' || assessment.predicted_class === 'Hyperactive-Impulsive (ADHD-HI)' || assessment.predicted_class === 'Inattentive (ADHD-I)' ? 'badge-adhd' : 'badge-non-adhd';
-                                const confidence = (assessment.confidence_score * 100).toFixed(2);
-                                const date = new Date(assessment.inferenced_at).toLocaleString();
-                                return `
+                                            .map((assessment) => {
+                                                const badgeClass =
+                                                    assessment.predicted_class ===
+                                                        "Combined / C (ADHD-C)" ||
+                                                    assessment.predicted_class ===
+                                                        "Hyperactive-Impulsive (ADHD-HI)" ||
+                                                    assessment.predicted_class ===
+                                                        "Inattentive (ADHD-I)"
+                                                        ? "badge-adhd"
+                                                        : "badge-non-adhd";
+                                                const confidence = (
+                                                    assessment.confidence_score *
+                                                    100
+                                                ).toFixed(2);
+                                                const date = new Date(
+                                                    assessment.inferenced_at
+                                                ).toLocaleString();
+                                                return `
                                     <tr>
                                     <td>${assessment.subject_code}</td>
                                     <td>${assessment.age || "N/A"}</td>
                                     <td>${assessment.gender || "N/A"}</td>
-                                    <td><span class="badge ${badgeClass}">${assessment.predicted_class}</span></td>
+                                    <td><span class="badge ${badgeClass}">${
+                                                    assessment.predicted_class
+                                                }</span></td>
                                     <td>${confidence}%</td>
                                     <td>${date}</td>
                                     </tr>
                                 `;
-                            })
-                            .join("")}
+                                            })
+                                            .join("")}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     `;
-                } else {
-                    assessmentsHTML = '<p class="text-muted">No assessments found.</p>';
-                }
+                    } else {
+                        assessmentsHTML =
+                            '<p class="text-muted">No assessments found.</p>';
+                    }
 
-                modalBody.innerHTML = `
+                    modalBody.innerHTML = `
                     <div class="info-section">
                         <h6>Clinician Information</h6>
                         <div class="info-row">
@@ -657,11 +918,15 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">Occupation</span>
-                            <span class="info-value">${clinician.occupation || "N/A"}</span>
+                            <span class="info-value">${
+                                clinician.occupation || "N/A"
+                            }</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Total Assessments</span>
-                            <span class="info-value">${clinician.assessments.length}</span>
+                            <span class="info-value">${
+                                clinician.assessments.length
+                            }</span>
                         </div>
                     </div>
 
@@ -670,125 +935,169 @@
                         ${assessmentsHTML}
                     </div>
                 `;
-            } catch (error) {
-                console.error("Error loading clinician details:", error);
-                modalBody.innerHTML = `<div class="alert alert-danger">Failed to load clinician details</div>`;
-            }
-        }
-
-        // Search functionality
-        document.getElementById("search-clinicians").addEventListener("input", function (e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll("#clinicians-table-body tr");
-
-            rows.forEach((row) => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? "" : "none";
-            });
-        });
-
-        // Add clinician functionality - show modal for admin
-        document.getElementById("add-clinician-btn").addEventListener("click", function () {
-            const clinicianName = sessionStorage.getItem('clinician_name') || 'Clinician';
-            if (clinicianName !== 'Admin Clinician') {
-                alert('Only the administrator can add clinicians.');
-                return;
+                } catch (error) {
+                    console.error("Error loading clinician details:", error);
+                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load clinician details</div>`;
+                }
             }
 
-            const modalEl = document.getElementById('addClinicianModal');
-            const modal = new bootstrap.Modal(modalEl);
-            // clear form
-            document.getElementById('add-first-name').value = '';
-            document.getElementById('add-last-name').value = '';
-            document.getElementById('add-occupation').value = '';
-            document.getElementById('add-password').value = '';
-            document.getElementById('add-clinician-error').style.display = 'none';
-            modal.show();
-        });
+            // Search functionality
+            document
+                .getElementById("search-clinicians")
+                .addEventListener("input", function (e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = document.querySelectorAll(
+                        "#clinicians-table-body tr"
+                    );
 
-        // Toggle add-clinician password visibility (both password and confirm)
-        (function () {
-            function toggleAddPassword() {
-                const pwd = document.getElementById('add-password');
-                const pwdConfirm = document.getElementById('add-password-confirm');
-                const eye = document.getElementById('add-eye-icon');
-                const confirmEye = document.getElementById('add-confirm-eye-icon');
-                const show = pwd.type === 'password';
-                pwd.type = show ? 'text' : 'password';
-                if (pwdConfirm) pwdConfirm.type = show ? 'text' : 'password';
-                const eyeOff = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/>';
-                const eyeOn = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-                if (eye) eye.innerHTML = show ? eyeOff : eyeOn;
-                if (confirmEye) confirmEye.innerHTML = show ? eyeOff : eyeOn;
-            }
-
-            const btn = document.getElementById('toggle-add-password');
-            if (btn) btn.addEventListener('click', toggleAddPassword);
-            const btn2 = document.getElementById('toggle-add-password-confirm');
-            if (btn2) btn2.addEventListener('click', toggleAddPassword);
-        })();
-
-        // Submit add clinician form
-        document.getElementById('submit-add-clinician').addEventListener('click', async function () {
-            const firstName = document.getElementById('add-first-name').value.trim();
-            const lastName = document.getElementById('add-last-name').value.trim();
-            const occupation = document.getElementById('add-occupation').value.trim();
-            const password = document.getElementById('add-password').value;
-            const passwordConfirmElem = document.getElementById('add-password-confirm');
-            const passwordConfirm = passwordConfirmElem ? passwordConfirmElem.value : '';
-            const errorDiv = document.getElementById('add-clinician-error');
-
-            if (!firstName || !lastName || !password) {
-                errorDiv.textContent = 'First name, last name and password are required.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            if (password !== passwordConfirm) {
-                errorDiv.textContent = 'Password and confirmation do not match.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const resp = await fetch('/api/clinicians', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        first_name: firstName,
-                        last_name: lastName,
-                        middle_name: null,
-                        occupation: occupation,
-                        password: password
-                    })
+                    rows.forEach((row) => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm)
+                            ? ""
+                            : "none";
+                    });
                 });
 
-                const data = await resp.json();
-                if (!resp.ok) {
-                    errorDiv.textContent = data.error || 'Failed to add clinician.';
-                    errorDiv.style.display = 'block';
-                    return;
+            // Add clinician functionality - show modal for admin
+            document
+                .getElementById("add-clinician-btn")
+                .addEventListener("click", function () {
+                    const clinicianName =
+                        sessionStorage.getItem("clinician_name") || "Clinician";
+                    if (clinicianName !== "Admin Clinician") {
+                        alert("Only the administrator can add clinicians.");
+                        return;
+                    }
+
+                    const modalEl =
+                        document.getElementById("addClinicianModal");
+                    const modal = new bootstrap.Modal(modalEl);
+                    // clear form
+                    document.getElementById("add-first-name").value = "";
+                    document.getElementById("add-last-name").value = "";
+                    document.getElementById("add-occupation").value = "";
+                    document.getElementById("add-password").value = "";
+                    document.getElementById(
+                        "add-clinician-error"
+                    ).style.display = "none";
+                    modal.show();
+                });
+
+            // Toggle add-clinician password visibility (both password and confirm)
+            (function () {
+                function toggleAddPassword() {
+                    const pwd = document.getElementById("add-password");
+                    const pwdConfirm = document.getElementById(
+                        "add-password-confirm"
+                    );
+                    const eye = document.getElementById("add-eye-icon");
+                    const confirmEye = document.getElementById(
+                        "add-confirm-eye-icon"
+                    );
+                    const show = pwd.type === "password";
+                    pwd.type = show ? "text" : "password";
+                    if (pwdConfirm)
+                        pwdConfirm.type = show ? "text" : "password";
+                    const eyeOff =
+                        '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/>';
+                    const eyeOn =
+                        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    if (eye) eye.innerHTML = show ? eyeOff : eyeOn;
+                    if (confirmEye)
+                        confirmEye.innerHTML = show ? eyeOff : eyeOn;
                 }
 
-                // Success
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addClinicianModal'));
-                modal.hide();
-                alert('Clinician added successfully!');
-                loadClinicians();
-            } catch (err) {
-                console.error('Error adding clinician:', err);
-                errorDiv.textContent = 'An error occurred while adding clinician.';
-                errorDiv.style.display = 'block';
-            }
-        });
+                const btn = document.getElementById("toggle-add-password");
+                if (btn) btn.addEventListener("click", toggleAddPassword);
+                const btn2 = document.getElementById(
+                    "toggle-add-password-confirm"
+                );
+                if (btn2) btn2.addEventListener("click", toggleAddPassword);
+            })();
 
-        // Initialize
-        loadClinicians();
-    </script>
+            // Submit add clinician form
+            document
+                .getElementById("submit-add-clinician")
+                .addEventListener("click", async function () {
+                    const firstName = document
+                        .getElementById("add-first-name")
+                        .value.trim();
+                    const lastName = document
+                        .getElementById("add-last-name")
+                        .value.trim();
+                    const occupation = document
+                        .getElementById("add-occupation")
+                        .value.trim();
+                    const password =
+                        document.getElementById("add-password").value;
+                    const passwordConfirmElem = document.getElementById(
+                        "add-password-confirm"
+                    );
+                    const passwordConfirm = passwordConfirmElem
+                        ? passwordConfirmElem.value
+                        : "";
+                    const errorDiv = document.getElementById(
+                        "add-clinician-error"
+                    );
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
-</body>
+                    if (!firstName || !lastName || !password) {
+                        errorDiv.textContent =
+                            "First name, last name and password are required.";
+                        errorDiv.style.display = "block";
+                        return;
+                    }
 
+                    if (password !== passwordConfirm) {
+                        errorDiv.textContent =
+                            "Password and confirmation do not match.";
+                        errorDiv.style.display = "block";
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch("/api/clinicians", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                first_name: firstName,
+                                last_name: lastName,
+                                middle_name: null,
+                                occupation: occupation,
+                                password: password,
+                            }),
+                        });
+
+                        const data = await resp.json();
+                        if (!resp.ok) {
+                            errorDiv.textContent =
+                                data.error || "Failed to add clinician.";
+                            errorDiv.style.display = "block";
+                            return;
+                        }
+
+                        // Success
+                        const modal = bootstrap.Modal.getInstance(
+                            document.getElementById("addClinicianModal")
+                        );
+                        modal.hide();
+                        alert("Clinician added successfully!");
+                        loadClinicians();
+                    } catch (err) {
+                        console.error("Error adding clinician:", err);
+                        errorDiv.textContent =
+                            "An error occurred while adding clinician.";
+                        errorDiv.style.display = "block";
+                    }
+                });
+
+            // Initialize
+            loadClinicians();
+        </script>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+    </body>
 </html>

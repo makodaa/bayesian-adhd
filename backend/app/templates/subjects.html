@@ -1,500 +1,636 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Subject Management - BayesianADHD</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+            crossorigin="anonymous"
+        />
+        <style>
+            :root {
+                --primary-color: #5a6c7d;
+                --secondary-color: #6c9bd1;
+                --sidebar-width: 250px;
+                --sidebar-collapsed-width: 60px;
+            }
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Subject Management - BayesianADHD</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
-    <style>
-        :root {
-            --primary-color: #5a6c7d;
-            --secondary-color: #6c9bd1;
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 60px;
-        }
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f7fa;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
 
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
+            .navbar {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                padding: 0 1rem;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: 70px;
+                display: flex;
+                align-items: center;
+            }
 
-        .navbar {
-            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            padding: 0 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: 70px;
-            display: flex;
-            align-items: center;
-        }
+            .navbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+            .navbar-brand {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: white !important;
+                margin: 0;
+            }
 
-        .navbar-brand {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: white !important;
-            margin: 0;
-        }
+            .navbar-toggle {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: white;
+                padding: 0.5rem;
+                margin: 0;
+                line-height: 1;
+                transition: opacity 0.2s;
+            }
 
-        .navbar-toggle {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: white;
-            padding: 0.5rem;
-            margin: 0;
-            line-height: 1;
-            transition: opacity 0.2s;
-        }
+            .navbar-toggle:hover {
+                opacity: 0.8;
+            }
 
-        .navbar-toggle:hover {
-            opacity: 0.8;
-        }
+            .layout-wrapper {
+                display: flex;
+                height: calc(100vh - 70px);
+                margin-top: 70px;
+                width: 100%;
+            }
 
-        .layout-wrapper {
-            display: flex;
-            height: calc(100vh - 70px);
-            margin-top: 70px;
-            width: 100%;
-        }
+            .sidebar {
+                width: var(--sidebar-width);
+                min-width: var(--sidebar-width);
+                background: white;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                overflow-y: auto;
+                overflow-x: hidden;
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+            }
 
-        .sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            background: white;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed-width);
+                min-width: var(--sidebar-collapsed-width);
+            }
 
-        .sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
-            min-width: var(--sidebar-collapsed-width);
-        }
+            .sidebar-nav {
+                flex: 1;
+                padding: 1.5rem 0;
+            }
 
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-        }
+            .nav-item {
+                list-style: none;
+            }
 
-        .nav-item {
-            list-style: none;
-        }
+            .nav-link {
+                display: flex;
+                align-items: center;
+                padding: 0.875rem 1rem;
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 500;
+            }
 
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.875rem 1rem;
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
+            .nav-link:hover {
+                background: #f8f9fa;
+            }
 
-        .nav-link:hover {
-            background: #f8f9fa;
-        }
+            .nav-link.active {
+                background: #e9ecef;
+                border-right: 3px solid var(--secondary-color);
+                font-weight: 600;
+            }
 
-        .nav-link.active {
-            background: #e9ecef;
-            border-right: 3px solid var(--secondary-color);
-            font-weight: 600;
-        }
+            .nav-link svg {
+                min-width: 24px;
+                margin-right: 1rem;
+                transition: margin 0.3s ease;
+            }
 
-        .nav-link svg {
-            min-width: 24px;
-            margin-right: 1rem;
-            transition: margin 0.3s ease;
-        }
+            .nav-link span {
+                opacity: 1;
+                transition: opacity 0.2s ease;
+            }
 
-        .nav-link span {
-            opacity: 1;
-            transition: opacity 0.2s ease;
-        }
+            .sidebar.collapsed .nav-link {
+                justify-content: center;
+                padding: 0.875rem 0;
+            }
 
-        .sidebar.collapsed .nav-link {
-            justify-content: center;
-            padding: 0.875rem 0;
-        }
+            .sidebar.collapsed .nav-link svg {
+                margin-right: 0;
+            }
 
-        .sidebar.collapsed .nav-link svg {
-            margin-right: 0;
-        }
+            .sidebar.collapsed .nav-link span {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+            }
 
-        .sidebar.collapsed .nav-link span {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-        }
+            .main-content {
+                flex: 1;
+                padding: 2rem;
+                overflow-y: auto;
+                overflow-x: hidden;
+                min-width: 0;
+            }
 
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-width: 0;
-        }
+            .content-header {
+                margin-bottom: 2rem;
+            }
 
-        .content-header {
-            margin-bottom: 2rem;
-        }
+            .content-header h1 {
+                font-size: 2rem;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
 
-        .content-header h1 {
-            font-size: 2rem;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
+            .card {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                margin-bottom: 1.5rem;
+            }
 
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
-        }
+            .table-container {
+                overflow-x: auto;
+            }
 
-        .table-container {
-            overflow-x: auto;
-        }
+            .btn-primary {
+                background-color: var(--secondary-color);
+                border: none;
+            }
 
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border: none;
-        }
+            .btn-primary:hover {
+                background-color: #5a8bc4;
+            }
 
-        .btn-primary:hover {
-            background-color: #5a8bc4;
-        }
+            .search-box {
+                max-width: 400px;
+            }
 
-        .search-box {
-            max-width: 400px;
-        }
+            .badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.85rem;
+            }
 
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-        }
+            .badge-adhd {
+                background-color: #c9846a;
+                color: white;
+            }
 
-        .badge-adhd {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-        }
+            .badge-non-adhd {
+                background-color: #6c9bd1;
+                color: white;
+            }
 
-        .badge-non-adhd {
-            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-            color: white;
-        }
+            .clickable-row {
+                cursor: pointer;
+            }
 
-        .clickable-row {
-            cursor: pointer;
-        }
+            .clickable-row:hover {
+                background-color: #f8f9fa;
+            }
 
-        .clickable-row:hover {
-            background-color: #f8f9fa;
-        }
+            .modal-header {
+                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
+                color: white;
+            }
 
-        .modal-header {
-            background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-            color: white;
-        }
+            .modal-header .btn-close {
+                filter: brightness(0) invert(1);
+            }
 
-        .modal-header .btn-close {
-            filter: brightness(0) invert(1);
-        }
+            .info-section {
+                margin-bottom: 1.5rem;
+            }
 
-        .info-section {
-            margin-bottom: 1.5rem;
-        }
+            .info-section h6 {
+                color: var(--primary-color);
+                font-weight: 600;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #e9ecef;
+            }
 
-        .info-section h6 {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e9ecef;
-        }
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
+            .info-row:last-child {
+                border-bottom: none;
+            }
 
-        .info-row:last-child {
-            border-bottom: none;
-        }
+            .info-label {
+                font-weight: 500;
+                color: #6c757d;
+            }
 
-        .info-label {
-            font-weight: 500;
-            color: #6c757d;
-        }
+            .info-value {
+                color: var(--primary-color);
+                font-weight: 500;
+            }
 
-        .info-value {
-            color: var(--primary-color);
-            font-weight: 500;
-        }
+            .assessment-table {
+                margin-top: 1rem;
+            }
 
-        .assessment-table {
-            margin-top: 1rem;
-        }
+            .assessment-table th {
+                background-color: #f8f9fa;
+                color: var(--primary-color);
+                font-weight: 600;
+            }
 
-        .assessment-table th {
-            background-color: #f8f9fa;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
+            .assessment-table-wrapper {
+                max-height: 180px;
+                overflow-y: auto;
+            }
+        </style>
+    </head>
 
-        .assessment-table-wrapper {
-            max-height: 180px;
-            overflow-y: auto;
-        }
-    </style>
-</head>
-
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-left">
-            <button class="navbar-toggle" id="sidebar-toggle">
-                <span>☰</span>
-            </button>
-            <span class="navbar-brand">BayesianADHD</span>
-        </div>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
-            <span style="color: white; font-weight: 500;" id="clinician-name"></span>
-            <button id="logout-btn"
-                style="background: rgba(255, 255, 255, 0.2); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">
-                Logout
-            </button>
-        </div>
-    </nav>
-
-    <div class="layout-wrapper">
-        <!-- Sidebar -->
-        <aside class="sidebar collapsed" id="sidebar">
-            <nav class="sidebar-nav">
-                <ul style="padding: 0; margin: 0">
-                    <li class="nav-item">
-                        <a href="/index.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                            </svg>
-                            <span>Analysis</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/subjects.html" class="nav-link active">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            <span>Subjects</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/clinicians.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span>Clinicians</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/results.html" class="nav-link">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <span>Results</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="content-header">
-                <h1>Subject Management</h1>
-                <p class="text-muted">View and manage subject records</p>
+    <body>
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="navbar-toggle" id="sidebar-toggle">
+                    <span>☰</span>
+                </button>
+                <span class="navbar-brand">BayesianADHD</span>
             </div>
+            <div
+                style="
+                    margin-left: auto;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                "
+            >
+                <span
+                    style="color: white; font-weight: 500"
+                    id="clinician-name"
+                ></span>
+                <button
+                    id="logout-btn"
+                    style="
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 1px solid white;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.3s ease;
+                    "
+                >
+                    Logout
+                </button>
+            </div>
+        </nav>
 
-            <!-- Actions Bar -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <input type="text" class="form-control search-box" id="search-subjects"
-                                placeholder="Search subjects..." />
+        <div class="layout-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed" id="sidebar">
+                <nav class="sidebar-nav">
+                    <ul style="padding: 0; margin: 0">
+                        <li class="nav-item">
+                            <a href="/index.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                    ></path>
+                                    <polyline
+                                        points="9 22 9 12 15 12 15 22"
+                                    ></polyline>
+                                </svg>
+                                <span>Analysis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/subjects.html" class="nav-link active">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Subjects</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/clinicians.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                                    ></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Clinicians</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/results.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    ></path>
+                                    <polyline
+                                        points="14 2 14 8 20 8"
+                                    ></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/about.html" class="nav-link">
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path
+                                        d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                    ></path>
+                                    <line
+                                        x1="12"
+                                        y1="17"
+                                        x2="12.01"
+                                        y2="17"
+                                    ></line>
+                                </svg>
+                                <span>About</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="content-header">
+                    <h1>Subject Management</h1>
+                    <p class="text-muted">View and manage subject records</p>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <input
+                                    type="text"
+                                    class="form-control search-box"
+                                    id="search-subjects"
+                                    placeholder="Search subjects..."
+                                />
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button
+                                    class="btn btn-primary"
+                                    id="add-subject-btn"
+                                >
+                                    + Add Subject
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-6 text-end">
-                            <button class="btn btn-primary" id="add-subject-btn">
-                                + Add Subject
-                            </button>
+                    </div>
+                </div>
+
+                <!-- Subjects Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Code</th>
+                                        <th>Age</th>
+                                        <th>Gender</th>
+                                        <th>Recordings</th>
+                                        <th>Assessment Result</th>
+                                        <th>Last Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjects-table-body">
+                                    <tr>
+                                        <td
+                                            colspan="6"
+                                            class="text-center text-muted"
+                                        >
+                                            No subjects found. Add a subject to
+                                            get started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Subject Details Modal -->
+        <div
+            class="modal fade"
+            id="subjectModal"
+            tabindex="-1"
+            aria-labelledby="subjectModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="subjectModalLabel">
+                            Subject Details
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body" id="modal-body-content">
+                        <div class="text-center">
+                            <div
+                                class="spinner-border text-primary"
+                                role="status"
+                            >
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Subjects Table -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-container">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Subject Code</th>
-                                    <th>Age</th>
-                                    <th>Gender</th>
-                                    <th>Recordings</th>
-                                    <th>Assessment Result</th>
-                                    <th>Last Updated</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subjects-table-body">
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">
-                                        No subjects found. Add a subject to get started.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Subject Details Modal -->
-    <div class="modal fade" id="subjectModal" tabindex="-1" aria-labelledby="subjectModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="subjectModalLabel">
-                        Subject Details
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="modal-body-content">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
 
-    <script>
-        // Load clinician name and setup logout
-        document.addEventListener('DOMContentLoaded', function () {
-            const clinicianName = sessionStorage.getItem('clinician_name') || 'Clinician';
-            document.getElementById('clinician-name').textContent = clinicianName;
+        <script>
+            // Load clinician name and setup logout
+            document.addEventListener("DOMContentLoaded", function () {
+                const clinicianName =
+                    sessionStorage.getItem("clinician_name") || "Clinician";
+                document.getElementById("clinician-name").textContent =
+                    clinicianName;
 
-            document.getElementById('logout-btn').addEventListener('click', async function () {
-                try {
-                    const response = await fetch('/api/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
+                document
+                    .getElementById("logout-btn")
+                    .addEventListener("click", async function () {
+                        try {
+                            const response = await fetch("/api/logout", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                            });
+
+                            if (response.ok) {
+                                sessionStorage.clear();
+                                window.location.href = "/login.html";
+                            } else {
+                                window.location.href = "/login.html";
+                            }
+                        } catch (error) {
+                            console.error("Error during logout:", error);
+                            window.location.href = "/login.html";
                         }
                     });
-
-                    if (response.ok) {
-                        sessionStorage.clear();
-                        window.location.href = '/login.html';
-                    } else {
-                        window.location.href = '/login.html';
-                    }
-                } catch (error) {
-                    console.error('Error during logout:', error);
-                    window.location.href = '/login.html';
-                }
             });
-        });
 
-        // Sidebar toggle
-        document.getElementById("sidebar-toggle").addEventListener("click", function () {
-            document.getElementById("sidebar").classList.toggle("collapsed");
-        });
+            // Sidebar toggle
+            document
+                .getElementById("sidebar-toggle")
+                .addEventListener("click", function () {
+                    document
+                        .getElementById("sidebar")
+                        .classList.toggle("collapsed");
+                });
 
-        let allSubjects = [];
+            let allSubjects = [];
 
-        // Load subjects
-        async function loadSubjects() {
-            try {
-                const response = await fetch("/api/subjects");
-                allSubjects = await response.json();
+            // Load subjects
+            async function loadSubjects() {
+                try {
+                    const response = await fetch("/api/subjects");
+                    allSubjects = await response.json();
 
-                const tbody = document.getElementById("subjects-table-body");
-                if (allSubjects.length === 0) {
-                    tbody.innerHTML =
-                        '<tr><td colspan="6" class="text-center text-muted">No subjects found.</td></tr>';
-                    return;
-                }
+                    const tbody = document.getElementById(
+                        "subjects-table-body"
+                    );
+                    if (allSubjects.length === 0) {
+                        tbody.innerHTML =
+                            '<tr><td colspan="6" class="text-center text-muted">No subjects found.</td></tr>';
+                        return;
+                    }
 
-                tbody.innerHTML = allSubjects
-                    .map((subject) => {
-                        const badgeClass = subject.last_result === 'Combined / C (ADHD-C)' || subject.last_result === 'Hyperactive-Impulsive (ADHD-HI)' || subject.last_result === 'Inattentive (ADHD-I)' ? 'badge-adhd' : 'badge-non-adhd';
-                        return `
-                            <tr class="clickable-row" onclick="viewSubject(${subject.id})">
+                    tbody.innerHTML = allSubjects
+                        .map((subject) => {
+                            const badgeClass =
+                                subject.last_result ===
+                                    "Combined / C (ADHD-C)" ||
+                                subject.last_result ===
+                                    "Hyperactive-Impulsive (ADHD-HI)" ||
+                                subject.last_result === "Inattentive (ADHD-I)"
+                                    ? "badge-adhd"
+                                    : "badge-non-adhd";
+                            return `
+                            <tr class="clickable-row" onclick="viewSubject(${
+                                subject.id
+                            })">
                                 <td>${subject.subject_code}</td>
                                 <td>${subject.age || "N/A"}</td>
                                 <td>${subject.gender || "N/A"}</td>
                                 <td>${subject.recording_count || 0}</td>
-                                <td><span class="badge ${badgeClass}">${subject.last_result || 'N/A'}</span></td>
-                                <td>${new Date(subject.last_update).toLocaleString() || 'N/A'}</td>
+                                <td><span class="badge ${badgeClass}">${
+                                subject.last_result || "N/A"
+                            }</span></td>
+                                <td>${
+                                    new Date(
+                                        subject.last_update
+                                    ).toLocaleString() || "N/A"
+                                }</td>
                             </tr>
                         `;
-                    })
-                    .join("");
-            } catch (error) {
-                console.error("Error loading subjects:", error);
-                alert("Failed to load subjects");
+                        })
+                        .join("");
+                } catch (error) {
+                    console.error("Error loading subjects:", error);
+                    alert("Failed to load subjects");
+                }
             }
-        }
 
-        // View subject details
-        async function viewSubject(subjectId) {
-            const modal = new bootstrap.Modal(document.getElementById("subjectModal"));
-            const modalBody = document.getElementById("modal-body-content");
+            // View subject details
+            async function viewSubject(subjectId) {
+                const modal = new bootstrap.Modal(
+                    document.getElementById("subjectModal")
+                );
+                const modalBody = document.getElementById("modal-body-content");
 
-            // Show loading state
-            modalBody.innerHTML = `
+                // Show loading state
+                modalBody.innerHTML = `
                 <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -502,22 +638,24 @@
                 </div>
             `;
 
-            modal.show();
+                modal.show();
 
-            try {
-                const response = await fetch(`/api/subjects/${subjectId}/assessments`);
-                const subject = await response.json();
+                try {
+                    const response = await fetch(
+                        `/api/subjects/${subjectId}/assessments`
+                    );
+                    const subject = await response.json();
 
-                if (subject.error) {
-                    modalBody.innerHTML = `<div class="alert alert-danger">${subject.error}</div>`;
-                    return;
-                }
+                    if (subject.error) {
+                        modalBody.innerHTML = `<div class="alert alert-danger">${subject.error}</div>`;
+                        return;
+                    }
 
-                // Build assessments table
-                let assessmentsHTML = "";
-                if (subject.assessments && subject.assessments.length > 0) {
-                    // In the viewSubject function, update the assessments table:
-                    assessmentsHTML = `
+                    // Build assessments table
+                    let assessmentsHTML = "";
+                    if (subject.assessments && subject.assessments.length > 0) {
+                        // In the viewSubject function, update the assessments table:
+                        assessmentsHTML = `
                         <div class="assessment-table-wrapper">
                             <div class="table-container">
                                 <table class="table table-sm assessment-table">
@@ -531,47 +669,74 @@
                                     </thead>
                                     <tbody>
                                         ${subject.assessments
-                            .map((assessment) => {
-                                const badgeClass = assessment.predicted_class === "Combined / C (ADHD-C)" || assessment.predicted_class === "Hyperactive-Impulsive (ADHD-HI)" || assessment.predicted_class === "Inattentive (ADHD-I)" ? "badge-adhd" : "badge-non-adhd";
-                                const confidence = (assessment.confidence_score * 100).toFixed(2);
-                                const date = new Date(assessment.inferenced_at).toLocaleString();
-                                return `
+                                            .map((assessment) => {
+                                                const badgeClass =
+                                                    assessment.predicted_class ===
+                                                        "Combined / C (ADHD-C)" ||
+                                                    assessment.predicted_class ===
+                                                        "Hyperactive-Impulsive (ADHD-HI)" ||
+                                                    assessment.predicted_class ===
+                                                        "Inattentive (ADHD-I)"
+                                                        ? "badge-adhd"
+                                                        : "badge-non-adhd";
+                                                const confidence = (
+                                                    assessment.confidence_score *
+                                                    100
+                                                ).toFixed(2);
+                                                const date = new Date(
+                                                    assessment.inferenced_at
+                                                ).toLocaleString();
+                                                return `
                                         <tr>
-                                            <td><span class="badge ${badgeClass}">${assessment.predicted_class}</span></td>
+                                            <td><span class="badge ${badgeClass}">${
+                                                    assessment.predicted_class
+                                                }</span></td>
                                             <td>${confidence}%</td>
-                                            <td>${assessment.clinician_name || "N/A"}</td>
+                                            <td>${
+                                                assessment.clinician_name ||
+                                                "N/A"
+                                            }</td>
                                             <td>${date}</td>
                                         </tr>
                                     `;
-                            })
-                            .join("")}
+                                            })
+                                            .join("")}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     `;
-                } else {
-                    assessmentsHTML = '<p class="text-muted">No assessments found.</p>';
-                }
+                    } else {
+                        assessmentsHTML =
+                            '<p class="text-muted">No assessments found.</p>';
+                    }
 
-                modalBody.innerHTML = `
+                    modalBody.innerHTML = `
                     <div class="info-section">
                         <h6>Subject Information</h6>
                         <div class="info-row">
                             <span class="info-label">Subject Code</span>
-                            <span class="info-value">${subject.subject_code}</span>
+                            <span class="info-value">${
+                                subject.subject_code
+                            }</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Age</span>
-                            <span class="info-value">${subject.age || "N/A"}</span>
+                            <span class="info-value">${
+                                subject.age || "N/A"
+                            }</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Gender</span>
-                            <span class="info-value">${subject.gender || "N/A"}</span>
+                            <span class="info-value">${
+                                subject.gender || "N/A"
+                            }</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Total Assessments</span>
-                            <span class="info-value">${subject.assessments.length}</span>
+                            <span class="info-value">${
+                                subject.assessments.length
+                            }</span>
                         </div>
                     </div>
 
@@ -580,35 +745,44 @@
                         ${assessmentsHTML}
                     </div>
                 `;
-            } catch (error) {
-                console.error("Error loading subject details:", error);
-                modalBody.innerHTML = `<div class="alert alert-danger">Failed to load subject details</div>`;
+                } catch (error) {
+                    console.error("Error loading subject details:", error);
+                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load subject details</div>`;
+                }
             }
-        }
 
-        // Search functionality
-        document.getElementById("search-subjects").addEventListener("input", function (e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll("#subjects-table-body tr");
+            // Search functionality
+            document
+                .getElementById("search-subjects")
+                .addEventListener("input", function (e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = document.querySelectorAll(
+                        "#subjects-table-body tr"
+                    );
 
-            rows.forEach((row) => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? "" : "none";
-            });
-        });
+                    rows.forEach((row) => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm)
+                            ? ""
+                            : "none";
+                    });
+                });
 
-        // Add subject functionality
-        document.getElementById("add-subject-btn").addEventListener("click", function () {
-            window.location.href = "/";
-        });
+            // Add subject functionality
+            document
+                .getElementById("add-subject-btn")
+                .addEventListener("click", function () {
+                    window.location.href = "/";
+                });
 
-        // Initialize
-        loadSubjects();
-    </script>
+            // Initialize
+            loadSubjects();
+        </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
-</body>
-
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+    </body>
 </html>
