@@ -314,9 +314,9 @@ def predict():
         logger.info(f"Getting or creating subject: {subject_code}, age={age}, gender={gender}")
         subject_id = subject_service.get_or_create_subject(subject_code, int(age), gender)
 
-        # Get or create clinician if provided
-        logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
-        clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
+        # Use logged-in clinician from session for result creation
+        clinician_id = session.get('clinician_id')
+        logger.info(f"Using session clinician_id: {clinician_id}")
         
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
@@ -345,12 +345,6 @@ def predict():
             'band_ratios': band_powers.get('band_ratios', {})
         }
         
-        # Store clinician info if provided
-        clinician_id = None
-        if clinician_name:
-            logger.info(f"Getting or creating clinician: {clinician_name}, {occupation}")
-            clinician_id = clinician_service.get_or_create_clinician(clinician_name, occupation)
-            
         logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']:.4f})")
         return jsonify({
             'prediction': True,
@@ -490,18 +484,13 @@ def generate_result_pdf(result_id):
         if not result:
             return jsonify({'error': 'Result not found'}), 404
         
-        # Get current clinician info from session
-        clinician_id = session.get('clinician_id')
-        clinician_data = {}
-        if clinician_id:
-            clinician = clinicians_repo.get_by_id(clinician_id)
-            if clinician:
-                clinician_data = {
-                    'first_name': clinician.get('first_name', ''),
-                    'middle_name': clinician.get('middle_name', ''),
-                    'last_name': clinician.get('last_name', ''),
-                    'occupation': clinician.get('occupation', '')
-                }
+        # Use clinician from result record (form-selected clinician)
+        clinician_data = {
+            'first_name': result.get('clinician_first_name', ''),
+            'middle_name': result.get('clinician_middle_name', ''),
+            'last_name': result.get('clinician_last_name', ''),
+            'occupation': result.get('clinician_occupation', '')
+        }
         
         # Generate PDF
         pdf_bytes = pdf_service.generate_report(result, clinician_data)
