@@ -781,19 +781,17 @@
                         <!-- Model Prediction -->
                         <div id="prediction-result" class="mb-4"></div>
                         <!-- Band Powers and Ratios -->
-                        <div class="row">
-                            <div class="col-md-7">
-                                <h6 class="mb-3" style="font-weight: 600">
-                                    Relative Band Power
-                                </h6>
-                                <div id="band-power-bars"></div>
-                            </div>
-                            <div class="col-md-5">
-                                <h6 class="mb-3" style="font-weight: 600">
-                                    Clinical Ratios
-                                </h6>
-                                <div id="clinical-ratios"></div>
-                            </div>
+                        <div>
+                            <h6 class="mb-3" style="font-weight: 600">
+                                Relative Band Power
+                            </h6>
+                            <div id="band-power-bars"></div>
+                        </div>
+                        <div class="mt-4">
+                            <h6 class="mb-3" style="font-weight: 600">
+                                Clinical Ratios
+                            </h6>
+                            <div id="clinical-ratios"></div>
                         </div>
                         <div id="analysis-disclaimers">
                             <div id="persistent-disclaimer" class="alert-custom"
@@ -1211,11 +1209,23 @@
                     return;
                 }
 
+                // Normative values for comparison (in percentages)
+                const normativeRanges = {
+                    'delta': '15 – 30%',
+                    'theta': '15 – 25%',
+                    'alpha': '25 – 35%',
+                    'fast_alpha': '4 – 7%',
+                    'beta': '10 – 15%',
+                    'high_beta': '3 – 5%',
+                    'gamma': '5 – 10%'
+                };
+
                 let html = "";
                 bands.forEach((band) => {
                     const percentage = (
                         displayData.average_relative_power[band] * 100
                     ).toFixed(1);
+                    const normative = normativeRanges[band.toLowerCase()] || normativeRanges[band] || 'N/A';
                     html += `
                         <div class="band-bar">
                             <div class="band-label">${band.charAt(0).toUpperCase() + band.slice(1)
@@ -1227,6 +1237,9 @@
                                 </div>
                             </div>
                             <div class="band-value">${percentage}%</div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #6c757d; margin-bottom: 1rem; margin-left: 80px;">
+                            Normal range: ${normative}
                         </div>
                     `;
                 });

@@ -1,6 +1,7 @@
 import io
 import base64
 import math
+from typing import Literal
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,9 @@ from ..utils.signal_processing import bandpass_df
 from ..config import SAMPLE_RATE
 from ..core.threader import threaded
 
+
+BandFilter = Literal['filtered', 'delta', 'theta',
+                      'alpha', 'beta', 'gamma','raw']
 
 class VisualizationService:
     """Generate EEG visualizations"""
@@ -24,16 +28,16 @@ class VisualizationService:
     }
 
     @threaded
-    def visualize_df(self, df: pd.DataFrame, eeg_type:str) -> str:
+    def visualize_df(self, df: pd.DataFrame, eeg_type: BandFilter) -> str:
         """Visualize Dataframe as EEG plot and return base64 image."""
 
         low, high = self.BAND_FILTERS.get(eeg_type, (None, None))
-        
+
         ch_names = df.select_dtypes(include=[np.number]).columns.tolist()
         ch_types = ['eeg'] * len(ch_names)
 
         # Apply bandpass filter
-        df = bandpass_df(df, low=low, high=high)
+        # df = bandpass_df(df, low=low, high=high)
         df_array = df.to_numpy().T
 
         # Create MNE info and raw object
@@ -52,7 +56,9 @@ class VisualizationService:
             show=False,
             show_scrollbars=False,
             clipping=None,
-            block=False
+            block=False,
+            lowpass=low,
+            highpass=high,
         )
 
         fig.set_size_inches(math.ceil(duration/6),6)

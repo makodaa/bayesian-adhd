@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response
 from pathlib import Path
+
+from .utils.timer import Timer
 from .ml.model_loader import ModelLoader
 from .services.file_service import FileService
 from .services.eeg_service import EEGService
@@ -106,6 +108,26 @@ def visualize_csv(file, eeg_type: str):
     file_service.validate_eeg_data(df)
     return visualization_service.visualize_df(df, eeg_type)
 
+def visualize_csv_all(file):
+    """
+    Process CSV and visualize using Visualization Service, and return all of it
+    as an array of base-64 encoded images.
+    """
+
+    logger.info(f"Visualizing CSV file: {file.filename}")
+    df = file_service.read_csv(file)
+    file_service.validate_eeg_data(df)
+
+    results = []
+    for band in VisualizationService.BAND_FILTERS.keys():
+        with Timer() as timer:
+            result = visualization_service.visualize_df(df, band)
+            results.append(result)
+
+            logger.info(f"Visualized {band} in {timer.elapsed()}")
+
+    return visualization_service.visualize_df(df)
+
 @error_handle
 def visualize_file(file, eeg_type="raw"):
     """Route file to appropriate visualization handler"""
@@ -116,6 +138,17 @@ def visualize_file(file, eeg_type="raw"):
         return {'error': 'File extension not supported'}
 
     return visualize_csv(file, eeg_type)
+
+@error_handle
+def visualize_file_all(file):
+    """Route file to appropriate visualization handler"""
+    if file.filename is None:
+        return None
+
+    if not file_service.is_allowed_file(file.filename):
+        return {'error': 'File extension not supported'}
+
+    return visualize_csv_all(file)
 
 @app.route('/')
 def home():
@@ -254,6 +287,34 @@ def about():
 def index():
     return render_template('index.html')
 
+@app.route('/visualize_all_eeg', methods=['POST'])
+@login_required
+def visualize_all_eeg():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        result = visualize_file_all(file)
+        if result is None:
+            print(f"Warning: visualize_file returned None for {file.filename}")
+            return jsonify({'error': 'Something went wrong while reading the file.'}), 500
+        if isinstance(result, dict) and 'error' in result:
+            print(f"Warning: Error from visualize_file: {result['error']}")
+            return jsonify({'error': result['error']}), 400
+        return jsonify({'result': result}), 200
+    except ValueError as e:
+        print(f"ValueError in visualize_eeg: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        print(f"Exception in visualize_eeg: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Failed to visualize: {str(e)}'}), 500
+
 @app.route('/visualize_eeg/<eeg_type>', methods=['POST'])
 @login_required
 def visualize_eeg(eeg_type):
@@ -322,7 +383,7 @@ def predict():
         # Use logged-in clinician from session for result creation
         clinician_id = session.get('clinician_id')
         logger.info(f"Using session clinician_id: {clinician_id}")
-        
+
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
         recording_id = recording_service.create_recording(
@@ -338,18 +399,18 @@ def predict():
 
         # Classify and save results
         result = eeg_service.classify_and_save(recording_id, df, clinician_id=clinician_id)
-        
+
         # Compute band powers and ratios for the same recording
         logger.info(f"Computing band powers for result {result['result_id']}")
         band_powers = band_analysis_service.compute_and_save(result['result_id'], df)
-        
+
         # Add band power summary to result
         result['band_analysis'] = {
             'average_absolute_power': band_powers.get('average_absolute_power', {}),
             'average_relative_power': band_powers.get('average_relative_power', {}),
             'band_ratios': band_powers.get('band_ratios', {})
         }
-        
+
         logger.info(f"Classification complete: {result['classification']} ({result['confidence_score']*100:.2f}%)")
         return jsonify({
             'prediction': True,
@@ -383,7 +444,7 @@ def get_clinicians():
     except Exception as e:
         logger.error(f"Error fetching clinicians: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-    
+
 @app.route('/api/clinicians/<int:clinician_id>', methods=['GET'])
 def get_clinician_details(clinician_id):
     """Get clinician details with their assessment results."""
@@ -444,7 +505,7 @@ def get_subject(subject_id):
     except Exception as e:
         logger.error(f"Error fetching subject {subject_id}: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-    
+
 @app.route('/api/subjects/<int:subject_id>/assessments', methods=['GET'])
 def get_subject_assessments(subject_id):
     """Get subject details with their assessment results."""
@@ -488,7 +549,7 @@ def generate_result_pdf(result_id):
         result = results_service.get_result_with_full_details(result_id)
         if not result:
             return jsonify({'error': 'Result not found'}), 404
-        
+
         # Use clinician from result record (form-selected clinician)
         clinician_data = {
             'first_name': result.get('clinician_first_name', ''),
@@ -496,18 +557,18 @@ def generate_result_pdf(result_id):
             'last_name': result.get('clinician_last_name', ''),
             'occupation': result.get('clinician_occupation', '')
         }
-        
+
         # Generate PDF
         pdf_bytes = pdf_service.generate_report(result, clinician_data)
-        
+
         # Create filename
         subject_code = result.get('subject_code', 'unknown').replace(' ', '_')
         from datetime import datetime
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"EEG_Report_{subject_code}_{timestamp}.pdf"
-        
+
         logger.info(f"Generated PDF report for result {result_id}, size: {len(pdf_bytes)} bytes")
-        
+
         return Response(
             pdf_bytes,
             mimetype='application/pdf',
@@ -526,7 +587,7 @@ def generate_result_pdf(result_id):
 def api_model_info():
     """Return model architecture and hyperparameter information."""
     import json
-    
+
     try:
         # Load best parameters from JSON file
         params_path = Path(__file__).parent.parent / 'best_parameters.json'
@@ -534,7 +595,7 @@ def api_model_info():
         if params_path.exists():
             with open(params_path, 'r') as f:
                 params = json.load(f)
-        
+
         # Get model stats if model is loaded
         total_params = 0
         trainable_params = 0
@@ -546,14 +607,14 @@ def api_model_info():
                     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
             except Exception as e:
                 logger.warning(f"Could not get model stats: {e}")
-        
+
         return jsonify({
             'params': params,
             'total_params': total_params,
             'trainable_params': trainable_params,
             'model_loaded': getattr(app, 'model_initialized', False)
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error getting model info: {e}", exc_info=True)
         return jsonify({'error': 'Failed to get model info'}), 500
@@ -561,7 +622,7 @@ def api_model_info():
 
 if __name__ == '__main__':
     import os
-    
+
     # Run Flask app
     app.run(
         host='0.0.0.0',
