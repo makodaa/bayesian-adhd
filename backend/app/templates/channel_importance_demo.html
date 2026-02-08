@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EEG Channel Importance Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        border-bottom: 3px solid #4caf50;
+        padding-bottom: 10px;
+      }
+
+      .upload-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 5px;
+      }
+
+      .results-section {
+        margin-top: 30px;
+        display: none;
+      }
+
+      .classification-info {
+        background: #e3f2fd;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+
+      .classification-info h2 {
+        margin-top: 0;
+        color: #1976d2;
+      }
+
+      .confidence-bar {
+        width: 100%;
+        height: 30px;
+        background: #ddd;
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+
+      .confidence-fill {
+        height: 100%;
+        background: linear-gradient(to right, #4caf50, #45a049);
+        transition: width 0.5s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+      }
+
+      .chart-container {
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+      }
+
+      .error-message {
+        background: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        display: none;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        display: none;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4caf50;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #45a049;
+      }
+
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      input[type="file"] {
+        padding: 10px;
+        border: 2px dashed #ccc;
+        border-radius: 5px;
+        width: 100%;
+        margin: 10px 0;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .tab {
+        padding: 10px 20px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .tab.active {
+        background: #4caf50;
+        color: white;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧠 EEG Channel Importance Analysis</h1>
+
+      <div class="upload-section">
+        <h3>Upload EEG Data</h3>
+        <input type="file" id="fileInput" accept=".csv" />
+        <button id="analyzeBtn" onclick="analyzeFile()">Analyze Channel Importance</button>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Analyzing channel importance... This may take 10-15 seconds.</p>
+        </div>
+      </div>
+
+      <div class="results-section" id="resultsSection">
+        <div class="classification-info">
+          <h2>Classification Results</h2>
+          <p><strong>Predicted Class:</strong> <span id="classification"></span></p>
+          <p><strong>Confidence:</strong></p>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confidenceFill"></div>
+          </div>
+
+          <h3>All Class Probabilities</h3>
+          <div id="classProbabilities"></div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="showTab('topographic')">Topographic Map</button>
+          <button class="tab" onclick="showTab('barchart')">Bar Chart</button>
+          <button class="tab" onclick="showTab('regional')">Regional Analysis</button>
+          <button class="tab" onclick="showTab('table')">Data Table</button>
+        </div>
+
+        <div id="topographic" class="tab-content active">
+          <div class="chart-container">
+            <h3>Channel Importance Topographic Map</h3>
+            <div id="topoMap"></div>
+          </div>
+        </div>
+
+        <div id="barchart" class="tab-content">
+          <div class="chart-container">
+            <h3>Channel Importance Scores</h3>
+            <div id="barChart"></div>
+          </div>
+        </div>
+
+        <div id="regional" class="tab-content">
+          <div class="chart-container">
+            <h3>Regional Analysis</h3>
+            <div id="regionalChart"></div>
+          </div>
+        </div>
+
+        <div id="table" class="tab-content">
+          <div class="chart-container">
+            <h3>Channel Importance Data</h3>
+            <div id="dataTable"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentData = null;
+
+      function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll(".tab-content").forEach((content) => {
+          content.classList.remove("active");
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+
+        // Show selected tab
+        document.getElementById(tabName).classList.add("active");
+        event.target.classList.add("active");
+      }
+
+      async function analyzeFile() {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          showError("Please select a CSV file");
+          return;
+        }
+
+        // Show loading, hide error and results
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("errorMessage").style.display = "none";
+        document.getElementById("resultsSection").style.display = "none";
+        document.getElementById("analyzeBtn").disabled = true;
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch("/api/channel-importance/upload", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Analysis failed");
+          }
+          const data = await response.json();
+          currentData = data;
+          displayResults(data);
+        } catch (error) {
+          showError(error.message);
+        } finally {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("analyzeBtn").disabled = false;
+        }
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById("errorMessage");
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+      }
+
+      function displayResults(data) {
+        // Show results section
+        document.getElementById("resultsSection").style.display = "block";
+
+        // Display classification
+        document.getElementById("classification").textContent = data.classification;
+
+        // Display confidence
+        const confidencePercent = (data.confidence * 100).toFixed(2);
+        const confidenceFill = document.getElementById("confidenceFill");
+        confidenceFill.style.width = confidencePercent + "%";
+        confidenceFill.textContent = confidencePercent + "%";
+
+        // Display all class probabilities
+        const probsDiv = document.getElementById("classProbabilities");
+        let probsHTML = '<table style="width:100%; border-collapse: collapse;">';
+        for (const [className, prob] of Object.entries(data.class_probabilities)) {
+          const percent = (prob * 100).toFixed(2);
+          probsHTML += `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">${className}</td>
+                        <td style="padding: 8px; text-align: right;">${percent}%</td>
+                        <td style="padding: 8px; width: 60%;">
+                            <div style="background: #ddd; height: 20px; border-radius: 10px; overflow: hidden;">
+                                <div style="background: #4CAF50; height: 100%; width: ${percent}%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+        }
+        probsHTML += "</table>";
+        probsDiv.innerHTML = probsHTML;
+
+        // Create visualizations
+        createTopographicMap(data);
+        createBarChart(data);
+        createRegionalAnalysis(data);
+        createDataTable(data);
+      }
+
+      function createTopographicMap(data) {
+        const positions = data.electrode_positions;
+        const importance = data.importance_normalized;
+
+        // Prepare data for contour plot
+        const x = [];
+        const y = [];
+        const z = [];
+        const text = [];
+
+        for (const [channel, pos] of Object.entries(positions)) {
+          x.push(pos[0]);
+          y.push(pos[1]);
+          z.push(importance[channel]);
+          text.push(channel);
+        }
+
+        // Create interpolated grid for smooth contours
+        const trace1 = {
+          x: x,
+          y: y,
+          z: z,
+          type: "contour",
+          colorscale: "Hot",
+          showscale: true,
+          colorbar: {
+            title: "Importance",
+            titleside: "right",
+          },
+          contours: {
+            coloring: "heatmap",
+          },
+        };
+
+        // Add electrode markers
+        const trace2 = {
+          x: x,
+          y: y,
+          text: text,
+          mode: "markers+text",
+          type: "scatter",
+          textposition: "middle center",
+          textfont: {
+            size: 10,
+            color: "black",
+          },
+          marker: {
+            size: 12,
+            color: "white",
+            line: {
+              color: "black",
+              width: 2,
+            },
+          },
+        };
+
+        const layout = {
+          title: "Channel Importance Scalp Map",
+          xaxis: {
+            range: [-1.2, 1.2],
+            showgrid: false,
+            zeroline: false,
+            showticklabels: false,
+          },
+          yaxis: {
+            range: [-1.2, 1.2],
+            showgrid: false,
+            zeroline: false,
+            showticklabels: false,
+            scaleanchor: "x",
+          },
+          shapes: [
+            // Draw head circle
+            {
+              type: "circle",
+              xref: "x",
+              yref: "y",
+              x0: -1,
+              y0: -1,
+              x1: 1,
+              y1: 1,
+              line: {
+                color: "black",
+                width: 3,
+              },
+            },
+          ],
+          width: 600,
+          height: 600,
+        };
+
+        Plotly.newPlot("topoMap", [trace1, trace2], layout);
+      }
+
+      function createBarChart(data) {
+        const importance = data.channel_importance;
+
+        // Sort by importance
+        const sorted = Object.entries(importance).sort((a, b) => b[1] - a[1]);
+
+        const channels = sorted.map((item) => item[0]);
+        const values = sorted.map((item) => item[1]);
+
+        const trace = {
+          x: values,
+          y: channels,
+          type: "bar",
+          orientation: "h",
+          marker: {
+            color: values,
+            colorscale: "Viridis",
+          },
+        };
+
+        const layout = {
+          title: "Channel Importance Scores (Sorted)",
+          xaxis: { title: "Importance Score" },
+          yaxis: { title: "Channel", autorange: "reversed" },
+          height: 600,
+        };
+
+        Plotly.newPlot("barChart", [trace], layout);
+      }
+
+      function createRegionalAnalysis(data) {
+        const importance = data.channel_importance;
+
+        // Define brain regions
+        const regions = {
+          Frontal: ["Fp1", "Fp2", "F3", "F4", "F7", "F8", "Fz"],
+          Central: ["C3", "C4", "Cz"],
+          Temporal: ["T7", "T8"],
+          Parietal: ["P3", "P4", "P7", "P8", "Pz"],
+          Occipital: ["O1", "O2"],
+        };
+
+        // Calculate average importance per region
+        const regionalImportance = {};
+        for (const [region, channels] of Object.entries(regions)) {
+          const values = channels.map((ch) => importance[ch]);
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          regionalImportance[region] = avg;
+        }
+
+        const regionNames = Object.keys(regionalImportance);
+        const regionValues = Object.values(regionalImportance);
+
+        const trace = {
+          x: regionNames,
+          y: regionValues,
+          type: "bar",
+          marker: {
+            color: regionValues,
+            colorscale: "Blues",
+          },
+        };
+
+        const layout = {
+          title: "Average Importance by Brain Region",
+          xaxis: { title: "Brain Region" },
+          yaxis: { title: "Average Importance" },
+          height: 500,
+        };
+
+        Plotly.newPlot("regionalChart", [trace], layout);
+      }
+
+      function createDataTable(data) {
+        const importance = data.channel_importance;
+        const normalized = data.importance_normalized;
+        const positions = data.electrode_positions;
+
+        // Sort by raw importance
+        const sorted = Object.entries(importance).sort((a, b) => b[1] - a[1]);
+
+        let html = `
+                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #4CAF50; color: white;">
+                            <th style="padding: 12px; text-align: left;">Rank</th>
+                            <th style="padding: 12px; text-align: left;">Channel</th>
+                            <th style="padding: 12px; text-align: right;">Importance</th>
+                            <th style="padding: 12px; text-align: right;">Normalized</th>
+                            <th style="padding: 12px; text-align: center;">Position (x, y)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+        sorted.forEach(([channel, value], index) => {
+          const norm = normalized[channel];
+          const pos = positions[channel];
+          const bgColor = index % 2 === 0 ? "#f9f9f9" : "white";
+          html += `
+                    <tr style="background: ${bgColor}; border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">${index + 1}</td>
+                        <td style="padding: 10px;"><strong>${channel}</strong></td>
+                        <td style="padding: 10px; text-align: right;">${value.toFixed(6)}</td>
+                        <td style="padding: 10px; text-align: right;">${norm.toFixed(4)}</td>
+                        <td style="padding: 10px; text-align: center;">(${pos[0].toFixed(2)}, ${pos[1].toFixed(2)})</td>
+                    </tr>
+                `;
+        });
+
+        html += "</tbody></table>";
+        document.getElementById("dataTable").innerHTML = html;
+      }
+    </script>
+  </body>
+</html>

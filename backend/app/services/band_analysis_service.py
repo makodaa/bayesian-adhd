@@ -1,6 +1,8 @@
+from typing import TypedDict
 import numpy as np
 import pandas as pd
 from scipy.signal import welch
+from scipy.integrate import simpson
 
 from ..config import CLASSIFYING_FREQUENCY_BANDS, SAMPLE_RATE
 from ..core.logging_config import get_app_logger
@@ -8,6 +10,45 @@ from ..db.repositories.band_powers import BandPowersRepository
 from ..db.repositories.ratios import RatiosRepository
 
 logger = get_app_logger(__name__)
+
+class BandPowers(TypedDict):
+    delta: float
+    theta: float
+    alpha: float
+    beta: float
+    gamma: float
+    fast_alpha: float
+    high_beta: float
+
+class BandRatios(TypedDict):
+    theta_beta_ratio: float
+    theta_alpha_ratio: float
+    alpha_theta_ratio: float
+
+class DisplayBandPowers(TypedDict):
+    delta: float
+    theta: float
+    alpha: float
+    beta: float
+    gamma: float
+
+class BandPowerResult(TypedDict):
+    # electrode -> band powers
+    absolute_power: dict[str, BandPowers]
+
+    # electrode -> band powers (normalized)
+    relative_power: dict[str, BandPowers]
+
+    # electrode -> total power
+    total_power: dict[str, float]
+
+    band_ratios: BandRatios
+
+    # averaged across electrodes (excludes fast_alpha, high_beta)
+    average_absolute_power: DisplayBandPowers
+
+    # averaged across electrodes (excludes fast_alpha, high_beta)
+    average_relative_power: DisplayBandPowers
 
 
 class BandAnalysisService:
@@ -27,7 +68,9 @@ class BandAnalysisService:
     """
 
     def __init__(
-        self, band_powers_repo: BandPowersRepository, ratios_repo: RatiosRepository
+        self,
+        band_powers_repo: BandPowersRepository,
+        ratios_repo: RatiosRepository
     ):
         self.band_powers_repo = band_powers_repo
         self.ratios_repo = ratios_repo
@@ -35,28 +78,37 @@ class BandAnalysisService:
     def compute_band_powers(self, df: pd.DataFrame) -> dict:
         """Compute absolute and relative power for each frequency band"""
         logger.info(f"Computing band powers for {len(df)} samples")
+
         electrodes = df.select_dtypes(include=[np.number]).columns.tolist()
         logger.debug(f"Processing {len(electrodes)} electrodes: {electrodes}")
-        result = {
+
+        result: BandPowerResult = {
             "absolute_power": {},
             "relative_power": {},
             "total_power": {},
             "band_ratios": {},
         }
-
         for electrode in electrodes:
             signal = df[electrode].to_numpy()
 
             # Compute power spectral density (PSD) using Welch's method
+            # Use nperseg=256 for better frequency resolution (4-second windows at 128 Hz)
+            # with 50% overlap for smoother estimates
             freqs, psd = welch(
-                signal, fs=SAMPLE_RATE, nperseg=min(256, len(signal) // 4)
+                signal,
+                fs=SAMPLE_RATE,
+                nperseg=min(256, len(signal) // 4),
+                noverlap=min(128, len(signal) // 8),
+                window='hamming',
+                scaling='density'
             )
 
-            # Compute absolute power for each band
+            # Compute absolute power for each band using Simpson's rule
             absolute_powers = {}
             for band_name, (low, high) in CLASSIFYING_FREQUENCY_BANDS.items():
                 band_mask = (freqs >= low) & (freqs < high)
-                band_power = np.trapezoid(psd[band_mask], freqs[band_mask])
+                # Use Simpson's rule for more accurate integration
+                band_power = simpson(psd[band_mask], x=freqs[band_mask])
                 absolute_powers[band_name] = float(band_power)
 
             # Compute total power across all bands

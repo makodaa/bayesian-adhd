@@ -1,11 +1,12 @@
-from typing import Any, Generator, Literal
+from typing import cast
 
 import mne
 import numpy as np
 import pandas as pd
 import torch
-from scipy import signal
 from scipy.integrate import simpson
+from scipy.signal import welch
+
 
 from ..config import (
     CLASSIFYING_FREQUENCY_BANDS,
@@ -99,14 +100,13 @@ class EEGService:
         n_ic = sources.shape[0]
         sfreq = raw.info["sfreq"]
 
-        # from scipy.signal import welch
-        # muscle_candidates = []
-        # for ic_idx in range(n_ic):
-        #     f, Pxx = welch(sources[ic_idx], sfreq, nperseg=512)
-        #     hf_mask = (f >= 20)
-        #     hf_ratio = Pxx[hf_mask].sum() / np.sum(Pxx)
-        #     if hf_ratio > 0.25:  # threshold – tune as needed
-        #         muscle_candidates.append(ic_idx)
+        muscle_candidates = []
+        for ic_idx in range(n_ic):
+            f, Pxx = welch(sources[ic_idx], sfreq, nperseg=512)
+            hf_mask = (f >= 20)
+            hf_ratio = Pxx[hf_mask].sum() / np.sum(Pxx)
+            if hf_ratio > 0.25:  # threshold – tune as needed
+                muscle_candidates.append(ic_idx)
 
         # exclude = list(set(eog_inds + muscle_candidates))
         exclude = list(set(eog_inds))
@@ -148,20 +148,29 @@ class EEGService:
 
         return cleaned_df
 
-    def compute_band_power(self, data, fs, band):
+    def compute_band_power(self, data, fs, band) -> float:
         """Compute absolute power in a frequency band using Welch's method"""
         low, high = band
 
         # Compute power spectral density using Welch's method
-        freqs, psd = signal.welch(data, fs, nperseg=min(256, len(data)))
+        # Use nperseg=256 for better frequency resolution (2-second windows at 128 Hz)
+        # with 50% overlap for smoother estimates
+        freqs, psd = welch(
+            data,
+            fs,
+            nperseg=min(256, len(data)),
+            noverlap=min(128, len(data) // 2),
+            window='hamming',
+            scaling='density'
+        )
 
         # Find indices of frequencies in the band
         idx_band = np.logical_and(freqs >= low, freqs <= high)
 
-        # Integrate power in the band using Simpson's rule
-        band_power = simpson(psd[idx_band], freqs[idx_band])
+        # Integrate power in the band using Simpson's rule for more accurate integration
+        band_power = simpson(psd[idx_band], x=freqs[idx_band])
 
-        return band_power
+        return cast(float, band_power)
 
     def classify(self, df: pd.DataFrame) -> tuple[str, float, dict]:
         """Classify EEG data for ADHD probability"""
@@ -212,7 +221,7 @@ class EEGService:
         n_samples = len(df)
 
         # Initialize power accumulators
-        powers = {band: 0 for band in CLASSIFYING_FREQUENCY_BANDS.keys()}
+        powers = {band: 0.0 for band in CLASSIFYING_FREQUENCY_BANDS.keys()}
 
         # Compute band powers for each channel and average across channels
         for channel in ELECTRODE_CHANNELS:
@@ -220,9 +229,7 @@ class EEGService:
                 eeg_data = df[channel].values
 
                 for band_name, band_range in CLASSIFYING_FREQUENCY_BANDS.items():
-                    powers[band_name] += self.compute_band_power(
-                        eeg_data, SAMPLE_RATE, band_range
-                    )
+                    powers[band_name] += self.compute_band_power(eeg_data, SAMPLE_RATE, band_range)
 
         # Average across channels
         n_channels = len(ELECTRODE_CHANNELS)

@@ -161,6 +161,7 @@ class PDFReportService:
         story.extend(self._build_classification_section(result_data))
         story.extend(self._build_band_powers_section(result_data))
         story.extend(self._build_ratios_section(result_data))
+        story.extend(self._build_channel_importance_section(result_data))
         story.extend(self._build_data_quality_notes(result_data))
         story.extend(self._build_signatory_section(clinician_data))
         
@@ -589,6 +590,88 @@ class PDFReportService:
             elements.append(Paragraph(f"<i>{note}</i>", self.styles['ReportBody']))
         
         elements.append(Spacer(1, 8))
+        return elements
+    
+    def _build_channel_importance_section(self, result_data: dict) -> list:
+        """Build channel importance analysis section."""
+        elements = []
+        
+        # Check if channel importance data exists
+        channel_importance = result_data.get('channel_importance')
+        if not channel_importance:
+            logger.info("No channel importance data available for report")
+            return elements
+        
+        elements.append(PageBreak())
+        elements.append(Paragraph("Channel Importance Analysis", self.styles['SectionHeader']))
+        elements.append(Spacer(1, 6))
+        
+        # Explanation
+        explanation = """
+        This analysis shows which EEG channels (brain regions) contributed most to the 
+        classification decision using occlusion sensitivity. Channels are temporarily removed 
+        and the resulting change in prediction confidence indicates their importance.
+        """
+        elements.append(Paragraph(explanation.strip(), self.styles['ReportBody']))
+        elements.append(Spacer(1, 12))
+        
+        # Get visualization images from base64
+        visualizations = channel_importance.get('visualizations', {})
+        
+        # Add topographic map if available
+        topo_map = visualizations.get('topographic_map', '')
+        if topo_map and topo_map.startswith('data:image'):
+            try:
+                # Extract base64 data
+                image_data = topo_map.split(',')[1]
+                img_buffer = BytesIO(base64.b64decode(image_data))
+                
+                # Add to PDF
+                elements.append(Paragraph("Topographic Channel Importance Map", self.styles['Subsection']))
+                img = Image(img_buffer, width=150*mm, height=150*mm, kind='proportional')
+                elements.append(img)
+                elements.append(Spacer(1, 12))
+            except Exception as e:
+                logger.error(f"Error adding topographic map to PDF: {e}")
+        
+        # Add bar chart if available
+        bar_chart = visualizations.get('bar_chart', '')
+        if bar_chart and bar_chart.startswith('data:image'):
+            try:
+                image_data = bar_chart.split(',')[1]
+                img_buffer = BytesIO(base64.b64decode(image_data))
+                
+                elements.append(Paragraph("Channel Importance Ranking", self.styles['Subsection']))
+                img = Image(img_buffer, width=160*mm, height=100*mm, kind='proportional')
+                elements.append(img)
+                elements.append(Spacer(1, 12))
+            except Exception as e:
+                logger.error(f"Error adding bar chart to PDF: {e}")
+        
+        # Add regional analysis if available
+        regional_chart = visualizations.get('regional_chart', '')
+        if regional_chart and regional_chart.startswith('data:image'):
+            try:
+                image_data = regional_chart.split(',')[1]
+                img_buffer = BytesIO(base64.b64decode(image_data))
+                
+                elements.append(Paragraph("Regional Importance Analysis", self.styles['Subsection']))
+                img = Image(img_buffer, width=160*mm, height=90*mm, kind='proportional')
+                elements.append(img)
+                elements.append(Spacer(1, 12))
+            except Exception as e:
+                logger.error(f"Error adding regional chart to PDF: {e}")
+        
+        # Add interpretation
+        interpretation = """
+        <b>Interpretation:</b> Higher importance scores indicate channels that had greater 
+        influence on the classification decision. These regions should be given particular 
+        attention during clinical review. Regional analysis groups channels by brain area 
+        (frontal, central, temporal, parietal, occipital) to identify broader patterns.
+        """
+        elements.append(Paragraph(interpretation.strip(), self.styles['ReportBody']))
+        elements.append(Spacer(1, 12))
+        
         return elements
     
     def _build_data_quality_notes(self, result_data: dict) -> list:

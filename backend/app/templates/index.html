@@ -715,6 +715,12 @@
                                 Gamma
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="channel-importance-tab" data-bs-toggle="tab" data-bs-target="#channel-importance-pane"
+                                type="button" role="tab" disabled>
+                                Channel Importance
+                            </button>
+                        </li>
                     </ul>
                     <div class="tab-content" id="eegTabContent">
                         <div class="tab-pane fade show active" id="raw-pane" role="tabpanel">
@@ -764,6 +770,15 @@
                                 <p class="text-muted">
                                     Upload an EEG file to view visualizations
                                 </p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="channel-importance-pane" role="tabpanel">
+                            <div class="visualization-container" style="display: block; padding: 1rem;">
+                                <div id="viz-channel-importance">
+                                    <p class="text-muted text-center">
+                                        Analyze EEG recording to view channel importance
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1128,6 +1143,7 @@
                     "alpha-tab",
                     "beta-tab",
                     "gamma-tab",
+                    "channel-importance-tab",
                 ];
                 tabs.forEach((tabId) => {
                     const tab = document.getElementById(tabId);
@@ -1182,6 +1198,65 @@
                     }
                 } catch (error) {
                     console.error(`Error loading visualizations:`, error);
+                }
+            }
+
+            // Load channel importance
+            async function loadChannelImportance(formData) {
+                const container = document.getElementById("viz-channel-importance");
+                
+                try {
+                    container.innerHTML = '<p class="text-muted text-center"><span class="spinner-border spinner-border-sm me-2"></span>Computing channel importance...</p>';
+                    
+                    const response = await fetch("/api/channel-importance/upload", {
+                        method: "POST",
+                        body: formData,
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Display visualizations in tabs
+                    let html = `
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#ci-topo" type="button">
+                                    Topographic Map
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#ci-bar" type="button">
+                                    Bar Chart
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#ci-regional" type="button">
+                                    Regional Analysis
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="ci-topo">
+                                <img src="${data.visualizations.topographic_map}" style="max-width: 100%; height: auto;" alt="Topographic Map">
+                            </div>
+                            <div class="tab-pane fade" id="ci-bar">
+                                <img src="${data.visualizations.bar_chart}" style="max-width: 100%; height: auto;" alt="Bar Chart">
+                            </div>
+                            <div class="tab-pane fade" id="ci-regional">
+                                <img src="${data.visualizations.regional_chart}" style="max-width: 100%; height: auto;" alt="Regional Analysis">
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = html;
+                    console.log("Channel importance loaded successfully");
+                    
+                } catch (error) {
+                    console.error("Error loading channel importance:", error);
+                    container.innerHTML = '<p class="text-danger text-center">Failed to load channel importance</p>';
                 }
             }
 
@@ -1404,7 +1479,11 @@
                             bands: bandData,
                         };
 
-                        loadVisualizations(vizFormData);
+                        // Load visualizations and channel importance in parallel
+                        await Promise.all([
+                            loadVisualizations(vizFormData),
+                            loadChannelImportance(vizFormData)
+                        ]);
                     } catch (error) {
                         console.error("Analysis error:", error);
                         alert(

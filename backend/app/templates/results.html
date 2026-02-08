@@ -542,7 +542,7 @@
       aria-labelledby="resultModalLabel"
       aria-hidden="true"
     >
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="resultModalLabel">Analysis Result Details</h5>
@@ -553,10 +553,55 @@
               aria-label="Close"
             ></button>
           </div>
-          <div class="modal-body" id="modal-body-content">
-            <div class="text-center">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+          <div class="modal-body">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="details-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#details-content"
+                  type="button"
+                  role="tab"
+                >
+                  Result Details
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="importance-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#importance-content"
+                  type="button"
+                  role="tab"
+                >
+                  Channel Importance
+                </button>
+              </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="resultTabsContent" style="padding-top: 1rem">
+              <!-- Result Details Tab -->
+              <div class="tab-pane fade show active" id="details-content" role="tabpanel">
+                <div id="modal-body-content">
+                  <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Channel Importance Tab -->
+              <div class="tab-pane fade" id="importance-content" role="tabpanel">
+                <div id="channel-importance-content">
+                  <div class="text-center text-muted" style="padding: 2rem">
+                    <p>Click on a result to view channel importance analysis</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -613,6 +658,8 @@
 
       let allResults = [];
       let currentResultId = null; // Track currently displayed result for PDF download
+      let currentRecordingId = null; // Track recording ID for channel importance
+      let currentResultId = null; // Track result ID for channel importance
 
       // Load results
       async function loadResults() {
@@ -703,6 +750,9 @@
           currentResultId = resultId;
           downloadBtn.disabled = false;
 
+          // Store recording ID for channel importance
+          currentRecordingId = data.recording_id;
+
           // Build modal content
           const isADHD = data.predicted_class === "ADHD";
           const cardClass = isADHD ? "adhd" : "non-adhd";
@@ -745,7 +795,7 @@
                                       band.charAt(0).toUpperCase() + band.slice(1)
                                     }</div>
                                     <div class="band-progress-modal">
-                                        <div class="band-progress-bar-modal" 
+                                        <div class="band-progress-bar-modal"
                                              style="width: ${percentage}%; background-color: ${
                                                bandColors[band]
                                              };">
@@ -839,7 +889,7 @@
                                         Confidence: ${confidence}%
                                     </div>
                                 </div>
-                                
+
                                 <!-- Subject Information -->
                                 <div class="info-section">
                                     <h6>Subject Information</h6>
@@ -856,7 +906,7 @@
                                         <span class="info-value">${data.gender}</span>
                                     </div>
                                 </div>
-                                
+
                                 ${
                                   data.clinician_first_name || data.clinician_last_name
                                     ? `
@@ -992,6 +1042,120 @@
           console.error("Error loading result details:", error);
           modalBody.innerHTML = `<div class="alert alert-danger">Failed to load result details</div>`;
         }
+      }
+
+      // Load channel importance when tab is clicked
+      document.getElementById('importance-tab').addEventListener('shown.bs.tab', function (event) {
+        if (currentResultId) {
+          loadChannelImportance(currentResultId, currentRecordingId);
+        }
+      });
+
+      // Load channel importance data
+      async function loadChannelImportance(resultId, recordingId) {
+        const container = document.getElementById('channel-importance-content');
+
+        // Show loading state
+        container.innerHTML = `
+          <div class="text-center" style="padding: 2rem;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading channel importance...</p>
+          </div>
+        `;
+
+        try {
+          // First try to load from database by result_id
+          let response = await fetch(`/api/channel-importance/result/${resultId}`);
+
+          // If not found in database, compute it
+          if (response.status === 404) {
+            console.log('Channel importance not found in database, computing...');
+            container.innerHTML = `
+              <div class="text-center" style="padding: 2rem;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Computing channel importance... This may take 10-15 seconds.</p>
+              </div>
+            `;
+            response = await fetch(`/api/channel-importance/recording/${recordingId}`);
+          }
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to load channel importance');
+          }
+
+          const data = await response.json();
+          displayChannelImportance(data);
+
+        } catch (error) {
+          console.error('Error loading channel importance:', error);
+          container.innerHTML = `
+            <div class="alert alert-danger">
+              <strong>Error:</strong> ${error.message}
+            </div>
+          `;
+        }
+      }
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to load channel importance');
+          }
+
+          const data = await response.json();
+          displayChannelImportance(data);
+
+        } catch (error) {
+          console.error('Error loading channel importance:', error);
+          container.innerHTML = `
+            <div class="alert alert-danger">
+              <strong>Error:</strong> ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      // Display channel importance visualizations
+      function displayChannelImportance(data) {
+        const container = document.getElementById('channel-importance-content');
+
+        // Create tabs for different visualizations
+        container.innerHTML = `
+          <div class="mb-3">
+            <div class="alert alert-info">
+              <strong>Classification:</strong> ${data.classification}
+              <span class="ms-3"><strong>Confidence:</strong> ${(data.confidence * 100).toFixed(2)}%</span>
+            </div>
+          </div>
+
+          <ul class="nav nav-pills mb-3" id="importanceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="topo-tab" data-bs-toggle="pill" data-bs-target="#topo-view" type="button">Topographic Map</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="bar-tab" data-bs-toggle="pill" data-bs-target="#bar-view" type="button">Bar Chart</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="regional-tab" data-bs-toggle="pill" data-bs-target="#regional-view" type="button">Regional Analysis</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="importanceTabsContent">
+            <div class="tab-pane fade show active" id="topo-view" style="text-align: center;">
+              <img src="${data.visualizations.topographic_map}" alt="Topographic Map" style="max-width: 100%; height: auto;" />
+            </div>
+            <div class="tab-pane fade" id="bar-view" style="text-align: center;">
+              <img src="${data.visualizations.bar_chart}" alt="Bar Chart" style="max-width: 100%; height: auto;" />
+            </div>
+            <div class="tab-pane fade" id="regional-view" style="text-align: center;">
+              <img src="${data.visualizations.regional_chart}" alt="Regional Chart" style="max-width: 100%; height: auto;" />
+            </div>
+          </div>
+        `;
       }
 
       // Search functionality

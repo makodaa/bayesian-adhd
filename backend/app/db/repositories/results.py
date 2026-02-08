@@ -44,14 +44,32 @@ class ResultsRepository(BaseRepository):
     def get_by_recording(self, recording_id):
         """Get all results for a recording."""
         logger.debug(f"Fetching all results for recording: {recording_id}")
-        query = "SELECT * FROM results WHERE recording_id = %s ORDER BY created_at DESC;"
+        query = "SELECT * FROM results WHERE recording_id = %s ORDER BY inferenced_at DESC;"
         try:
             with self.get_connection() as conn:
                 cursor = self.get_dict_cursor(conn)
                 cursor.execute(query, (recording_id,))
                 results = cursor.fetchall()
-                logger.info(f"Retrieved {len(results)} results for recording {recording_id}")
+                logger.debug(f"Found {len(results)} results for recording {recording_id}")
                 return results
         except Exception as e:
             logger.error(f"Failed to fetch results for recording {recording_id}: {e}", exc_info=True)
+            raise
+
+    def get_latest_by_recording_id(self, recording_id):
+        """Get the most recent result for a recording."""
+        logger.debug(f"Fetching latest result for recording: {recording_id}")
+        query = "SELECT * FROM results WHERE recording_id = %s ORDER BY inferenced_at DESC LIMIT 1;"
+        try:
+            with self.get_connection() as conn:
+                cursor = self.get_dict_cursor(conn)
+                cursor.execute(query, (recording_id,))
+                result = cursor.fetchone()
+                if result:
+                    logger.debug(f"Latest result found for recording {recording_id}: result_id={result['id']}")
+                else:
+                    logger.warning(f"No result found for recording {recording_id}")
+                return result
+        except Exception as e:
+            logger.error(f"Failed to fetch latest result for recording {recording_id}: {e}", exc_info=True)
             raise

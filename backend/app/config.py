@@ -52,5 +52,31 @@ ELECTRODE_CHANNELS = [
     "Pz",
 ]
 
+# Standard 10-20 EEG electrode positions (normalized x, y coordinates)
+# For topographic visualization and spatial feature mapping
+# Coordinates are in a unit circle (approx -1 to 1 for both x and y)
+# x: left (-) to right (+), y: back (-) to front (+)
+ELECTRODE_POSITIONS = {
+    "Fp1": (-0.31, 0.95),  # Left frontal pole
+    "Fp2": (0.31, 0.95),   # Right frontal pole
+    "F7": (-0.75, 0.55),   # Left frontal lateral
+    "F3": (-0.45, 0.60),   # Left frontal
+    "Fz": (0.0, 0.65),     # Frontal midline
+    "F4": (0.45, 0.60),    # Right frontal
+    "F8": (0.75, 0.55),    # Right frontal lateral
+    "T7": (-0.95, 0.0),    # Left temporal
+    "C3": (-0.55, 0.0),    # Left central
+    "Cz": (0.0, 0.0),      # Central midline
+    "C4": (0.55, 0.0),     # Right central
+    "T8": (0.95, 0.0),     # Right temporal
+    "P7": (-0.75, -0.55),  # Left parietal lateral
+    "P3": (-0.45, -0.60),  # Left parietal
+    "Pz": (0.0, -0.65),    # Parietal midline
+    "P4": (0.45, -0.60),   # Right parietal
+    "P8": (0.75, -0.55),   # Right parietal lateral
+    "O1": (-0.31, -0.95),  # Left occipital
+    "O2": (0.31, -0.95),   # Right occipital
+}
+
 # Model paths
 MODEL_PATH = "app/ml/optimized_model.pth"

@@ -19,6 +19,7 @@ from .core.error_handle import error_handle
 from .core.logging_config import get_app_logger
 from .db.connection import get_db_connection
 from .db.repositories.band_powers import BandPowersRepository
+from .db.repositories.channel_importance import ChannelImportanceRepository
 from .db.repositories.clinicians import CliniciansRepository
 from .db.repositories.ratios import RatiosRepository
 from .db.repositories.recordings import RecordingsRepository
@@ -26,6 +27,7 @@ from .db.repositories.results import ResultsRepository
 from .db.repositories.subjects import SubjectsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
+from .services.channel_importance_service import ChannelImportanceService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
@@ -110,6 +112,7 @@ recording_service = RecordingService(
 )
 results_service = ResultsService(results_repo)
 pdf_service = PDFReportService()
+channel_importance_service = ChannelImportanceService(model_loader)
 
 
 # Authentication decorator
@@ -344,6 +347,13 @@ def results():
 @login_required
 def about():
     return render_template("about.html")
+
+
+@app.route("/channel-importance-demo.html")
+@login_required
+def channel_importance_demo():
+    """Demo page for channel importance visualization."""
+    return render_template("channel_importance_demo.html")
 
 
 @app.route("/index.html")
@@ -688,6 +698,135 @@ def generate_result_pdf(result_id):
     except Exception as e:
         logger.error(f"Error generating PDF for result {result_id}: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate PDF: {str(e)}"}), 500
+
+
+@app.route("/api/channel-importance/upload", methods=["POST"])
+@login_required
+def compute_channel_importance_upload():
+    """Compute channel importance from uploaded EEG file."""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "Empty filename"}), 400
+
+        if not file_service.is_allowed_file(file.filename):
+            return jsonify({"error": "File type not supported"}), 400
+
+        logger.info(f"Computing channel importance for uploaded file: {file.filename}")
+
+        # Read and validate CSV
+        df = file_service.read_csv(file)
+        file_service.validate_eeg_data(df)
+
+        # Compute channel importance with visualizations
+        result = channel_importance_service.compute_channel_importance_with_visualizations(df)
+
+        # Add electrode positions for reference
+        from .config import ELECTRODE_POSITIONS
+        result["electrode_positions"] = ELECTRODE_POSITIONS
+
+        logger.info("Channel importance computation completed")
+        return jsonify(result), 200
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error computing channel importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to compute channel importance: {str(e)}"}), 500
+
+
+@app.route("/api/channel-importance/recording/<int:recording_id>", methods=["GET"])
+@login_required
+def compute_channel_importance_recording(recording_id):
+    """Compute channel importance from existing recording."""
+    try:
+        logger.info(f"Computing channel importance for recording {recording_id}")
+
+        # Get recording
+        recording = recording_service.get_recording(recording_id)
+        if not recording:
+            return jsonify({"error": "Recording not found"}), 404
+
+        # Check if file exists
+        file_path = recording.get("file_path")
+        if not file_path or not Path(file_path).exists():
+            return jsonify({"error": "Recording file not found"}), 404
+
+        # Read the CSV file
+        import pandas as pd
+        df = pd.read_csv(file_path)
+        file_service.validate_eeg_data(df)
+        
+        # Get result_id for this recording (most recent)
+        result = ResultsRepository.get_latest_by_recording_id(recording_id)
+        result_id = result.get('id') if result else None
+
+        # Compute channel importance with visualizations and save to DB
+        result_data = channel_importance_service.compute_channel_importance_with_visualizations(df, result_id=result_id)
+
+        # Add electrode positions for reference
+        from .config import ELECTRODE_POSITIONS
+        result_data["electrode_positions"] = ELECTRODE_POSITIONS
+
+        # Add recording metadata
+        result_data["recording_id"] = recording_id
+        result_data["subject_id"] = recording.get("subject_id")
+        result_data["subject_code"] = recording.get("subject_code")
+        result_data["result_id"] = result_id
+
+        logger.info("Channel importance computation completed")
+        return jsonify(result_data), 200
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error computing channel importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to compute channel importance: {str(e)}"}), 500
+
+
+@app.route("/api/channel-importance/result/<int:result_id>", methods=["GET"])
+@login_required
+def get_channel_importance_by_result(result_id):
+    """Get channel importance data for a specific result from database."""
+    try:
+        logger.info(f"Retrieving channel importance for result {result_id}")
+        
+        # Get from database
+        channel_importance = ChannelImportanceRepository.get_by_result_id(result_id)
+        
+        if not channel_importance:
+            return jsonify({"error": "Channel importance data not found"}), 404
+        
+        # Format response
+        response = {
+            "result_id": result_id,
+            "classification": channel_importance["predicted_class"],
+            "confidence": channel_importance["confidence_score"],
+            "channel_importance": channel_importance["importance_scores"],
+            "importance_normalized": channel_importance["normalized_scores"],
+            "visualizations": {
+                "topographic_map": channel_importance["topographic_map"],
+                "bar_chart": channel_importance["bar_chart"],
+                "regional_chart": channel_importance["regional_chart"]
+            },
+            "created_at": channel_importance["created_at"].isoformat() if channel_importance.get("created_at") else None
+        }
+        
+        # Add electrode positions for reference
+        from .config import ELECTRODE_POSITIONS
+        response["electrode_positions"] = ELECTRODE_POSITIONS
+        
+        logger.info("Channel importance retrieved successfully")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving channel importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to retrieve channel importance: {str(e)}"}), 500
 
 
 @app.route("/api/model/info", methods=["GET"])

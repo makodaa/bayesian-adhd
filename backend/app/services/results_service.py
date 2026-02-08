@@ -1,5 +1,6 @@
 from typing import Optional
 from ..db.repositories.results import ResultsRepository
+from ..db.repositories.channel_importance import ChannelImportanceRepository
 from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
@@ -113,6 +114,18 @@ class ResultsService:
                     (result_id,)
                 )
                 result['ratios'] = cursor.fetchall()
+                
+                # Get channel importance if available
+                try:
+                    channel_importance = ChannelImportanceRepository.get_by_result_id(result_id)
+                    if channel_importance:
+                        result['channel_importance'] = channel_importance
+                        logger.debug(f"Channel importance data loaded for result {result_id}")
+                    else:
+                        logger.debug(f"No channel importance data for result {result_id}")
+                except Exception as e:
+                    logger.warning(f"Could not load channel importance for result {result_id}: {e}")
+                    result['channel_importance'] = None
                 
                 logger.info(f"Retrieved full details for result {result_id}")
                 return result
