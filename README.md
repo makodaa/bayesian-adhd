@@ -80,7 +80,7 @@ docker-compose up -d
 
 3. Access the application:
 
--   Open your browser to `http://localhost:5001`
+-   Open your browser to `http://localhost:8000`
 -   The database will be automatically initialized on first run
 
 ### Usage
@@ -108,6 +108,10 @@ docker-compose logs -f backend
 
 # Stop services
 docker-compose down
+
+# Reset the database when problems are encountered
+docker compose down -v && docker compose up --build # For macOS / Linux
+docker compose down -v ; docker compose up --build # For Windows
 ```
 
 ### Database Access

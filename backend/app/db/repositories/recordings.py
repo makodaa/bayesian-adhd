@@ -28,7 +28,7 @@ class RecordingsRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to create recording for subject {subject_id}: {e}", exc_info=True)
             raise
-    
+
     def get_by_id(self, recording_id):
         """Get recording by ID."""
         logger.debug(f"Fetching recording by ID: {recording_id}")
@@ -46,7 +46,7 @@ class RecordingsRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to fetch recording {recording_id}: {e}", exc_info=True)
             raise
-    
+
     def get_by_subject(self, subject_id):
         """Get all recordings for a subject."""
         logger.debug(f"Fetching all recordings for subject: {subject_id}")

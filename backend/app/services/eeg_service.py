@@ -1,37 +1,54 @@
 from typing import Any, Generator, Literal
+
 import mne
-import torch
 import numpy as np
 import pandas as pd
-from ..ml.model_loader import ModelLoader
-from ..config import ELECTRODE_CHANNELS, SAMPLE_RATE, SAMPLES_PER_WINDOW, WINDOW_STEP, TARGET_FREQUENCY_BINS, FREQUENCY_BANDS
-from ..db.repositories.results import ResultsRepository
-from ..db.repositories.recordings import RecordingsRepository
-from ..core.logging_config import get_app_logger
+import torch
 from scipy import signal
 from scipy.integrate import simpson
+
+from ..config import (
+    CLASSIFYING_FREQUENCY_BANDS,
+    DISPLAY_FREQUENCY_BANDS,
+    ELECTRODE_CHANNELS,
+    SAMPLE_RATE,
+    SAMPLES_PER_WINDOW,
+    TARGET_FREQUENCY_BINS,
+    WINDOW_STEP,
+)
+from ..core.logging_config import get_app_logger
+from ..db.repositories.recordings import RecordingsRepository
+from ..db.repositories.results import ResultsRepository
+from ..ml.model_loader import ModelLoader
 
 logger = get_app_logger(__name__)
 
 
 class EEGService:
     """Handle EEG signal classification, ADHD prediction, and result saving"""
-    def __init__(self,
-                model_loader:ModelLoader,
-                results_repo:ResultsRepository,
-                recordings_repo:RecordingsRepository):
+
+    def __init__(
+        self,
+        model_loader: ModelLoader,
+        results_repo: ResultsRepository,
+        recordings_repo: RecordingsRepository,
+    ):
         self.model_loader = model_loader
         self.results_repo = results_repo
         self.recordings_repo = recordings_repo
 
-    def process_window(self, window:pd.DataFrame, window_count:int) :
+    def process_window(self, window: pd.DataFrame, window_count: int):
         """Process a single window and compute frequency features."""
         logger.debug(f"Processing window {window_count} with {len(window)} samples")
 
-        electrode_columns = window[ELECTRODE_CHANNELS].select_dtypes(include=[np.number]).columns
+        electrode_columns = (
+            window[ELECTRODE_CHANNELS].select_dtypes(include=[np.number]).columns
+        )
 
         n = len(window)
-        assert len(electrode_columns) == 19, f"There should only be 19 electrode columns, received {n}"
+        assert len(electrode_columns) == 19, (
+            f"There should only be 19 electrode columns, received {n}"
+        )
         original_freqs = np.fft.rfftfreq(n, d=1 / SAMPLE_RATE)
 
         # compute power spectra for all electrodes
@@ -42,7 +59,9 @@ class EEGService:
             power = np.abs(fft_vals) ** 2
 
             # interpolate to common freq bins
-            electrode_powers[electrode] = np.interp(TARGET_FREQUENCY_BINS, original_freqs, power)
+            electrode_powers[electrode] = np.interp(
+                TARGET_FREQUENCY_BINS, original_freqs, power
+            )
 
         # build rows: one per frequency bin
         for i, f in enumerate(TARGET_FREQUENCY_BINS):
@@ -129,7 +148,6 @@ class EEGService:
 
         return cleaned_df
 
-
     def compute_band_power(self, data, fs, band):
         """Compute absolute power in a frequency band using Welch's method"""
         low, high = band
@@ -145,33 +163,43 @@ class EEGService:
 
         return band_power
 
-    def classify(self, df:pd.DataFrame) -> tuple[str, float, dict]:
+    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict]:
         """Classify EEG data for ADHD probability"""
         logger.info(f"Starting EEG classification on {len(df)} samples")
         logger.info(f"DataFrame columns: {df.columns.tolist()}")
 
         # Check if columns are numeric (0-18 or 1-19) and rename them to electrode names
         if list(df.columns) == [str(i) for i in range(19)]:
-            logger.info("Detected numeric column names (0-18), renaming to electrode channels")
+            logger.info(
+                "Detected numeric column names (0-18), renaming to electrode channels"
+            )
             df.columns = ELECTRODE_CHANNELS
         elif list(df.columns) == list(range(19)):
-            logger.info("Detected numeric column names (0-18), renaming to electrode channels")
+            logger.info(
+                "Detected numeric column names (0-18), renaming to electrode channels"
+            )
             df.columns = ELECTRODE_CHANNELS
         elif list(df.columns) == [str(i) for i in range(1, 20)]:
-            logger.info("Detected numeric column names (1-19), renaming to electrode channels")
+            logger.info(
+                "Detected numeric column names (1-19), renaming to electrode channels"
+            )
             df.columns = ELECTRODE_CHANNELS
         elif list(df.columns) == list(range(1, 20)):
-            logger.info("Detected numeric column names (1-19), renaming to electrode channels")
+            logger.info(
+                "Detected numeric column names (1-19), renaming to electrode channels"
+            )
             df.columns = ELECTRODE_CHANNELS
-        
+
         # Check if expected columns exist
         missing_channels = [ch for ch in ELECTRODE_CHANNELS if ch not in df.columns]
         if missing_channels:
             logger.error(f"Missing electrode channels: {missing_channels}")
             logger.error(f"Available columns: {df.columns.tolist()}")
-            raise ValueError(f"CSV file is missing required electrode channels: {missing_channels}. "
-                            f"Expected channels: {ELECTRODE_CHANNELS}. "
-                            f"Found columns: {df.columns.tolist()}")
+            raise ValueError(
+                f"CSV file is missing required electrode channels: {missing_channels}. "
+                f"Expected channels: {ELECTRODE_CHANNELS}. "
+                f"Found columns: {df.columns.tolist()}"
+            )
         window_count = 0
         n_samples = len(df)
         output = []
@@ -184,15 +212,17 @@ class EEGService:
         n_samples = len(df)
 
         # Initialize power accumulators
-        powers = {band: 0 for band in FREQUENCY_BANDS.keys()}
+        powers = {band: 0 for band in CLASSIFYING_FREQUENCY_BANDS.keys()}
 
         # Compute band powers for each channel and average across channels
         for channel in ELECTRODE_CHANNELS:
             if channel in df.columns:
                 eeg_data = df[channel].values
 
-                for band_name, band_range in FREQUENCY_BANDS.items():
-                    powers[band_name] += self.compute_band_power(eeg_data, SAMPLE_RATE, band_range)
+                for band_name, band_range in CLASSIFYING_FREQUENCY_BANDS.items():
+                    powers[band_name] += self.compute_band_power(
+                        eeg_data, SAMPLE_RATE, band_range
+                    )
 
         # Average across channels
         n_channels = len(ELECTRODE_CHANNELS)
@@ -200,8 +230,8 @@ class EEGService:
             powers[band_name] /= n_channels
 
         # Compute ratios
-        tbr = powers['theta'] / powers['beta'] if powers['beta'] != 0 else np.nan
-        tar = powers['theta'] / powers['alpha'] if powers['alpha'] != 0 else np.nan
+        tbr = powers["theta"] / powers["beta"] if powers["beta"] != 0 else np.nan
+        tar = powers["theta"] / powers["alpha"] if powers["alpha"] != 0 else np.nan
 
         # Compute total power and relative powers for frontend display
         total_power = sum(powers.values())
@@ -211,37 +241,47 @@ class EEGService:
         }
 
         # Standard bands for frontend display (exclude fast_alpha and high_beta)
-        DISPLAY_BANDS = {'delta', 'theta', 'alpha', 'beta', 'gamma'}
-        
+
         # Prepare band data for return (matches frontend expectations)
         # Full data includes all bands for database storage
         band_data = {
-            'average_absolute_power': {band: float(power) for band, power in powers.items()},
-            'average_relative_power': relative_powers,
-            'band_ratios': {
-                'theta_beta_ratio': float(tbr) if not np.isnan(tbr) else 0.0,
-                'theta_alpha_ratio': float(tar) if not np.isnan(tar) else 0.0,
-            }
+            "average_absolute_power": {
+                band: float(power) for band, power in powers.items()
+            },
+            "average_relative_power": relative_powers,
+            "band_ratios": {
+                "theta_beta_ratio": float(tbr) if not np.isnan(tbr) else 0.0,
+                "theta_alpha_ratio": float(tar) if not np.isnan(tar) else 0.0,
+            },
         }
-        
+
         # Filtered data for frontend display (only standard 5 bands)
-        band_data['display_bands'] = {
-            'average_absolute_power': {band: power for band, power in band_data['average_absolute_power'].items() if band in DISPLAY_BANDS},
-            'average_relative_power': {band: power for band, power in band_data['average_relative_power'].items() if band in DISPLAY_BANDS},
-            'band_ratios': band_data['band_ratios']
+        band_data["display_bands"] = {
+            "average_absolute_power": {
+                band: power
+                for band, power in band_data["average_absolute_power"].items()
+                if band in DISPLAY_FREQUENCY_BANDS
+            },
+            "average_relative_power": {
+                band: power
+                for band, power in band_data["average_relative_power"].items()
+                if band in DISPLAY_FREQUENCY_BANDS
+            },
+            "band_ratios": band_data["band_ratios"],
         }
 
         # Store power results for model features
         power_results = {
-            'theta': powers['theta'],
-            'beta': powers['beta'],
-            'alpha': powers['alpha'],
-            'fast_alpha': powers['fast_alpha'],
-            'high_beta': powers['high_beta'],
-            'tbr': tbr,
-            'tar': tar,
+            "theta": powers["theta"],
+            "beta": powers["beta"],
+            "alpha": powers["alpha"],
+            "fast_alpha": powers["fast_alpha"],
+            "high_beta": powers["high_beta"],
+            "tbr": tbr,
+            "tar": tar,
         }
 
+        # Normalize the data subject-wise.
         std_dev = df.std()
         mean = df.mean()
         df = (df - mean) / std_dev
@@ -249,7 +289,7 @@ class EEGService:
         # Sliding window with overlap
         # Takes WINDOW_STEP steps every iteration
         for start in range(0, n_samples - SAMPLES_PER_WINDOW + 1, WINDOW_STEP):
-            window = df.iloc[start:start + SAMPLES_PER_WINDOW]
+            window = df.iloc[start : start + SAMPLES_PER_WINDOW]
             for frequency in self.process_window(window, window_count):
                 output.append(frequency)
             window_count += 1
@@ -261,72 +301,94 @@ class EEGService:
         for power_name, power_value in power_results.items():
             frequency_df[power_name] = power_value
 
-        frequency_count = len(frequency_df['Frequency'].unique())
-        window_count = len(frequency_df['Window'].unique())
-        numeric_df = frequency_df.drop(['Window','Frequency'], axis=1)
+        frequency_count = len(frequency_df["Frequency"].unique())
+        window_count = len(frequency_df["Window"].unique())
+        numeric_df = frequency_df.drop(["Window", "Frequency"], axis=1)
 
         # shape: (windows, freq, features)
         # Reshaping dataframe into tensor for classification
-        logger.debug(f"Reshaping data: {window_count} windows, {frequency_count} frequencies, {numeric_df.shape[1]} features")
-        full_ndarray = numeric_df.values.reshape((window_count, frequency_count, numeric_df.shape[1]))
+        logger.debug(
+            f"Reshaping data: {window_count} windows, {frequency_count} frequencies, {numeric_df.shape[1]} features"
+        )
+        full_ndarray = numeric_df.values.reshape(
+            (window_count, frequency_count, numeric_df.shape[1])
+        )
         full_ndarray = full_ndarray[..., np.newaxis]
 
         logger.info("Running model inference")
         with torch.no_grad():
-            tensor = torch.tensor(full_ndarray, dtype=torch.float32).permute(0,3,1,2)
+            tensor = torch.tensor(full_ndarray, dtype=torch.float32).permute(0, 3, 1, 2)
 
             print(f"The tensor shape: {tensor.shape}")
-            x_eeg  = tensor[:, :, :, :19]    # (1, 77, 19)
-            x_band = tensor[:, 0, 0, 19:]    # (7,)
+            x_eeg = tensor[:, :, :, :19]  # (1, 77, 19)
+            x_band = tensor[:, 0, 0, 19:]  # (7,)
 
             print((x_eeg.shape, x_band.shape))
-            predictions = self.model_loader.model(x_eeg, x_band).softmax(1).detach().numpy()
-            print("="*100)
+            predictions = (
+                self.model_loader.model(x_eeg, x_band).softmax(1).detach().numpy()
+            )
+            print("=" * 100)
             print(f"Predictions: {predictions}")
-            print("="*100)
+            print("=" * 100)
 
             adhd_1_name = "Combined / C (ADHD-C)"
             adhd_2_name = "Hyperactive-Impulsive (ADHD-H)"
             adhd_3_name = "Inattentive (ADHD-I)"
             control_name = "Non-ADHD"
 
-            adhd_1, adhd_2, adhd_3, control = np.sum(predictions, axis=0) / np.sum(predictions)
+            adhd_1, adhd_2, adhd_3, control = np.sum(predictions, axis=0) / np.sum(
+                predictions
+            )
             maximum = max(adhd_1, adhd_2, adhd_3, control)
             # Store confidence as decimal (0-1) - frontend/PDF will multiply by 100 for display
             conf = float(maximum)
 
             if -0.001 <= maximum - adhd_1 <= 0.001:
-                logger.info(f"Classification result: {adhd_1_name} with {conf*100:.2f}% confidence")
+                logger.info(
+                    f"Classification result: {adhd_1_name} with {conf * 100:.2f}% confidence"
+                )
                 return adhd_1_name, conf, band_data
             elif -0.001 <= maximum - adhd_2 <= 0.001:
-                logger.info(f"Classification result: {adhd_2_name} with {conf*100:.2f}% confidence")
+                logger.info(
+                    f"Classification result: {adhd_2_name} with {conf * 100:.2f}% confidence"
+                )
                 return adhd_2_name, conf, band_data
             elif -0.001 <= maximum - adhd_3 <= 0.001:
-                logger.info(f"Classification result: {adhd_3_name} with {conf*100:.2f}% confidence")
+                logger.info(
+                    f"Classification result: {adhd_3_name} with {conf * 100:.2f}% confidence"
+                )
                 return adhd_3_name, conf, band_data
             elif -0.001 <= maximum - control <= 0.001:
-                logger.info(f"Classification result: {control_name} with {conf*100:.2f}% confidence")
+                logger.info(
+                    f"Classification result: {control_name} with {conf * 100:.2f}% confidence"
+                )
                 return control_name, conf, band_data
+            raise ValueError("Unreachable")
 
-
-    def classify_and_save(self, recording_id:int, df:pd.DataFrame, clinician_id:int=None)->dict:
+    def classify_and_save(
+        self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
+    ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
         classification, confidence, band_data = self.classify(df)
 
-        logger.info(f"Saving classification result to database: {classification} ({confidence*100:.2f}%)")
+        logger.info(
+            f"Saving classification result to database: {classification} ({confidence * 100:.2f}%)"
+        )
         result_id = self.results_repo.create_result(
-            recording_id = recording_id,
-            classification = classification,
-            confidence_score = confidence,
-            clinician_id = clinician_id
+            recording_id=recording_id,
+            classification=classification,
+            confidence_score=confidence,
+            clinician_id=clinician_id,
         )
 
-        logger.info(f"Classification complete for recording {recording_id}, result ID: {result_id}")
+        logger.info(
+            f"Classification complete for recording {recording_id}, result ID: {result_id}"
+        )
         return {
-            'recording_id': recording_id,
-            'result_id': result_id,
-            'classification': classification,
-            'confidence_score': confidence,
-            'clinician_id': clinician_id
+            "recording_id": recording_id,
+            "result_id": result_id,
+            "classification": classification,
+            "confidence_score": confidence,
+            "clinician_id": clinician_id,
         }

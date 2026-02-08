@@ -1076,7 +1076,17 @@
                 const container = document.getElementById(containerId);
                 if (!container) return;
 
-                container.innerHTML = `<img src="${imageData}" alt="EEG Visualization" />`;
+                // Check if imageData is an array of images or a single image
+                if (Array.isArray(imageData)) {
+                    // Stitch multiple images vertically
+                    const imagesHtml = imageData.map(img => 
+                        `<img src="${img}" alt="EEG Visualization" style="display: block; width: 100%; margin: 0; padding: 0;" />`
+                    ).join('');
+                    container.innerHTML = `<div style="display: flex; flex-direction: column;">${imagesHtml}</div>`;
+                } else {
+                    // Single image (backward compatibility)
+                    container.innerHTML = `<img src="${imageData}" alt="EEG Visualization" />`;
+                }
             }
 
             // File input handler
@@ -1142,31 +1152,36 @@
                 // Enable tabs
                 setTabsEnabled(true);
 
-                // Load each visualization
-                for (const band of bands) {
-                    const containerId = `viz-${band}`;
-                    setLoadingState(containerId, true);
+                // Load each visualization by loading them all at the same time.
+                try {
+                    for (const band of bands) {
+                        const containerId = `viz-${band}`;
+                        setLoadingState(containerId, true);
+                    }
 
-                    try {
-                        const response = await fetch(`/visualize_eeg/${band}`, {
+                    const response = await fetch(
+                        `/visualize_all_eeg`, {
                             method: "POST",
                             body: formData,
-                        });
-                        const data = await response.json();
+                        },
+                    );
 
-                        if (data.result) {
-                            displayVisualization(containerId, data.result);
-                            analysisData.visualizations[band] = data.result;
+                    console.log(`Response received: ${response}`);
+                    const json = await response.json();
+                    const {result: visualizations} = json;
+                    for (const {band, images} of visualizations) {
+                        console.warn(`Visualization for ${band} loaded successfully.`);
+                        if (!bands.includes(band)) {
+                        console.error(`Visualization for ${band} is not supported. What hafen, vella?`);
+                        continue;
                         }
-                    } catch (error) {
-                        console.error(
-                            `Error loading ${band} visualization:`,
-                            error
-                        );
-                        document.getElementById(
-                            containerId
-                        ).innerHTML = `<p class="text-danger">Failed to load visualization</p>`;
+
+                        const containerId = `viz-${band}`;
+                        displayVisualization(containerId, images);
+                        analysisData.visualizations[band] = images;
                     }
+                } catch (error) {
+                    console.error(`Error loading visualizations:`, error);
                 }
             }
 
@@ -1189,8 +1204,7 @@
 
             // Display band power analysis
             function displayBandPowers(bandData) {
-                const barsContainer =
-                    document.getElementById("band-power-bars");
+                const barsContainer = document.getElementById("band-power-bars");
                 console.log('Band data:', bandData);
 
                 // Use display_bands if available (filtered for frontend), otherwise fall back to full data
@@ -1211,29 +1225,29 @@
 
                 // Normative values for comparison (in percentages)
                 const normativeRanges = {
-                    'delta': '15 – 30%',
-                    'theta': '15 – 25%',
-                    'alpha': '25 – 35%',
-                    'fast_alpha': '4 – 7%',
-                    'beta': '10 – 15%',
-                    'high_beta': '3 – 5%',
-                    'gamma': '5 – 10%'
+                    'delta': '15 - 30%',
+                    'theta': '15 - 25%',
+                    'alpha': '25 - 35%',
+                    'fast_alpha': '4 - 7%',
+                    'beta': '10 - 15%',
+                    'high_beta': '3 - 5%',
+                    'gamma': '5 - 10%'
                 };
 
                 let html = "";
                 bands.forEach((band) => {
-                    const percentage = (
-                        displayData.average_relative_power[band] * 100
-                    ).toFixed(1);
-                    const normative = normativeRanges[band.toLowerCase()] || normativeRanges[band] || 'N/A';
+                    const percentage = (displayData.average_relative_power[band] * 100).toFixed(1);
+                    const normative = normativeRanges[band.toLowerCase()]
+                                    || normativeRanges[band]
+                                    || 'N/A';
+
+                    const bandDisplay = band[0].toUpperCase() + band.slice(1);
                     html += `
                         <div class="band-bar">
-                            <div class="band-label">${band.charAt(0).toUpperCase() + band.slice(1)
-                        }</div>
+                            <div class="band-label">${bandDisplay}</div>
                             <div class="band-progress">
-                                <div class="band-progress-bar" 
-                                     style="width: ${percentage}%; background-color: ${bandColors[band]
-                        };">
+                                <div class="band-progress-bar"
+                                     style="width: ${percentage}%; background-color: ${bandColors[band]};">
                                 </div>
                             </div>
                             <div class="band-value">${percentage}%</div>
@@ -1323,14 +1337,10 @@
 
                     try {
                         // Load visualizations in parallel with prediction (which now includes band analysis)
-                        const [predictionPromise, vizPromise] =
-                            await Promise.all([
-                                fetch("/predict", {
-                                    method: "POST",
-                                    body: formData,
-                                }),
-                                loadVisualizations(vizFormData),
-                            ]);
+                        const predictionPromise = await fetch("/predict", {
+                            method: "POST",
+                            body: formData,
+                        });
 
                         // Process prediction (now includes band analysis)
                         const predictionData = await predictionPromise.json();
@@ -1393,6 +1403,8 @@
                             prediction: result,
                             bands: bandData,
                         };
+
+                        loadVisualizations(vizFormData);
                     } catch (error) {
                         console.error("Analysis error:", error);
                         alert(

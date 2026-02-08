@@ -7,6 +7,7 @@ class RatiosRepository(BaseRepository):
     def create_ratio(self, result_id, ratio_name, ratio_value):
         """Create a new ratio entry and return its ID."""
         logger.debug(f"Creating ratio for result {result_id}: {ratio_name}={ratio_value:.4f}")
+
         query = """
         INSERT INTO ratios(result_id, ratio_name, ratio_value)
         VALUES (%s, %s, %s)
@@ -22,7 +23,7 @@ class RatiosRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to create ratio for result {result_id}: {e}", exc_info=True)
             raise
-    
+
     def get_by_result(self, result_id):
         """Get all ratios for a result."""
         logger.debug(f"Fetching ratios for result: {result_id}")
