@@ -580,6 +580,18 @@
                   Channel Importance
                 </button>
               </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="temporal-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#temporal-content"
+                  type="button"
+                  role="tab"
+                >
+                  Temporal Importance
+                </button>
+              </li>
             </ul>
 
             <!-- Tab Content -->
@@ -600,6 +612,15 @@
                 <div id="channel-importance-content">
                   <div class="text-center text-muted" style="padding: 2rem">
                     <p>Click on a result to view channel importance analysis</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Temporal Importance Tab -->
+              <div class="tab-pane fade" id="temporal-content" role="tabpanel">
+                <div id="temporal-importance-content">
+                  <div class="text-center text-muted" style="padding: 2rem">
+                    <p>Click on a result to view temporal importance analysis</p>
                   </div>
                 </div>
               </div>
@@ -657,9 +678,8 @@
       });
 
       let allResults = [];
-      let currentResultId = null; // Track currently displayed result for PDF download
-      let currentRecordingId = null; // Track recording ID for channel importance
-      let currentResultId = null; // Track result ID for channel importance
+      let currentResultId = null; // Track currently displayed result for PDF download and importance analyses
+      let currentRecordingId = null; // Track recording ID for importance analyses
 
       // Load results
       async function loadResults() {
@@ -1045,15 +1065,22 @@
       }
 
       // Load channel importance when tab is clicked
-      document.getElementById('importance-tab').addEventListener('shown.bs.tab', function (event) {
+      document.getElementById("importance-tab").addEventListener("shown.bs.tab", function (event) {
         if (currentResultId) {
           loadChannelImportance(currentResultId, currentRecordingId);
         }
       });
 
+      // Load temporal importance when tab is clicked
+      document.getElementById("temporal-tab").addEventListener("shown.bs.tab", function (event) {
+        if (currentResultId) {
+          loadTemporalImportance(currentResultId, currentRecordingId);
+        }
+      });
+
       // Load channel importance data
       async function loadChannelImportance(resultId, recordingId) {
-        const container = document.getElementById('channel-importance-content');
+        const container = document.getElementById("channel-importance-content");
 
         // Show loading state
         container.innerHTML = `
@@ -1071,7 +1098,7 @@
 
           // If not found in database, compute it
           if (response.status === 404) {
-            console.log('Channel importance not found in database, computing...');
+            console.log("Channel importance not found in database, computing...");
             container.innerHTML = `
               <div class="text-center" style="padding: 2rem;">
                 <div class="spinner-border text-primary" role="status">
@@ -1085,32 +1112,17 @@
 
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to load channel importance');
+            throw new Error(errorData.error || "Failed to load channel importance");
           }
 
           const data = await response.json();
           displayChannelImportance(data);
 
+          // After channel importance loads successfully, preload temporal importance in background
+          // This ensures it's ready when user clicks the tab
+          preloadTemporalImportance(resultId, recordingId);
         } catch (error) {
-          console.error('Error loading channel importance:', error);
-          container.innerHTML = `
-            <div class="alert alert-danger">
-              <strong>Error:</strong> ${error.message}
-            </div>
-          `;
-        }
-      }
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to load channel importance');
-          }
-
-          const data = await response.json();
-          displayChannelImportance(data);
-
-        } catch (error) {
-          console.error('Error loading channel importance:', error);
+          console.error("Error loading channel importance:", error);
           container.innerHTML = `
             <div class="alert alert-danger">
               <strong>Error:</strong> ${error.message}
@@ -1121,7 +1133,7 @@
 
       // Display channel importance visualizations
       function displayChannelImportance(data) {
-        const container = document.getElementById('channel-importance-content');
+        const container = document.getElementById("channel-importance-content");
 
         // Create tabs for different visualizations
         container.innerHTML = `
@@ -1156,6 +1168,153 @@
             </div>
           </div>
         `;
+      }
+
+      // Load temporal importance data
+      async function loadTemporalImportance(resultId, recordingId) {
+        const container = document.getElementById("temporal-importance-content");
+
+        // Show loading state
+        container.innerHTML = `
+          <div class="text-center" style="padding: 2rem;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading temporal importance...</p>
+          </div>
+        `;
+
+        try {
+          // First try to load from database by result_id
+          let response = await fetch(`/api/temporal-importance/result/${resultId}`);
+
+          // If not found in database, compute it
+          if (response.status === 404) {
+            console.log("Temporal importance not found in database, computing...");
+            container.innerHTML = `
+              <div class="text-center" style="padding: 2rem;">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Computing temporal importance... This may take 15-30 seconds.</p>
+                <p class="text-muted small">Analyzing time-based sensitivity patterns...</p>
+              </div>
+            `;
+            response = await fetch(`/api/temporal-importance/recording/${recordingId}`);
+          }
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to load temporal importance");
+          }
+
+          const data = await response.json();
+          displayTemporalImportance(data);
+        } catch (error) {
+          console.error("Error loading temporal importance:", error);
+          container.innerHTML = `
+            <div class="alert alert-danger">
+              <strong>Error:</strong> ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      // Display temporal importance visualizations
+      function displayTemporalImportance(data) {
+        const container = document.getElementById("temporal-importance-content");
+
+        const temporal = data.temporal_importance;
+
+        // Create tabs for different visualizations
+        container.innerHTML = `
+          <div class="mb-3">
+            <div class="alert alert-info">
+              <strong>Classification:</strong> ${data.classification}
+              <span class="ms-3"><strong>Confidence:</strong> ${(data.confidence * 100).toFixed(2)}%</span>
+              <span class="ms-3"><strong>Duration:</strong> ${temporal.total_duration_sec.toFixed(1)}s</span>
+              <span class="ms-3"><strong>Windows Analyzed:</strong> ${temporal.num_windows}</span>
+            </div>
+            <div class="alert alert-light">
+              <small>
+                <strong>Analysis Parameters:</strong> 
+                Window Size: ${temporal.window_size_ms}ms | 
+                Stride: ${temporal.stride_ms}ms
+              </small>
+            </div>
+          </div>
+
+          <ul class="nav nav-pills mb-3" id="temporalTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="time-curve-tab" data-bs-toggle="pill" data-bs-target="#time-curve-view" type="button">Time-Importance Curve</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="heatmap-tab" data-bs-toggle="pill" data-bs-target="#heatmap-view" type="button">Heatmap</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="stats-tab" data-bs-toggle="pill" data-bs-target="#stats-view" type="button">Statistics</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="temporalTabsContent">
+            <div class="tab-pane fade show active" id="time-curve-view" style="text-align: center;">
+              <img src="${data.visualizations.time_curve}" alt="Time-Importance Curve" style="max-width: 100%; height: auto;" />
+              <div class="mt-3 text-muted">
+                <small>Shows importance scores over time. Peaks indicate critical time segments for classification.</small>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="heatmap-view" style="text-align: center;">
+              <img src="${data.visualizations.heatmap}" alt="Temporal Heatmap" style="max-width: 100%; height: auto;" />
+              <div class="mt-3 text-muted">
+                <small>Color-coded view: Red = high importance, Blue = low importance.</small>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="stats-view" style="text-align: center;">
+              <img src="${data.visualizations.statistics}" alt="Statistical Summary" style="max-width: 100%; height: auto;" />
+              <div class="mt-3 text-muted">
+                <small>Distribution and summary statistics of temporal importance scores.</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Interpretation Guide</h6>
+                <ul class="small mb-0">
+                  <li><strong>Time-Importance Curve:</strong> Identifies when in time the model is most sensitive. High peaks show critical diagnostic segments.</li>
+                  <li><strong>Temporal Patterns:</strong> Can reveal attention lapses, behavioral changes, or artifact periods.</li>
+                  <li><strong>Clinical Value:</strong> Links EEG patterns to temporal dynamics of ADHD symptoms.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Preload temporal importance in background (non-blocking)
+      async function preloadTemporalImportance(resultId, recordingId) {
+        try {
+          // Check if already in database
+          let response = await fetch(`/api/temporal-importance/result/${resultId}`);
+
+          // If not found, compute it in background
+          if (response.status === 404) {
+            console.log("Preloading temporal importance in background...");
+            // Don't await - let it compute in background
+            fetch(`/api/temporal-importance/recording/${recordingId}`)
+              .then((res) => {
+                if (res.ok) {
+                  console.log("Temporal importance preloaded successfully");
+                }
+              })
+              .catch((err) => {
+                console.log("Background temporal importance loading failed:", err);
+              });
+          }
+        } catch (error) {
+          console.log("Error preloading temporal importance:", error);
+        }
       }
 
       // Search functionality

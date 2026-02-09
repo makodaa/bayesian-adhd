@@ -20,6 +20,7 @@ from .core.logging_config import get_app_logger
 from .db.connection import get_db_connection
 from .db.repositories.band_powers import BandPowersRepository
 from .db.repositories.channel_importance import ChannelImportanceRepository
+from .db.repositories.temporal_importance import TemporalImportanceRepository
 from .db.repositories.clinicians import CliniciansRepository
 from .db.repositories.ratios import RatiosRepository
 from .db.repositories.recordings import RecordingsRepository
@@ -28,6 +29,7 @@ from .db.repositories.subjects import SubjectsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
 from .services.channel_importance_service import ChannelImportanceService
+from .services.temporal_importance_service import TemporalImportanceService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
@@ -113,6 +115,7 @@ recording_service = RecordingService(
 results_service = ResultsService(results_repo)
 pdf_service = PDFReportService()
 channel_importance_service = ChannelImportanceService(model_loader)
+temporal_importance_service = TemporalImportanceService(model_loader)
 
 
 # Authentication decorator
@@ -827,6 +830,151 @@ def get_channel_importance_by_result(result_id):
     except Exception as e:
         logger.error(f"Error retrieving channel importance: {e}", exc_info=True)
         return jsonify({"error": f"Failed to retrieve channel importance: {str(e)}"}), 500
+
+
+# ==================== Temporal Importance API Routes ====================
+
+@app.route("/api/temporal-importance/upload", methods=["POST"])
+@login_required
+def compute_temporal_importance_upload():
+    """Compute temporal importance from uploaded EEG file."""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "Empty filename"}), 400
+
+        if not file_service.is_allowed_file(file.filename):
+            return jsonify({"error": "File type not supported"}), 400
+
+        # Get optional parameters
+        window_size_ms = request.form.get("window_size_ms", 500, type=int)
+        stride_ms = request.form.get("stride_ms", 100, type=int)
+
+        logger.info(f"Computing temporal importance for uploaded file: {file.filename}")
+        logger.info(f"Parameters: window_size={window_size_ms}ms, stride={stride_ms}ms")
+
+        # Read and validate CSV
+        df = file_service.read_csv(file)
+        file_service.validate_eeg_data(df)
+
+        # Compute temporal importance with visualizations
+        result = temporal_importance_service.compute_temporal_importance_with_visualizations(
+            df,
+            window_size_ms=window_size_ms,
+            stride_ms=stride_ms
+        )
+
+        logger.info("Temporal importance computation completed")
+        return jsonify(result), 200
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error computing temporal importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to compute temporal importance: {str(e)}"}), 500
+
+
+@app.route("/api/temporal-importance/recording/<int:recording_id>", methods=["GET"])
+@login_required
+def compute_temporal_importance_recording(recording_id):
+    """Compute temporal importance from existing recording."""
+    try:
+        # Get optional parameters from query string
+        window_size_ms = request.args.get("window_size_ms", 500, type=int)
+        stride_ms = request.args.get("stride_ms", 100, type=int)
+
+        logger.info(f"Computing temporal importance for recording {recording_id}")
+        logger.info(f"Parameters: window_size={window_size_ms}ms, stride={stride_ms}ms")
+
+        # Get recording
+        recording = recording_service.get_recording(recording_id)
+        if not recording:
+            return jsonify({"error": "Recording not found"}), 404
+
+        # Check if file exists
+        file_path = recording.get("file_path")
+        if not file_path or not Path(file_path).exists():
+            return jsonify({"error": "Recording file not found"}), 404
+
+        # Read the CSV file
+        import pandas as pd
+        df = pd.read_csv(file_path)
+        file_service.validate_eeg_data(df)
+        
+        # Get result_id for this recording (most recent)
+        result = ResultsRepository.get_latest_by_recording_id(recording_id)
+        result_id = result.get('id') if result else None
+
+        # Compute temporal importance with visualizations and save to DB
+        result_data = temporal_importance_service.compute_temporal_importance_with_visualizations(
+            df,
+            window_size_ms=window_size_ms,
+            stride_ms=stride_ms,
+            result_id=result_id
+        )
+
+        # Add recording metadata
+        result_data["recording_id"] = recording_id
+        result_data["subject_id"] = recording.get("subject_id")
+        result_data["subject_code"] = recording.get("subject_code")
+        result_data["result_id"] = result_id
+
+        logger.info("Temporal importance computation completed")
+        return jsonify(result_data), 200
+
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error computing temporal importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to compute temporal importance: {str(e)}"}), 500
+
+
+@app.route("/api/temporal-importance/result/<int:result_id>", methods=["GET"])
+@login_required
+def get_temporal_importance_by_result(result_id):
+    """Get temporal importance data for a specific result from database."""
+    try:
+        logger.info(f"Retrieving temporal importance for result {result_id}")
+        
+        # Get from database
+        from .db.repositories.temporal_importance import TemporalImportanceRepository
+        temporal_importance = TemporalImportanceRepository.get_by_result_id(result_id)
+        
+        if not temporal_importance:
+            return jsonify({"error": "Temporal importance data not found"}), 404
+        
+        # Format response
+        response = {
+            "result_id": result_id,
+            "classification": temporal_importance["predicted_class"],
+            "confidence": temporal_importance["confidence_score"],
+            "temporal_importance": {
+                "time_points": temporal_importance["time_points"],
+                "importance_scores": temporal_importance["importance_scores"],
+                "window_size_ms": temporal_importance["window_size_ms"],
+                "stride_ms": temporal_importance["stride_ms"],
+                "num_windows": len(temporal_importance["time_points"]),
+                "total_duration_sec": temporal_importance["time_points"][-1] if temporal_importance["time_points"] else 0
+            },
+            "visualizations": {
+                "time_curve": temporal_importance["time_curve_plot"],
+                "heatmap": temporal_importance["heatmap_plot"],
+                "statistics": temporal_importance["statistics_plot"]
+            },
+            "created_at": temporal_importance["created_at"].isoformat() if temporal_importance.get("created_at") else None
+        }
+        
+        logger.info("Temporal importance retrieved successfully")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving temporal importance: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to retrieve temporal importance: {str(e)}"}), 500
 
 
 @app.route("/api/model/info", methods=["GET"])

@@ -21,17 +21,17 @@ from app.services.channel_importance_service import ChannelImportanceService
 def generate_sample_eeg_data(duration_seconds=10, sample_rate=SAMPLE_RATE):
     """
     Generate synthetic EEG data for testing.
-    
+
     Args:
         duration_seconds: Length of recording in seconds
         sample_rate: Sampling rate in Hz
-        
+
     Returns:
         DataFrame with 19 EEG channels
     """
     n_samples = duration_seconds * sample_rate
     time = np.linspace(0, duration_seconds, n_samples)
-    
+
     data = {}
     for channel in ELECTRODE_CHANNELS:
         # Generate synthetic EEG-like signal (combination of sine waves)
@@ -40,21 +40,21 @@ def generate_sample_eeg_data(duration_seconds=10, sample_rate=SAMPLE_RATE):
         alpha = 0.3 * np.sin(2 * np.pi * 10 * time)  # 10 Hz
         beta = 0.2 * np.sin(2 * np.pi * 20 * time)  # 20 Hz
         noise = 0.1 * np.random.randn(n_samples)
-        
+
         signal = theta + alpha + beta + noise
         data[channel] = signal
-    
+
     return pd.DataFrame(data)
 
 
 def test_channel_importance_service():
     """Test the channel importance service with synthetic data."""
-    
+
     print("=" * 80)
     print("CHANNEL IMPORTANCE SERVICE TEST")
     print("=" * 80)
     print()
-    
+
     # Initialize model loader
     print("1. Initializing model...")
     try:
