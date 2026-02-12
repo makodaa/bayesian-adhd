@@ -371,6 +371,179 @@
             color: var(--secondary-color);
         }
 
+        /* Topographic Maps */
+        .topo-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .topo-tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .topo-tab {
+            padding: 0.35rem 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .topo-tab:hover {
+            background: #e9ecef;
+        }
+
+        .topo-tab.active {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+
+        .topo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .topo-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .topo-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .topo-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: var(--text-dark);
+        }
+
+        .topo-type-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .topo-type-btn {
+            padding: 0.4rem 0.8rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 20px;
+            background: white;
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .topo-type-btn:hover {
+            background: rgba(108, 155, 209, 0.1);
+        }
+
+        .topo-type-btn.active {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        /* Temporal Biomarkers */
+        .temporal-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .temporal-plot-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .temporal-plot-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .temporal-plot-card .plot-header {
+            padding: 0.5rem 0.75rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .temporal-plot-card .plot-header:hover {
+            background: #e9ecef;
+        }
+
+        .temporal-plot-card .plot-body {
+            padding: 0.5rem;
+        }
+
+        .temporal-plot-card .plot-body img {
+            width: 100%;
+            height: auto;
+        }
+
+        .temporal-plot-card .plot-body.collapsed {
+            display: none;
+        }
+
+        .temporal-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .temporal-stat {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.78rem;
+        }
+
+        .temporal-stat .stat-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.15rem;
+        }
+
+        .temporal-stat .stat-values {
+            display: flex;
+            gap: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .temporal-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: var(--text-dark);
+        }
+
         .spinner-border {
             color: var(--secondary-color);
         }
@@ -792,6 +965,42 @@
                                 Clinical Ratios
                             </h6>
                             <div id="clinical-ratios"></div>
+                        </div>
+                        <!-- Topographic Scalp Maps -->
+                        <div id="topo-section" class="topo-section" style="display: none;">
+                            <h6 class="mb-3" style="font-weight: 600">Spatial Analysis - Scalp Topography</h6>
+                            <div class="topo-type-toggle">
+                                <button class="topo-type-btn active" data-topo-type="absolute" onclick="switchTopoType('absolute')">Absolute Power</button>
+                                <button class="topo-type-btn" data-topo-type="relative" onclick="switchTopoType('relative')">Relative Power</button>
+                                <button class="topo-type-btn" data-topo-type="tbr" onclick="switchTopoType('tbr')">TBR</button>
+                            </div>
+                            <div id="topo-content">
+                                <div id="topo-absolute" class="topo-grid"></div>
+                                <div id="topo-relative" class="topo-grid" style="display: none;"></div>
+                                <div id="topo-tbr" style="display: none;"></div>
+                            </div>
+                            <div id="topo-loading" class="topo-loading" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2" style="font-size: 0.9rem;">Generating scalp topographic maps...</p>
+                            </div>
+                        </div>
+                        <!-- Temporal Biomarker Evolution -->
+                        <div id="temporal-section" class="temporal-section" style="display: none;">
+                            <h6 class="mb-3" style="font-weight: 600">Temporal Features - Biomarker Evolution</h6>
+                            <p style="font-size: 0.8rem; color: #6c757d; margin-bottom: 0.75rem;">
+                                Biomarker values computed in sliding 2-second windows across the recording.
+                                Click a group header to expand/collapse.
+                            </p>
+                            <div id="temporal-plots" class="temporal-plot-list"></div>
+                            <div id="temporal-summary"></div>
+                            <div id="temporal-loading" class="temporal-loading" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2" style="font-size: 0.9rem;">Computing temporal biomarkers...</p>
+                            </div>
                         </div>
                         <div id="analysis-disclaimers">
                             <div id="persistent-disclaimer" class="alert-custom"
@@ -1405,6 +1614,14 @@
                         };
 
                         loadVisualizations(vizFormData);
+
+                        // Load topographic maps in parallel using the file
+                        loadTopographicMaps(vizFormData);
+
+                        // Load temporal biomarker evolution
+                        const temporalFormData = new FormData();
+                        temporalFormData.append("file", analysisData.file);
+                        loadTemporalBiomarkers(temporalFormData);
                     } catch (error) {
                         console.error("Analysis error:", error);
                         alert(
@@ -1415,6 +1632,257 @@
                         analyzeBtn.innerHTML = "Analyze EEG Recording";
                     }
                 });
+        </script>
+
+        <script>
+            // ── Topographic Maps ──
+
+            let currentTopoData = null;
+
+            async function loadTopographicMaps(formData) {
+                const section = document.getElementById('topo-section');
+                const loading = document.getElementById('topo-loading');
+                const absGrid = document.getElementById('topo-absolute');
+                const relGrid = document.getElementById('topo-relative');
+                const tbrDiv = document.getElementById('topo-tbr');
+
+                // Show section with loading state
+                section.style.display = '';
+                loading.style.display = '';
+                absGrid.innerHTML = '';
+                relGrid.innerHTML = '';
+                tbrDiv.innerHTML = '';
+
+                try {
+                    const response = await fetch('/api/topographic_maps', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to generate topographic maps');
+                    }
+
+                    const data = await response.json();
+                    currentTopoData = data;
+                    renderTopographicMaps(data);
+                } catch (error) {
+                    console.error('Error loading topographic maps:', error);
+                    absGrid.innerHTML = `<p class="text-muted">Failed to load topographic maps: ${error.message}</p>`;
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+
+            async function loadTopographicMapsByResult(resultId) {
+                const section = document.getElementById('topo-section');
+                const loading = document.getElementById('topo-loading');
+                const absGrid = document.getElementById('topo-absolute');
+                const relGrid = document.getElementById('topo-relative');
+                const tbrDiv = document.getElementById('topo-tbr');
+
+                section.style.display = '';
+                loading.style.display = '';
+                absGrid.innerHTML = '';
+                relGrid.innerHTML = '';
+                tbrDiv.innerHTML = '';
+
+                try {
+                    const response = await fetch(`/api/topographic_maps/${resultId}`);
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to generate topographic maps');
+                    }
+
+                    const data = await response.json();
+                    currentTopoData = data;
+                    renderTopographicMaps(data);
+                } catch (error) {
+                    console.error('Error loading topographic maps:', error);
+                    absGrid.innerHTML = `<p class="text-muted">Failed to load topographic maps: ${error.message}</p>`;
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+
+            function renderTopographicMaps(data) {
+                const absGrid = document.getElementById('topo-absolute');
+                const relGrid = document.getElementById('topo-relative');
+                const tbrDiv = document.getElementById('topo-tbr');
+
+                const bandOrder = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+
+                // Absolute power maps
+                let absHtml = '';
+                bandOrder.forEach(band => {
+                    const img = data.absolute_power_maps[band];
+                    if (img) {
+                        absHtml += `
+                            <div class="topo-card">
+                                <img src="${img}" alt="${band} absolute power topomap" loading="lazy" />
+                            </div>`;
+                    }
+                });
+                absGrid.innerHTML = absHtml || '<p class="text-muted">No absolute power maps available</p>';
+
+                // Relative power maps
+                let relHtml = '';
+                bandOrder.forEach(band => {
+                    const img = data.relative_power_maps[band];
+                    if (img) {
+                        relHtml += `
+                            <div class="topo-card">
+                                <img src="${img}" alt="${band} relative power topomap" loading="lazy" />
+                            </div>`;
+                    }
+                });
+                relGrid.innerHTML = relHtml || '<p class="text-muted">No relative power maps available</p>';
+
+                // TBR map
+                if (data.tbr_map) {
+                    tbrDiv.innerHTML = `
+                        <div class="topo-grid" style="max-width: 320px;">
+                            <div class="topo-card">
+                                <img src="${data.tbr_map}" alt="TBR topomap" loading="lazy" />
+                            </div>
+                        </div>`;
+                } else {
+                    tbrDiv.innerHTML = '<p class="text-muted">TBR map not available</p>';
+                }
+            }
+
+            function switchTopoType(type) {
+                const types = ['absolute', 'relative', 'tbr'];
+                types.forEach(t => {
+                    const el = document.getElementById(`topo-${t}`);
+                    const btn = document.querySelector(`[data-topo-type="${t}"]`);
+                    if (t === type) {
+                        el.style.display = '';
+                        btn.classList.add('active');
+                    } else {
+                        el.style.display = 'none';
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        </script>
+
+        <script>
+            // ── Temporal Biomarkers ──
+
+            async function loadTemporalBiomarkers(formData) {
+                const section = document.getElementById('temporal-section');
+                const loading = document.getElementById('temporal-loading');
+                const plotsContainer = document.getElementById('temporal-plots');
+                const summaryContainer = document.getElementById('temporal-summary');
+
+                section.style.display = '';
+                loading.style.display = '';
+                plotsContainer.innerHTML = '';
+                summaryContainer.innerHTML = '';
+
+                try {
+                    const response = await fetch('/api/temporal_biomarkers', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to compute temporal biomarkers');
+                    }
+
+                    const data = await response.json();
+                    renderTemporalPlots(data.plots, plotsContainer);
+                    renderTemporalSummary(data.summary, summaryContainer);
+                } catch (error) {
+                    console.error('Error loading temporal biomarkers:', error);
+                    plotsContainer.innerHTML = `<p class="text-muted">Failed to load temporal biomarkers: ${error.message}</p>`;
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+
+            function renderTemporalPlots(plots, container) {
+                let html = '';
+                plots.forEach((plot, index) => {
+                    const collapsed = index > 0 ? 'collapsed' : '';
+                    const chevron = index > 0 ? '&#9654;' : '&#9660;';
+                    html += `
+                        <div class="temporal-plot-card">
+                            <div class="plot-header" onclick="toggleTemporalPlot(this)">
+                                <span>${plot.group}</span>
+                                <span class="chevron">${chevron}</span>
+                            </div>
+                            <div class="plot-body ${collapsed}">
+                                <img src="${plot.image}" alt="${plot.group} temporal evolution" loading="lazy" />
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html || '<p class="text-muted">No temporal plots available</p>';
+            }
+
+            function toggleTemporalPlot(header) {
+                const body = header.nextElementSibling;
+                const chevron = header.querySelector('.chevron');
+                if (body.classList.contains('collapsed')) {
+                    body.classList.remove('collapsed');
+                    chevron.innerHTML = '&#9660;';
+                } else {
+                    body.classList.add('collapsed');
+                    chevron.innerHTML = '&#9654;';
+                }
+            }
+
+            const biomarkerLabels = {
+                theta_beta_ratio: 'Theta/Beta',
+                theta_alpha_ratio: 'Theta/Alpha',
+                alpha_theta_ratio: 'Alpha/Theta',
+                alpha_beta_ratio: 'Alpha/Beta',
+                delta_theta_ratio: 'Delta/Theta',
+                low_beta_high_beta_ratio: 'Low Beta/High Beta',
+                combined_ratio: 'Combined (T+B)/(A+G)',
+                peak_alpha_frequency: 'Peak Alpha Freq (Hz)',
+                spectral_entropy: 'Spectral Entropy',
+                spectral_edge_freq_90: 'Spectral Edge 90% (Hz)',
+                hjorth_activity: 'Activity',
+                hjorth_mobility: 'Mobility',
+                hjorth_complexity: 'Complexity',
+                frontal_theta_power: 'Frontal Theta Power',
+                frontal_theta_beta_ratio: 'Frontal Theta/Beta',
+                central_theta_beta_ratio: 'Central Theta/Beta',
+                alpha_asymmetry: 'Alpha Asymmetry (L-R)/(L+R)',
+                theta_asymmetry: 'Theta Asymmetry (L-R)/(L+R)',
+                frontal_parietal_theta_ratio: 'Frontal/Parietal Theta',
+                frontal_parietal_alpha_ratio: 'Frontal/Parietal Alpha',
+            };
+
+            function renderTemporalSummary(summary, container) {
+                if (!summary || Object.keys(summary).length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = '<h6 style="font-weight:600; margin-top:1rem;">Biomarker Summary Statistics</h6>';
+                html += '<div class="temporal-summary-grid">';
+
+                Object.entries(summary).forEach(([key, stats]) => {
+                    const label = biomarkerLabels[key] || key;
+                    html += `
+                        <div class="temporal-stat">
+                            <div class="stat-label">${label}</div>
+                            <div class="stat-values">
+                                <span title="Mean">&mu;=${stats.mean.toFixed(3)}</span>
+                                <span title="Std Dev">&sigma;=${stats.std.toFixed(3)}</span>
+                            </div>
+                        </div>`;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            }
         </script>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"

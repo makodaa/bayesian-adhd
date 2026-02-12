@@ -34,6 +34,8 @@ from .services.pdf_service import PDFReportService
 from .services.recording_service import RecordingService
 from .services.results_service import ResultsService
 from .services.subject_service import SubjectService
+from .services.temporal_biomarker_service import TemporalBiomarkerService
+from .services.topographic_service import TopographicService
 from .services.visualization_service import BandFilter, VisualizationService
 from .utils.mock_data import MockDataGenerator
 from .utils.timer import Timer
@@ -102,6 +104,8 @@ file_service = FileService()
 eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
 visualization_service = VisualizationService()
+topographic_service = TopographicService()
+temporal_biomarker_service = TemporalBiomarkerService()
 clinician_service = ClinicianService(clinicians_repo)
 clinician_auth_service = ClinicianAuthService(clinicians_repo)
 subject_service = SubjectService(subjects_repo)
@@ -688,6 +692,92 @@ def generate_result_pdf(result_id):
     except Exception as e:
         logger.error(f"Error generating PDF for result {result_id}: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate PDF: {str(e)}"}), 500
+
+
+@app.route("/api/topographic_maps", methods=["POST"])
+@login_required
+def api_topographic_maps():
+    """Generate topographic scalp heatmaps from an uploaded EEG CSV file.
+
+    Returns absolute power, relative power topomaps per band,
+    plus a Theta/Beta Ratio (TBR) topomap.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files["file"]
+    if file.filename is None or file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    try:
+        df = file_service.read_csv(file)
+        file_service.validate_eeg_data(df)
+        topo_data = topographic_service.generate_all_topomaps(df)
+
+        return jsonify({
+            "absolute_power_maps": topo_data["absolute_power_maps"],
+            "relative_power_maps": topo_data["relative_power_maps"],
+            "tbr_map": topo_data["tbr_map"],
+        }), 200
+    except ValueError as e:
+        logger.error(f"Validation error in topographic maps: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error generating topographic maps: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to generate topographic maps: {str(e)}"}), 500
+
+
+@app.route("/api/topographic_maps/<int:result_id>", methods=["GET"])
+@login_required
+def api_topographic_maps_by_result(result_id):
+    """Generate topographic scalp heatmaps from stored band powers for a result."""
+    try:
+        band_powers = band_powers_repo.get_by_result(result_id)
+        if not band_powers:
+            return jsonify({"error": "No band power data found for this result"}), 404
+
+        topo_data = topographic_service.generate_topomaps_from_db(band_powers)
+
+        return jsonify({
+            "absolute_power_maps": topo_data["absolute_power_maps"],
+            "relative_power_maps": topo_data["relative_power_maps"],
+            "tbr_map": topo_data["tbr_map"],
+        }), 200
+    except Exception as e:
+        logger.error(f"Error generating topographic maps for result {result_id}: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to generate topographic maps: {str(e)}"}), 500
+
+
+@app.route("/api/temporal_biomarkers", methods=["POST"])
+@login_required
+def api_temporal_biomarkers():
+    """Compute temporal biomarker evolution across the recording and return plots.
+
+    Accepts an EEG CSV file.  Returns grouped time-series plots as base64
+    images plus raw numeric biomarker data and summary statistics.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files["file"]
+    if file.filename is None or file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    try:
+        df = file_service.read_csv(file)
+        file_service.validate_eeg_data(df)
+        result = temporal_biomarker_service.generate_temporal_plots(df)
+
+        return jsonify({
+            "plots": result["plots"],
+            "summary": result["summary"],
+        }), 200
+    except ValueError as e:
+        logger.error(f"Validation error in temporal biomarkers: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error computing temporal biomarkers: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to compute temporal biomarkers: {str(e)}"}), 500
 
 
 @app.route("/api/model/info", methods=["GET"])
