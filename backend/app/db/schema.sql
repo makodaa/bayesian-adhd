@@ -74,3 +74,34 @@ CREATE TABLE reports (
     created_at TIMESTAMP DEFAULT NOW(),
     clinician_id INTEGER NOT NULL REFERENCES clinicians(id) ON DELETE CASCADE
 );
+
+CREATE TABLE temporal_plots (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    group_name VARCHAR(100) NOT NULL,
+    plot_image TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE temporal_summaries (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    biomarker_key VARCHAR(100) NOT NULL,
+    mean_value FLOAT NOT NULL,
+    std_value FLOAT NOT NULL,
+    min_value FLOAT NOT NULL,
+    max_value FLOAT NOT NULL
+);
+
+CREATE TABLE topographic_maps (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    map_type VARCHAR(20) NOT NULL,
+    band VARCHAR(20),
+    map_image TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_temporal_plots_result ON temporal_plots(result_id);
+CREATE INDEX IF NOT EXISTS idx_temporal_summaries_result ON temporal_summaries(result_id);
+CREATE INDEX IF NOT EXISTS idx_topographic_maps_result ON topographic_maps(result_id);

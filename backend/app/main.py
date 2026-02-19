@@ -24,6 +24,9 @@ from .db.repositories.ratios import RatiosRepository
 from .db.repositories.recordings import RecordingsRepository
 from .db.repositories.results import ResultsRepository
 from .db.repositories.subjects import SubjectsRepository
+from .db.repositories.temporal_plots import TemporalPlotsRepository
+from .db.repositories.temporal_summaries import TemporalSummariesRepository
+from .db.repositories.topographic_maps import TopographicMapsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
 from .services.clinician_auth_service import ClinicianAuthService
@@ -98,6 +101,9 @@ band_powers_repo = BandPowersRepository()
 ratios_repo = RatiosRepository()
 subjects_repo = SubjectsRepository()
 clinicians_repo = CliniciansRepository()
+temporal_plots_repo = TemporalPlotsRepository()
+temporal_summaries_repo = TemporalSummariesRepository()
+topographic_maps_repo = TopographicMapsRepository()
 
 # Initialize services
 file_service = FileService()
@@ -498,6 +504,40 @@ def predict():
         logger.info(f"Computing band powers for result {result['result_id']}")
         band_powers = band_analysis_service.compute_and_save(result["result_id"], df)
 
+        # Generate and save topographic maps
+        logger.info(f"Generating topographic maps for result {result['result_id']}")
+        try:
+            topo_data = topographic_service.generate_all_topomaps(df)
+            # Save absolute power maps
+            for band, image in topo_data.get("absolute_power_maps", {}).items():
+                topographic_maps_repo.create_map(result["result_id"], "absolute", band, image)
+            # Save relative power maps
+            for band, image in topo_data.get("relative_power_maps", {}).items():
+                topographic_maps_repo.create_map(result["result_id"], "relative", band, image)
+            # Save TBR map
+            if topo_data.get("tbr_map"):
+                topographic_maps_repo.create_map(result["result_id"], "tbr", None, topo_data["tbr_map"])
+            logger.info(f"Topographic maps saved for result {result['result_id']}")
+        except Exception as e:
+            logger.warning(f"Failed to generate/save topographic maps: {e}", exc_info=True)
+
+        # Generate and save temporal biomarker plots
+        logger.info(f"Computing temporal biomarkers for result {result['result_id']}")
+        try:
+            temporal_data = temporal_biomarker_service.generate_temporal_plots(df)
+            # Save plot images
+            for plot in temporal_data.get("plots", []):
+                temporal_plots_repo.create_plot(result["result_id"], plot["group"], plot["image"])
+            # Save summary statistics
+            for key, stats in temporal_data.get("summary", {}).items():
+                temporal_summaries_repo.create_summary(
+                    result["result_id"], key,
+                    stats["mean"], stats["std"], stats["min"], stats["max"]
+                )
+            logger.info(f"Temporal biomarkers saved for result {result['result_id']}")
+        except Exception as e:
+            logger.warning(f"Failed to generate/save temporal biomarkers: {e}", exc_info=True)
+
         # Add band power summary to result
         result["band_analysis"] = {
             "average_absolute_power": band_powers.get("average_absolute_power", {}),
@@ -730,8 +770,32 @@ def api_topographic_maps():
 @app.route("/api/topographic_maps/<int:result_id>", methods=["GET"])
 @login_required
 def api_topographic_maps_by_result(result_id):
-    """Generate topographic scalp heatmaps from stored band powers for a result."""
+    """Retrieve stored topographic scalp heatmaps for a result.
+
+    First tries to load pre-generated images from the database.
+    Falls back to generating on-the-fly from stored band powers.
+    """
     try:
+        # Try stored images first
+        stored_maps = topographic_maps_repo.get_by_result(result_id)
+        if stored_maps:
+            absolute_power_maps = {}
+            relative_power_maps = {}
+            tbr_map = None
+            for row in stored_maps:
+                if row["map_type"] == "absolute":
+                    absolute_power_maps[row["band"]] = row["map_image"]
+                elif row["map_type"] == "relative":
+                    relative_power_maps[row["band"]] = row["map_image"]
+                elif row["map_type"] == "tbr":
+                    tbr_map = row["map_image"]
+            return jsonify({
+                "absolute_power_maps": absolute_power_maps,
+                "relative_power_maps": relative_power_maps,
+                "tbr_map": tbr_map,
+            }), 200
+
+        # Fallback: generate from stored band powers
         band_powers = band_powers_repo.get_by_result(result_id)
         if not band_powers:
             return jsonify({"error": "No band power data found for this result"}), 404
@@ -778,6 +842,37 @@ def api_temporal_biomarkers():
     except Exception as e:
         logger.error(f"Error computing temporal biomarkers: {e}", exc_info=True)
         return jsonify({"error": f"Failed to compute temporal biomarkers: {str(e)}"}), 500
+
+
+@app.route("/api/temporal_biomarkers/<int:result_id>", methods=["GET"])
+@login_required
+def api_temporal_biomarkers_by_result(result_id):
+    """Retrieve stored temporal biomarker plots and summary for a result."""
+    try:
+        plots = temporal_plots_repo.get_by_result(result_id)
+        summaries = temporal_summaries_repo.get_by_result(result_id)
+
+        if not plots and not summaries:
+            return jsonify({"error": "No temporal biomarker data found for this result"}), 404
+
+        # Reconstruct the response format
+        plots_list = [{"group": p["group_name"], "image": p["plot_image"]} for p in plots]
+        summary_dict = {}
+        for s in summaries:
+            summary_dict[s["biomarker_key"]] = {
+                "mean": s["mean_value"],
+                "std": s["std_value"],
+                "min": s["min_value"],
+                "max": s["max_value"],
+            }
+
+        return jsonify({
+            "plots": plots_list,
+            "summary": summary_dict,
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching temporal biomarkers for result {result_id}: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to fetch temporal biomarkers: {str(e)}"}), 500
 
 
 @app.route("/api/model/info", methods=["GET"])

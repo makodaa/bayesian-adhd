@@ -346,6 +346,126 @@
       .clickable-row:hover {
         background-color: #f8f9fa;
       }
+
+      /* Topographic Maps in Modal */
+      .topo-section-modal {
+        margin-top: 1rem;
+      }
+
+      .topo-type-toggle-modal {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .topo-type-btn-modal {
+        padding: 0.3rem 0.65rem;
+        border: 2px solid var(--secondary-color);
+        border-radius: 20px;
+        background: white;
+        color: var(--secondary-color);
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .topo-type-btn-modal:hover {
+        background: rgba(108, 155, 209, 0.1);
+      }
+
+      .topo-type-btn-modal.active {
+        background: var(--secondary-color);
+        color: white;
+      }
+
+      .topo-grid-modal {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .topo-card-modal {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.4rem;
+        text-align: center;
+      }
+
+      .topo-card-modal img {
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+      }
+
+      /* Temporal Biomarkers in Modal */
+      .temporal-section-modal {
+        margin-top: 1rem;
+      }
+
+      .temporal-plot-card-modal {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+      }
+
+      .temporal-plot-card-modal .plot-header-modal {
+        padding: 0.4rem 0.65rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .temporal-plot-card-modal .plot-header-modal:hover {
+        background: #e9ecef;
+      }
+
+      .temporal-plot-card-modal .plot-body-modal {
+        padding: 0.4rem;
+      }
+
+      .temporal-plot-card-modal .plot-body-modal img {
+        width: 100%;
+        height: auto;
+      }
+
+      .temporal-plot-card-modal .plot-body-modal.collapsed {
+        display: none;
+      }
+
+      .temporal-summary-grid-modal {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.4rem;
+        margin-top: 0.5rem;
+      }
+
+      .temporal-stat-modal {
+        background: #f8f9fa;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      .temporal-stat-modal .stat-label {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .temporal-stat-modal .stat-values {
+        display: flex;
+        gap: 0.4rem;
+        color: #4a5568;
+      }
     </style>
   </head>
 
@@ -987,7 +1107,40 @@
                                 ${disclaimersHTML}
                             </div>
                         </div>
+
+                        <!-- Full-Width Sections Below -->
+                        <!-- Topographic Maps -->
+                        <div class="info-section topo-section-modal" id="modal-topo-section">
+                            <h6>Spatial Analysis - Scalp Topography</h6>
+                            <div class="topo-type-toggle-modal" id="modal-topo-toggle">
+                                <button class="topo-type-btn-modal active" data-modal-topo="absolute" onclick="switchModalTopoType('absolute')">Absolute Power</button>
+                                <button class="topo-type-btn-modal" data-modal-topo="relative" onclick="switchModalTopoType('relative')">Relative Power</button>
+                                <button class="topo-type-btn-modal" data-modal-topo="tbr" onclick="switchModalTopoType('tbr')">TBR</button>
+                            </div>
+                            <div id="modal-topo-absolute" class="topo-grid-modal"></div>
+                            <div id="modal-topo-relative" class="topo-grid-modal" style="display:none;"></div>
+                            <div id="modal-topo-tbr" style="display:none;"></div>
+                            <div id="modal-topo-loading" class="text-center py-3" style="display:none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="ms-2" style="font-size:0.85rem;">Generating topographic maps...</span>
+                            </div>
+                        </div>
+
+                        <!-- Temporal Biomarkers -->
+                        <div class="info-section temporal-section-modal" id="modal-temporal-section">
+                            <h6>Temporal Features - Biomarker Evolution</h6>
+                            <div id="modal-temporal-plots" style="margin-top:0.75rem;"></div>
+                            <div id="modal-temporal-summary"></div>
+                            <div id="modal-temporal-loading" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="ms-2" style="font-size:0.85rem;">Loading temporal biomarkers...</span>
+                            </div>
+                        </div>
                     `;
+
+          // Load topographic maps and temporal biomarkers AFTER DOM elements exist
+          loadModalTopographicMaps(resultId);
+          loadModalTemporalBiomarkers(resultId);
         } catch (error) {
           console.error("Error loading result details:", error);
           modalBody.innerHTML = `<div class="alert alert-danger">Failed to load result details</div>`;
@@ -1104,6 +1257,194 @@
 
       // Initialize
       loadResults();
+    </script>
+
+    <script>
+      // ── Topographic Maps in Modal ──
+
+      async function loadModalTopographicMaps(resultId) {
+        const loading = document.getElementById("modal-topo-loading");
+        const absGrid = document.getElementById("modal-topo-absolute");
+        const relGrid = document.getElementById("modal-topo-relative");
+        const tbrDiv = document.getElementById("modal-topo-tbr");
+
+        if (!loading || !absGrid) return;
+
+        loading.style.display = "";
+        absGrid.innerHTML = "";
+        relGrid.innerHTML = "";
+        tbrDiv.innerHTML = "";
+
+        try {
+          const response = await fetch(`/api/topographic_maps/${resultId}`);
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Failed to load topographic maps");
+          }
+
+          const data = await response.json();
+          renderModalTopoMaps(data);
+        } catch (error) {
+          console.error("Error loading modal topo maps:", error);
+          absGrid.innerHTML = `<p class="text-muted" style="font-size:0.85rem;">Could not load topographic maps: ${error.message}</p>`;
+        } finally {
+          loading.style.display = "none";
+        }
+      }
+
+      function renderModalTopoMaps(data) {
+        const absGrid = document.getElementById("modal-topo-absolute");
+        const relGrid = document.getElementById("modal-topo-relative");
+        const tbrDiv = document.getElementById("modal-topo-tbr");
+
+        const bandOrder = ["delta", "theta", "alpha", "beta", "gamma"];
+
+        let absHtml = "";
+        bandOrder.forEach((band) => {
+          const img = data.absolute_power_maps[band];
+          if (img) {
+            absHtml += `<div class="topo-card-modal"><img src="${img}" alt="${band} absolute" loading="lazy" /></div>`;
+          }
+        });
+        absGrid.innerHTML = absHtml || '<p class="text-muted">No data</p>';
+
+        let relHtml = "";
+        bandOrder.forEach((band) => {
+          const img = data.relative_power_maps[band];
+          if (img) {
+            relHtml += `<div class="topo-card-modal"><img src="${img}" alt="${band} relative" loading="lazy" /></div>`;
+          }
+        });
+        relGrid.innerHTML = relHtml || '<p class="text-muted">No data</p>';
+
+        if (data.tbr_map) {
+          tbrDiv.innerHTML = `<div class="topo-grid-modal" style="max-width:240px;"><div class="topo-card-modal"><img src="${data.tbr_map}" alt="TBR" loading="lazy" /></div></div>`;
+        } else {
+          tbrDiv.innerHTML = '<p class="text-muted">No TBR map</p>';
+        }
+      }
+
+      function switchModalTopoType(type) {
+        ["absolute", "relative", "tbr"].forEach((t) => {
+          const el = document.getElementById(`modal-topo-${t}`);
+          const btn = document.querySelector(`[data-modal-topo="${t}"]`);
+          if (t === type) {
+            el.style.display = "";
+            btn.classList.add("active");
+          } else {
+            el.style.display = "none";
+            btn.classList.remove("active");
+          }
+        });
+      }
+
+      // ── Temporal Biomarkers in Modal ──
+
+      async function loadModalTemporalBiomarkers(resultId) {
+        const loading = document.getElementById("modal-temporal-loading");
+        const plotsContainer = document.getElementById("modal-temporal-plots");
+        const summaryContainer = document.getElementById("modal-temporal-summary");
+
+        if (!loading || !plotsContainer) return;
+
+        loading.style.display = "";
+        plotsContainer.innerHTML = "";
+        summaryContainer.innerHTML = "";
+
+        try {
+          const response = await fetch(`/api/temporal_biomarkers/${resultId}`);
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Failed to load temporal biomarkers");
+          }
+
+          const data = await response.json();
+          renderModalTemporalPlots(data.plots, plotsContainer);
+          renderModalTemporalSummary(data.summary, summaryContainer);
+        } catch (error) {
+          console.error("Error loading temporal biomarkers:", error);
+          plotsContainer.innerHTML = `<p class="text-muted" style="font-size:0.85rem;">Could not load temporal biomarkers: ${error.message}</p>`;
+        } finally {
+          loading.style.display = "none";
+        }
+      }
+
+      function renderModalTemporalPlots(plots, container) {
+        let html = "";
+        plots.forEach((plot, index) => {
+          const collapsed = index > 0 ? "collapsed" : "";
+          const chevron = index > 0 ? "&#9654;" : "&#9660;";
+          html += `
+            <div class="temporal-plot-card-modal">
+              <div class="plot-header-modal" onclick="toggleModalTemporalPlot(this)">
+                <span>${plot.group}</span>
+                <span class="chevron">${chevron}</span>
+              </div>
+              <div class="plot-body-modal ${collapsed}">
+                <img src="${plot.image}" alt="${plot.group}" loading="lazy" />
+              </div>
+            </div>`;
+        });
+        container.innerHTML = html || '<p class="text-muted">No plots</p>';
+      }
+
+      function toggleModalTemporalPlot(header) {
+        const body = header.nextElementSibling;
+        const chevron = header.querySelector(".chevron");
+        if (body.classList.contains("collapsed")) {
+          body.classList.remove("collapsed");
+          chevron.innerHTML = "&#9660;";
+        } else {
+          body.classList.add("collapsed");
+          chevron.innerHTML = "&#9654;";
+        }
+      }
+
+      const biomarkerLabelsModal = {
+        theta_beta_ratio: "Theta/Beta",
+        theta_alpha_ratio: "Theta/Alpha",
+        alpha_theta_ratio: "Alpha/Theta",
+        alpha_beta_ratio: "Alpha/Beta",
+        delta_theta_ratio: "Delta/Theta",
+        low_beta_high_beta_ratio: "Low Beta/High Beta",
+        combined_ratio: "Combined (T+B)/(A+G)",
+        peak_alpha_frequency: "Peak Alpha Freq (Hz)",
+        spectral_entropy: "Spectral Entropy",
+        spectral_edge_freq_90: "Spectral Edge 90% (Hz)",
+        hjorth_activity: "Activity",
+        hjorth_mobility: "Mobility",
+        hjorth_complexity: "Complexity",
+        frontal_theta_power: "Frontal Theta Power",
+        frontal_theta_beta_ratio: "Frontal Theta/Beta",
+        central_theta_beta_ratio: "Central Theta/Beta",
+        alpha_asymmetry: "Alpha Asymmetry (L−R)/(L+R)",
+        theta_asymmetry: "Theta Asymmetry (L−R)/(L+R)",
+        frontal_parietal_theta_ratio: "Frontal/Parietal Theta",
+        frontal_parietal_alpha_ratio: "Frontal/Parietal Alpha",
+      };
+
+      function renderModalTemporalSummary(summary, container) {
+        if (!summary || Object.keys(summary).length === 0) {
+          container.innerHTML = "";
+          return;
+        }
+        let html =
+          '<h6 style="font-weight:600; margin-top:0.75rem; font-size:0.9rem;">Biomarker Summary</h6>';
+        html += '<div class="temporal-summary-grid-modal">';
+        Object.entries(summary).forEach(([key, stats]) => {
+          const label = biomarkerLabelsModal[key] || key;
+          html += `
+            <div class="temporal-stat-modal">
+              <div class="stat-label">${label}</div>
+              <div class="stat-values">
+                <span title="Mean">&mu;=${stats.mean.toFixed(3)}</span>
+                <span title="Std Dev">&sigma;=${stats.std.toFixed(3)}</span>
+              </div>
+            </div>`;
+        });
+        html += "</div>";
+        container.innerHTML = html;
+      }
     </script>
 
     <script
