@@ -759,9 +759,7 @@
         tbody.innerHTML = results
           .map((result) => {
             const badgeClass =
-              result.predicted_class === "Combined / C (ADHD-C)" ||
-              result.predicted_class === "Hyperactive-Impulsive (ADHD-H)" ||
-              result.predicted_class === "Inattentive (ADHD-I)"
+              result.predicted_class === "ADHD"
                 ? "badge-adhd"
                 : "badge-non-adhd";
             const confidence = (result.confidence_score * 100).toFixed(2);

@@ -582,11 +582,7 @@
                     tbody.innerHTML = allSubjects
                         .map((subject) => {
                             const badgeClass =
-                                subject.last_result ===
-                                    "Combined / C (ADHD-C)" ||
-                                subject.last_result ===
-                                    "Hyperactive-Impulsive (ADHD-H)" ||
-                                subject.last_result === "Inattentive (ADHD-I)"
+                                subject.last_result === "ADHD"
                                     ? "badge-adhd"
                                     : "badge-non-adhd";
                             return `
@@ -664,12 +660,7 @@
                                         ${subject.assessments
                                             .map((assessment) => {
                                                 const badgeClass =
-                                                    assessment.predicted_class ===
-                                                        "Combined / C (ADHD-C)" ||
-                                                    assessment.predicted_class ===
-                                                        "Hyperactive-Impulsive (ADHD-H)" ||
-                                                    assessment.predicted_class ===
-                                                        "Inattentive (ADHD-I)"
+                                                    assessment.predicted_class === "ADHD"
                                                         ? "badge-adhd"
                                                         : "badge-non-adhd";
                                                 const confidence = (

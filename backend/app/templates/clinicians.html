@@ -863,12 +863,7 @@
                                         ${clinician.assessments
                                             .map((assessment) => {
                                                 const badgeClass =
-                                                    assessment.predicted_class ===
-                                                        "Combined / C (ADHD-C)" ||
-                                                    assessment.predicted_class ===
-                                                        "Hyperactive-Impulsive (ADHD-H)" ||
-                                                    assessment.predicted_class ===
-                                                        "Inattentive (ADHD-I)"
+                                                    assessment.predicted_class === "ADHD"
                                                         ? "badge-adhd"
                                                         : "badge-non-adhd";
                                                 const confidence = (

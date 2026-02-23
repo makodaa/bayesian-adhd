@@ -331,39 +331,26 @@ class EEGService:
             print(f"Predictions: {predictions}")
             print("=" * 100)
 
-            adhd_1_name = "Combined / C (ADHD-C)"
-            adhd_2_name = "Hyperactive-Impulsive (ADHD-H)"
-            adhd_3_name = "Inattentive (ADHD-I)"
-            control_name = "Non-ADHD"
-
             adhd_1, adhd_2, adhd_3, control = np.sum(predictions, axis=0) / np.sum(
                 predictions
             )
-            maximum = max(adhd_1, adhd_2, adhd_3, control)
-            # Store confidence as decimal (0-1) - frontend/PDF will multiply by 100 for display
-            conf = float(maximum)
 
-            if -0.001 <= maximum - adhd_1 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_1_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_1_name, conf, band_data
-            elif -0.001 <= maximum - adhd_2 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_2_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_2_name, conf, band_data
-            elif -0.001 <= maximum - adhd_3 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_3_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_3_name, conf, band_data
-            elif -0.001 <= maximum - control <= 0.001:
-                logger.info(
-                    f"Classification result: {control_name} with {conf * 100:.2f}% confidence"
-                )
-                return control_name, conf, band_data
-            raise ValueError("Unreachable")
+            # Temporarily collapse subtypes: sum of ADHD subtypes vs control
+            adhd_total = float(adhd_1 + adhd_2 + adhd_3)
+            control_total = float(control)
+
+            if adhd_total >= control_total:
+                label = "ADHD"
+                # Store confidence as decimal (0-1) - frontend/PDF will multiply by 100 for display
+                conf = adhd_total
+            else:
+                label = "Non-ADHD"
+                conf = control_total
+
+            logger.info(
+                f"Classification result: {label} with {conf * 100:.2f}% confidence"
+            )
+            return label, conf, band_data
 
     def classify_and_save(
         self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
