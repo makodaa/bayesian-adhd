@@ -27,6 +27,10 @@
             --error-600: #b4494f;
             --shadow-soft: 0 12px 30px rgba(20, 50, 63, 0.08);
             --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
+            --radius-xs: 4px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-pill: 999px;
             --sidebar-width: 82px;
             --content-width: 1200px;
         }
@@ -74,7 +78,7 @@
         .toast-message {
             background: #183945;
             color: #f4f9fb;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             padding: 0.85rem 1rem;
             box-shadow: var(--shadow-soft);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -152,7 +156,7 @@
             display: inline-flex;
             width: 42px;
             height: 42px;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             align-items: center;
             justify-content: center;
             background: linear-gradient(145deg, #4b9ab8, #2f6e86);
@@ -169,7 +173,7 @@
 
         .sidebar-link {
             width: 100%;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             color: #d6eaf2;
             text-decoration: none;
             display: flex;
@@ -228,7 +232,7 @@
             border: 1px solid rgba(220, 243, 250, 0.5);
             color: #f0f9fc;
             background: transparent;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.32rem 0.7rem;
             font-size: 0.76rem;
             font-weight: 600;
@@ -274,7 +278,7 @@
         .menu-toggle {
             border: 1px solid var(--border-soft);
             background: #fff;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             width: 40px;
             height: 40px;
             display: none;
@@ -303,7 +307,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.24rem 0.72rem;
             background: #e8f3f8;
             color: var(--brand-700);
@@ -321,7 +325,7 @@
         .btn-primary-app,
         .btn-secondary-app {
             border: none;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             padding: 0.62rem 1rem;
             font-size: 0.91rem;
             font-weight: 600;
@@ -386,7 +390,7 @@
             text-align: center;
             background: #f6fafc;
             border: 1px dashed #c8d7df;
-            border-radius: 16px;
+            border-radius: var(--radius-md);
             padding: 2.1rem 1rem;
         }
 
@@ -415,7 +419,7 @@
         .result-section {
             background: var(--surface-card);
             border: 1px solid #dbe3e8;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             box-shadow: 0 8px 22px rgba(20, 50, 63, 0.05);
         }
 
@@ -507,7 +511,7 @@
         .confidence-track {
             width: 100%;
             height: 12px;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             background: #e2e9ee;
             overflow: hidden;
         }
@@ -596,14 +600,14 @@
             display: inline-flex;
             gap: 0.35rem;
             background: #ecf3f7;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.23rem;
             margin-bottom: 0.85rem;
         }
 
         .toggle-btn {
             border: none;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.35rem 0.7rem;
             background: transparent;
             color: var(--text-700);
@@ -633,7 +637,7 @@
 
         .band-progress {
             height: 18px;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             background: #e3ebef;
             overflow: hidden;
         }
@@ -659,7 +663,7 @@
         .electrode-table-wrap {
             overflow-x: auto;
             border: 1px solid #dbe4ea;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
         }
 
         .electrode-table {
@@ -699,7 +703,7 @@
         .ratio-item {
             background: #f5f9fb;
             border: 1px solid #dce6eb;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             padding: 0.55rem 0.68rem;
             display: flex;
             justify-content: space-between;
@@ -741,7 +745,7 @@
             border: 1px solid #c8dbe6;
             background: #f6fbfd;
             color: var(--text-700);
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             font-size: 0.78rem;
             padding: 0.33rem 0.66rem;
             font-weight: 600;
@@ -762,7 +766,7 @@
         .topo-card {
             background: #ffffff;
             border: 1px solid #d7e2e8;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             padding: 0.55rem;
             min-height: 170px;
             display: flex;
@@ -773,7 +777,7 @@
         .topo-card img {
             width: 100%;
             height: auto;
-            border-radius: 8px;
+            border-radius: var(--radius-xs);
         }
 
         .visualization-tabs {
@@ -806,7 +810,7 @@
             min-height: 300px;
             border: 1px solid #d8e3e9;
             background: #f4f8fa;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -819,12 +823,12 @@
         .visualization-container img {
             max-width: 100%;
             max-height: 430px;
-            border-radius: 8px;
+            border-radius: var(--radius-xs);
         }
 
         .loading-block {
             border: 1px solid #d9e5eb;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             background: #f8fcfd;
             padding: 0.75rem;
             display: grid;
@@ -832,7 +836,7 @@
         }
 
         .skeleton-row {
-            border-radius: 8px;
+            border-radius: var(--radius-xs);
             height: 16px;
             background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
             background-size: 250% 100%;
@@ -860,7 +864,7 @@
 
         .temporal-plot-card {
             border: 1px solid #dbe6ec;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             overflow: hidden;
             background: #fff;
         }
@@ -890,7 +894,7 @@
         .plot-body img {
             width: 100%;
             height: auto;
-            border-radius: 8px;
+            border-radius: var(--radius-xs);
         }
 
         .temporal-summary-grid {
@@ -903,7 +907,7 @@
         .temporal-stat {
             background: #f5f9fb;
             border: 1px solid #dbe6ec;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             padding: 0.5rem 0.62rem;
             font-size: 0.77rem;
             color: var(--text-700);
@@ -935,7 +939,7 @@
             margin-top: 0.2rem;
             background: #ffffff;
             border: 1px solid #d8e3e8;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             box-shadow: var(--shadow-soft);
             padding: 0.75rem;
             display: flex;
@@ -986,7 +990,7 @@
         .icon-button {
             border: 1px solid #d2dfe7;
             background: #ffffff;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             width: 36px;
             height: 36px;
             display: inline-flex;
@@ -1017,7 +1021,7 @@
         .step-dot {
             width: 22px;
             height: 22px;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1059,7 +1063,7 @@
         .form-panel {
             background: #ffffff;
             border: 1px solid #d8e3e8;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             padding: 0.75rem;
             display: grid;
             gap: 0.7rem;
@@ -1102,7 +1106,7 @@
         .field-wrap select,
         .field-wrap textarea {
             border: 1px solid #cddae2;
-            border-radius: 9px;
+            border-radius: var(--radius-sm);
             background: #ffffff;
             padding: 0.5rem 0.6rem;
             font-size: 0.86rem;
@@ -1141,7 +1145,7 @@
 
         .radio-options label {
             border: 1px solid #cddae2;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.24rem 0.6rem;
             font-size: 0.8rem;
             color: var(--text-700);
@@ -1157,7 +1161,7 @@
 
         .upload-dropzone {
             border: 1.5px dashed #9fc2d3;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             background: #f4fafd;
             padding: 0.85rem;
             text-align: center;
@@ -1197,7 +1201,7 @@
 
         .channel-pill {
             border: 1px solid #cfdce4;
-            border-radius: 999px;
+            border-radius: var(--radius-sm);
             padding: 0.22rem 0.35rem;
             text-align: center;
             font-size: 0.72rem;
@@ -1220,7 +1224,7 @@
 
         .metadata-panel {
             border: 1px solid #d8e3e8;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             background: #f8fbfd;
             padding: 0.65rem;
             display: grid;
@@ -1248,7 +1252,7 @@
 
         .review-summary {
             border: 1px solid #d8e3e8;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             background: #ffffff;
             padding: 0.65rem;
             display: grid;
@@ -1276,7 +1280,7 @@
 
         .disclaimer-note {
             border: 1px solid #c9dbe5;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             background: #eff6fa;
             color: var(--text-700);
             font-size: 0.82rem;
@@ -1290,7 +1294,7 @@
             color: var(--error-600);
             background: #faecec;
             border: 1px solid #eac1c4;
-            border-radius: 8px;
+            border-radius: var(--radius-xs);
             padding: 0.45rem 0.55rem;
         }
 
@@ -1308,7 +1312,7 @@
 
         .processing-panel {
             border: 1px solid #d9e5eb;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             background: #ffffff;
             padding: 0.85rem;
             display: grid;
@@ -1329,7 +1333,7 @@
 
         .processing-track {
             height: 10px;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             overflow: hidden;
             background: #e2ecf1;
         }
@@ -1337,7 +1341,7 @@
         .processing-fill {
             height: 100%;
             width: 0;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             background: linear-gradient(90deg, #63accb, #2f7491);
             transition: width 260ms ease-out;
         }
@@ -1361,7 +1365,7 @@
             content: "";
             width: 7px;
             height: 7px;
-            border-radius: 999px;
+            border-radius: var(--radius-pill);
             background: #c6d9e3;
             position: absolute;
             top: 0.36rem;
