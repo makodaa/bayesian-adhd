@@ -329,6 +329,9 @@ def create_eeg_visualization_context():
         return jsonify({"error": "Invalid clinician session"}), 401
 
     try:
+        logger.info(
+            f"Creating visualization context for clinician {clinician_id}, file={filename}"
+        )
         file_bytes = file.stream.read()
         df = file_service.read_csv_bytes(file_bytes, filename)
         file_service.validate_eeg_data(df)
@@ -337,6 +340,11 @@ def create_eeg_visualization_context():
             file_bytes=file_bytes,
             clinician_id=clinician_id,
             filename=filename,
+        )
+
+        logger.info(
+            "Visualization context ready: "
+            f"context_id={context['context_id']}, created={context['created']}"
         )
 
         return jsonify(
@@ -367,12 +375,16 @@ def get_eeg_visualization_image(context_id: str, band: str):
         return jsonify({"error": "Invalid clinician session"}), 401
 
     try:
+        logger.info(
+            f"Visualization request: clinician={clinician_id}, context={context_id}, band={band}"
+        )
         cached_path = visualization_cache_service.get_cached_image_path(
             context_id=context_id,
             clinician_id=clinician_id,
             band=band,
         )
         if cached_path is not None:
+            logger.info(f"Visualization cache HIT for context={context_id}, band={band}")
             response = send_file(cached_path, mimetype="image/png", conditional=True)
             response.headers["X-Visualization-Cache"] = "HIT"
             response.headers["Cache-Control"] = "private, max-age=3600"
@@ -395,6 +407,8 @@ def get_eeg_visualization_image(context_id: str, band: str):
             band=band,
             image_bytes=image_bytes,
         )
+
+        logger.info(f"Visualization cache MISS for context={context_id}, band={band}")
 
         response = send_file(image_path, mimetype="image/png", conditional=True)
         response.headers["X-Visualization-Cache"] = "MISS"
@@ -465,6 +479,9 @@ def predict():
                 filename=filename,
             )
             visualization_context_id = viz_context["context_id"]
+            logger.info(
+                f"Predict linked visualization context: {visualization_context_id}"
+            )
         except Exception as exc:
             logger.warning(
                 f"Could not create visualization context during predict: {exc}",

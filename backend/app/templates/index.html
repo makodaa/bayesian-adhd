@@ -1335,10 +1335,19 @@
                 });
             }
 
+            function clearVisualizationObjectUrls() {
+                Object.values(analysisData.visualizations).forEach((url) => {
+                    if (typeof url === "string" && url.startsWith("blob:")) {
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            }
+
             function resetVisualizationState() {
                 visualizationContextId = null;
                 loadedVisualizationBands.clear();
                 inFlightVisualizationBands.clear();
+                clearVisualizationObjectUrls();
                 analysisData.visualizations = {};
 
                 eegBands.forEach((band) => {
@@ -1377,6 +1386,24 @@
                 return response.json();
             }
 
+            async function ensureVisualizationContext(result) {
+                const contextId = result && result.visualization_context_id
+                    ? result.visualization_context_id
+                    : null;
+
+                if (contextId) {
+                    visualizationContextId = contextId;
+                    setTabsEnabled(true);
+                    await loadBandVisualization("raw");
+                    return;
+                }
+
+                const payload = await createVisualizationContext(analysisData.file);
+                visualizationContextId = payload.context_id;
+                setTabsEnabled(true);
+                await loadBandVisualization("raw");
+            }
+
             async function loadBandVisualization(band) {
                 if (!visualizationContextId || !eegBands.includes(band)) {
                     return;
@@ -1391,27 +1418,42 @@
                 inFlightVisualizationBands.add(band);
 
                 const imageUrl = getVisualizationImageUrl(visualizationContextId, band);
-                const img = new Image();
-                img.alt = `${band} EEG visualization`;
-                img.loading = "lazy";
+                try {
+                    const response = await fetch(imageUrl, {
+                        method: "GET",
+                        cache: "no-store",
+                    });
 
-                img.onload = () => {
-                    displayVisualization(containerId, imageUrl, band);
+                    if (!response.ok) {
+                        const errorMessage = await response.text();
+                        throw new Error(errorMessage || `Failed to load ${band} visualization`);
+                    }
+
+                    const imageBlob = await response.blob();
+                    if (!imageBlob.type.includes("image")) {
+                        throw new Error(`Unexpected response type for ${band}: ${imageBlob.type}`);
+                    }
+
+                    const objectUrl = URL.createObjectURL(imageBlob);
+                    if (analysisData.visualizations[band] && analysisData.visualizations[band].startsWith("blob:")) {
+                        URL.revokeObjectURL(analysisData.visualizations[band]);
+                    }
+
+                    displayVisualization(containerId, objectUrl, band);
                     loadedVisualizationBands.add(band);
-                    inFlightVisualizationBands.delete(band);
-                    analysisData.visualizations[band] = imageUrl;
-                };
-
-                img.onerror = () => {
+                    analysisData.visualizations[band] = objectUrl;
+                    const cacheStatus = response.headers.get("X-Visualization-Cache") || "UNKNOWN";
+                    console.info(`Loaded ${band} visualization (${cacheStatus})`);
+                } catch (error) {
+                    console.error(`Failed to load ${band} visualization:`, error);
                     const container = document.getElementById(containerId);
                     if (container) {
                         container.innerHTML =
                             '<p class="text-danger">Failed to load visualization. Try running analysis again.</p>';
                     }
+                } finally {
                     inFlightVisualizationBands.delete(band);
-                };
-
-                img.src = imageUrl;
+                }
             }
 
             function setupVisualizationTabLazyLoading() {
@@ -1520,13 +1562,17 @@
 
                 let html = "";
                 Object.entries(ratios).forEach(([name, value]) => {
+                    const numericValue = Number(value);
+                    const displayValue = Number.isFinite(numericValue)
+                        ? numericValue.toFixed(3)
+                        : "N/A";
                     const displayName = name
                         .replace(/_/g, " ")
                         .replace(/\b\w/g, (l) => l.toUpperCase());
                     html += `
                         <div class="ratio-item">
                             <span class="ratio-name">${displayName}</span>
-                            <span class="ratio-value">${value.toFixed(3)}</span>
+                            <span class="ratio-value">${displayValue}</span>
                         </div>
                     `;
                 });
@@ -1603,6 +1649,16 @@
 
                         // Display results
                         const result = predictionData.result || predictionData;
+
+                        ensureVisualizationContext(result).catch((error) => {
+                            console.error("Visualization context error:", error);
+                            const rawContainer = document.getElementById("viz-raw");
+                            if (rawContainer) {
+                                rawContainer.innerHTML =
+                                    '<p class="text-warning">Could not initialize EEG visualizations for this upload.</p>';
+                            }
+                        });
+
                         displayPrediction(
                             result.classification ||
                             (result > 0 ? "ADHD" : "Non-ADHD"),
@@ -1651,27 +1707,6 @@
                             prediction: result,
                             bands: bandData,
                         };
-
-                        if (result.visualization_context_id) {
-                            visualizationContextId = result.visualization_context_id;
-                            setTabsEnabled(true);
-                            loadBandVisualization("raw");
-                        } else {
-                            createVisualizationContext(analysisData.file)
-                                .then((payload) => {
-                                    visualizationContextId = payload.context_id;
-                                    setTabsEnabled(true);
-                                    loadBandVisualization("raw");
-                                })
-                                .catch((error) => {
-                                    console.error("Visualization context error:", error);
-                                    const rawContainer = document.getElementById("viz-raw");
-                                    if (rawContainer) {
-                                        rawContainer.innerHTML =
-                                            '<p class="text-warning">Could not initialize EEG visualizations for this upload.</p>';
-                                    }
-                                });
-                        }
 
                         // Load topographic maps in parallel using the file
                         loadTopographicMaps(topographicFormData);
