@@ -496,22 +496,22 @@
 
         #waveform-section-card {
             grid-column: 1;
-            order: 2;
+            order: 3;
         }
 
         #spectral-section-card {
             grid-column: 2;
-            order: 3;
+            order: 4;
         }
 
         #export-bar {
             grid-column: 1 / -1;
-            order: 4;
+            order: 5;
         }
 
         #quality-notice-section {
             grid-column: 1 / -1;
-            order: 5;
+            order: 2;
         }
 
         #topographic-section-card {
@@ -1790,6 +1790,11 @@
                                     <div id="prediction-result"></div>
                                 </article>
 
+                                <article id="quality-notice-section" class="quality-card hidden">
+                                    <h3>Data Quality Notice</h3>
+                                    <ul id="quality-notice-list"></ul>
+                                </article>
+
                                 <article class="section-shell section-shell--card" id="spectral-section-card">
                                     <button type="button" class="section-toggle" data-collapsible-toggle data-target="spectral-content" aria-expanded="true">
                                         <span>Spectral Band Power Analysis</span>
@@ -1895,11 +1900,6 @@
                                 <div id="export-bar" class="export-bar hidden">
                                     <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
                                 </div>
-
-                                <article id="quality-notice-section" class="quality-card hidden">
-                                    <h3>Data Quality Notice</h3>
-                                    <ul id="quality-notice-list"></ul>
-                                </article>
 
                                 <article class="section-shell section-shell--card" id="temporal-card">
                                     <button type="button" class="section-toggle" data-collapsible-toggle data-target="temporal-content" aria-expanded="false">
@@ -2708,6 +2708,10 @@
 
             if (context.medicated === "true") {
                 notices.push("Current medication status was reported and may affect EEG-derived features.");
+
+                if (!String(context.medicationIntake || "").trim()) {
+                    notices.push("Medication status is marked as yes, but medication details were not provided.");
+                }
             }
 
             if ((Number(confidenceScore) || 0) < 0.6) {
