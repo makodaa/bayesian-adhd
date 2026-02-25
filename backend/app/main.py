@@ -556,6 +556,8 @@ def predict():
         result["band_analysis"] = {
             "average_absolute_power": band_powers.get("average_absolute_power", {}),
             "average_relative_power": band_powers.get("average_relative_power", {}),
+            "absolute_power": band_powers.get("absolute_power", {}),
+            "relative_power": band_powers.get("relative_power", {}),
             "band_ratios": band_powers.get("band_ratios", {}),
         }
 
