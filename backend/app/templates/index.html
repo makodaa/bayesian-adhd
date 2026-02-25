@@ -467,7 +467,7 @@
 
         .support-disclaimer {
             grid-column: 1 / -1;
-            order: 0;
+            order: 2;
             border: 1px solid #c9dbe5;
             border-radius: var(--radius-sm);
             background: linear-gradient(180deg, #eff6fa 0%, #f5f9fc 100%);
@@ -496,37 +496,37 @@
 
         #waveform-section-card {
             grid-column: 1;
-            order: 3;
+            order: 4;
         }
 
         #spectral-section-card {
             grid-column: 2;
-            order: 4;
+            order: 5;
         }
 
         #export-bar {
             grid-column: 1 / -1;
-            order: 5;
+            order: 6;
         }
 
         #quality-notice-section {
             grid-column: 1 / -1;
-            order: 2;
+            order: 3;
         }
 
         #topographic-section-card {
             grid-column: 1 / -1;
-            order: 6;
+            order: 7;
         }
 
         #temporal-card {
             grid-column: 1 / -1;
-            order: 7;
+            order: 8;
         }
 
         #intervention-card {
             grid-column: 1 / -1;
-            order: 8;
+            order: 9;
         }
 
         .summary-card,
@@ -611,7 +611,7 @@
             background: linear-gradient(180deg, #fffaf5 0%, #fffdf9 100%);
         }
 
-        .quality-card ul {
+        .quality-card .notice-list {
             margin: 0;
             padding-left: 1rem;
             color: var(--text-700);
@@ -619,6 +619,13 @@
             line-height: 1.5;
             display: grid;
             gap: 0.35rem;
+        }
+
+        .quality-card .notice-line {
+            margin: 0;
+            color: var(--text-700);
+            font-size: 0.88rem;
+            line-height: 1.5;
         }
 
         .section-toggle {
@@ -1779,20 +1786,20 @@
                             </div>
 
                             <div id="results-content" class="results-content hidden">
-                                <article id="support-disclaimer-section" class="support-disclaimer">
-                                    <h3>Clinical Support Disclaimer</h3>
-                                    <p>This application provides automated clinical decision support and is not a definitive diagnostic tool.</p>
-                                    <p>Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.</p>
-                                </article>
-
                                 <article class="summary-card">
                                     <h3>Classification Summary</h3>
                                     <div id="prediction-result"></div>
                                 </article>
 
+                                <article id="support-disclaimer-section" class="support-disclaimer">
+                                    <h3>Disclaimer</h3>
+                                    <p>This application provides automated clinical decision support and is not a definitive diagnostic tool.</p>
+                                    <p>Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.</p>
+                                </article>
+
                                 <article id="quality-notice-section" class="quality-card hidden">
-                                    <h3>Data Quality Notice</h3>
-                                    <ul id="quality-notice-list"></ul>
+                                    <h3 id="quality-notice-title">Warning</h3>
+                                    <div id="quality-notice-content"></div>
                                 </article>
 
                                 <article class="section-shell section-shell--card" id="spectral-section-card">
@@ -2690,8 +2697,9 @@
 
         function renderDataQualityNotice(context, confidenceScore) {
             const section = byId("quality-notice-section");
-            const list = byId("quality-notice-list");
-            if (!section || !list) return;
+            const title = byId("quality-notice-title");
+            const content = byId("quality-notice-content");
+            if (!section || !title || !content) return;
 
             const notices = [];
             const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
@@ -2720,11 +2728,16 @@
 
             if (notices.length === 0) {
                 section.classList.add("hidden");
-                list.innerHTML = "";
+                content.innerHTML = "";
                 return;
             }
 
-            list.innerHTML = notices.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+            title.textContent = notices.length > 1 ? "Warnings" : "Warning";
+            if (notices.length === 1) {
+                content.innerHTML = `<p class="notice-line">${escapeHtml(notices[0])}</p>`;
+            } else {
+                content.innerHTML = `<ul class="notice-list">${notices.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+            }
             section.classList.remove("hidden");
         }
 
