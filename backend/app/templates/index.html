@@ -365,69 +365,6 @@
             gap: 1.2rem;
         }
 
-        .intro-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 1rem;
-        }
-
-        .intro-card {
-            background: var(--surface-card);
-            border: 1px solid #dbe3e8;
-            border-radius: 16px;
-            padding: 1rem 1.1rem;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .intro-card h2 {
-            margin: 0;
-            font-size: 1.05rem;
-            color: var(--text-900);
-        }
-
-        .intro-card p {
-            margin: 0.45rem 0 0;
-            color: var(--text-700);
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .intro-list {
-            margin: 0.7rem 0 0;
-            padding-left: 1.1rem;
-            color: var(--text-700);
-            font-size: 0.88rem;
-            line-height: 1.5;
-        }
-
-        .mini-metrics {
-            margin-top: 0.9rem;
-            display: grid;
-            gap: 0.6rem;
-        }
-
-        .metric-chip {
-            background: var(--surface-muted);
-            border: 1px solid #dfe8ed;
-            border-radius: 10px;
-            padding: 0.6rem 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .metric-chip span {
-            color: var(--text-700);
-            font-size: 0.83rem;
-        }
-
-        .metric-chip strong {
-            color: var(--text-900);
-            font-size: 0.84rem;
-            font-weight: 700;
-            text-align: right;
-        }
-
         .results-shell {
             display: grid;
             gap: 0.9rem;
@@ -468,7 +405,9 @@
 
         .results-content {
             display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
             gap: 0.8rem;
+            align-items: start;
         }
 
         .summary-card,
@@ -478,6 +417,46 @@
             border: 1px solid #dbe3e8;
             border-radius: 14px;
             box-shadow: 0 8px 22px rgba(20, 50, 63, 0.05);
+        }
+
+        .summary-card {
+            grid-column: 1 / -1;
+            order: 1;
+        }
+
+        #waveform-section-card {
+            grid-column: 1;
+            order: 2;
+        }
+
+        #spectral-section-card {
+            grid-column: 2;
+            order: 3;
+        }
+
+        #export-bar {
+            grid-column: 1 / -1;
+            order: 4;
+        }
+
+        #quality-notice-section {
+            grid-column: 1 / -1;
+            order: 5;
+        }
+
+        #topographic-section-card {
+            grid-column: 1 / -1;
+            order: 6;
+        }
+
+        #temporal-card {
+            grid-column: 1 / -1;
+            order: 7;
+        }
+
+        #intervention-card {
+            grid-column: 1 / -1;
+            order: 8;
         }
 
         .summary-card,
@@ -1430,8 +1409,13 @@
         }
 
         @media (max-width: 1160px) {
-            .intro-grid {
+            .results-content {
                 grid-template-columns: 1fr;
+            }
+
+            #waveform-section-card,
+            #spectral-section-card {
+                grid-column: 1 / -1;
             }
         }
 
@@ -1584,37 +1568,10 @@
             </header>
 
             <main class="page-body">
-                <section class="intro-grid">
-                    <article class="intro-card">
-                        <h2>Clinical Workflow</h2>
-                        <p>Run each assessment in sequence: complete metadata, upload EEG CSV, then review before submission.
-                            Supporting visualizations load after classification so your primary interpretation remains front and center.</p>
-                        <ul class="intro-list">
-                            <li>Step 1: Capture subject and recording context.</li>
-                            <li>Step 2: Validate EEG channels and file metadata.</li>
-                            <li>Step 3: Review and run assessment.</li>
-                        </ul>
-                    </article>
-                    <article class="intro-card">
-                        <h2>Latest Snapshot</h2>
-                        <p>The latest processed result appears below with progressive disclosure for deeper analysis sections.</p>
-                        <div class="mini-metrics">
-                            <div class="metric-chip">
-                                <span>Latest Classification</span>
-                                <strong id="last-classification">No result yet</strong>
-                            </div>
-                            <div class="metric-chip">
-                                <span>Latest Confidence</span>
-                                <strong id="last-confidence">-</strong>
-                            </div>
-                        </div>
-                    </article>
-                </section>
-
-                <section class="results-shell">
+                <section class="results-shell" id="assessment-findings">
                     <div class="results-heading">
                         <h2>Assessment Findings</h2>
-                        <p>Review the classification summary first, then expand supporting sections as needed.</p>
+                        <p>Start with classification, waveform, and band power. Expand advanced sections as needed.</p>
                     </div>
 
                     <div id="results-empty-state" class="empty-state">
@@ -1629,12 +1586,7 @@
                             <div id="prediction-result"></div>
                         </article>
 
-                        <article id="quality-notice-section" class="quality-card hidden">
-                            <h3>Data Quality Notice</h3>
-                            <ul id="quality-notice-list"></ul>
-                        </article>
-
-                        <article class="result-section">
+                        <article class="result-section" id="spectral-section-card">
                             <button type="button" class="section-toggle" data-target="spectral-content" aria-expanded="true">
                                 <span>Spectral Band Power Analysis</span>
                                 <span class="toggle-symbol">-</span>
@@ -1649,7 +1601,7 @@
                             </div>
                         </article>
 
-                        <article class="result-section">
+                        <article class="result-section" id="topographic-section-card">
                             <button type="button" class="section-toggle" data-target="topographic-content" aria-expanded="false">
                                 <span>Topographic Scalp Maps</span>
                                 <span class="toggle-symbol">+</span>
@@ -1674,12 +1626,12 @@
                             </div>
                         </article>
 
-                        <article class="result-section">
-                            <button type="button" class="section-toggle" data-target="waveform-content" aria-expanded="false">
+                        <article class="result-section" id="waveform-section-card">
+                            <button type="button" class="section-toggle" data-target="waveform-content" aria-expanded="true">
                                 <span>EEG Waveform Visualization</span>
-                                <span class="toggle-symbol">+</span>
+                                <span class="toggle-symbol">-</span>
                             </button>
-                            <div id="waveform-content" class="section-content hidden">
+                            <div id="waveform-content" class="section-content">
                                 <ul class="nav nav-tabs visualization-tabs" id="eegTabs" role="tablist">
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
@@ -1736,7 +1688,16 @@
                             </div>
                         </article>
 
-                        <article class="result-section">
+                        <div id="export-bar" class="export-bar hidden">
+                            <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
+                        </div>
+
+                        <article id="quality-notice-section" class="quality-card hidden">
+                            <h3>Data Quality Notice</h3>
+                            <ul id="quality-notice-list"></ul>
+                        </article>
+
+                        <article class="result-section" id="temporal-card">
                             <button type="button" class="section-toggle" data-target="temporal-content" aria-expanded="false">
                                 <span>Temporal Biomarker Evolution</span>
                                 <span class="toggle-symbol">+</span>
@@ -1754,7 +1715,7 @@
                             </div>
                         </article>
 
-                        <article class="result-section">
+                        <article class="result-section" id="intervention-card">
                             <button type="button" class="section-toggle" data-target="intervention-content" aria-expanded="false">
                                 <span>Intervention Suggestions</span>
                                 <span class="toggle-symbol">+</span>
@@ -1764,10 +1725,6 @@
                                 <ul id="intervention-suggestions" class="intervention-list"></ul>
                             </div>
                         </article>
-                    </div>
-
-                    <div id="export-bar" class="export-bar hidden">
-                        <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
                     </div>
                 </section>
             </main>
@@ -2595,18 +2552,6 @@
             list.innerHTML = suggestions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
         }
 
-        function updateSnapshotMetrics(result) {
-            const classificationEl = byId("last-classification");
-            const confidenceEl = byId("last-confidence");
-            if (classificationEl) {
-                classificationEl.textContent = result.classification || "Unknown";
-            }
-            if (confidenceEl) {
-                const confidence = Number(result.confidence_score);
-                confidenceEl.textContent = Number.isFinite(confidence) ? `${(confidence * 100).toFixed(1)}%` : "-";
-            }
-        }
-
         function updateExportControls() {
             const downloadBtn = byId("download-pdf-btn");
             if (!downloadBtn) return;
@@ -3033,7 +2978,6 @@
                 displayClinicalRatios((result.band_analysis || {}).band_ratios || {});
                 renderDataQualityNotice(context, result.confidence_score || 0);
                 renderInterventionSuggestions(result.classification || "Unknown");
-                updateSnapshotMetrics(result);
 
                 setHidden("results-empty-state", true);
                 setHidden("results-content", false);
@@ -3055,6 +2999,11 @@
                 leaveProcessingMode();
                 closeAssessmentDrawer(true);
                 setStep(1);
+
+                const findingsSection = byId("assessment-findings");
+                if (findingsSection) {
+                    findingsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
 
                 const fileInput = byId("file");
                 if (fileInput) fileInput.value = "";
