@@ -1246,6 +1246,11 @@
                 results: null,
             };
 
+            const eegBands = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
+            let visualizationContextId = null;
+            const loadedVisualizationBands = new Set();
+            const inFlightVisualizationBands = new Set();
+
             // Band colors
             const bandColors = {
                 delta: "#9C27B0",
@@ -1281,21 +1286,11 @@
                 }
             }
 
-            function displayVisualization(containerId, imageData) {
+            function displayVisualization(containerId, imageUrl, band) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
 
-                // Check if imageData is an array of images or a single image
-                if (Array.isArray(imageData)) {
-                    // Stitch multiple images vertically
-                    const imagesHtml = imageData.map(img => 
-                        `<img src="${img}" alt="EEG Visualization" style="display: block; width: 100%; margin: 0; padding: 0;" />`
-                    ).join('');
-                    container.innerHTML = `<div style="display: flex; flex-direction: column;">${imagesHtml}</div>`;
-                } else {
-                    // Single image (backward compatibility)
-                    container.innerHTML = `<img src="${imageData}" alt="EEG Visualization" />`;
-                }
+                container.innerHTML = `<img src="${imageUrl}" alt="${band} EEG visualization" loading="lazy" />`;
             }
 
             // File input handler
@@ -1322,23 +1317,17 @@
                         label.innerHTML = `
                         <div>Click to select file</div>
                         <small class="text-muted">Supported: .csv files</small>
-                    `;
+                        `;
                         analyzeBtn.disabled = true;
                     }
+
+                    resetVisualizationState();
                 });
 
             // Enable/disable tabs
             function setTabsEnabled(enabled) {
-                const tabs = [
-                    "raw-tab",
-                    "filtered-tab",
-                    "delta-tab",
-                    "theta-tab",
-                    "alpha-tab",
-                    "beta-tab",
-                    "gamma-tab",
-                ];
-                tabs.forEach((tabId) => {
+                eegBands.forEach((band) => {
+                    const tabId = `${band}-tab`;
                     const tab = document.getElementById(tabId);
                     if (tab) {
                         tab.disabled = !enabled;
@@ -1346,53 +1335,101 @@
                 });
             }
 
-            // Load all visualizations
-            async function loadVisualizations(formData) {
-                const bands = [
-                    "raw",
-                    "filtered",
-                    "delta",
-                    "theta",
-                    "alpha",
-                    "beta",
-                    "gamma",
-                ];
+            function resetVisualizationState() {
+                visualizationContextId = null;
+                loadedVisualizationBands.clear();
+                inFlightVisualizationBands.clear();
+                analysisData.visualizations = {};
 
-                // Enable tabs
-                setTabsEnabled(true);
+                eegBands.forEach((band) => {
+                    const container = document.getElementById(`viz-${band}`);
+                    if (!container) return;
 
-                // Load each visualization by loading them all at the same time.
-                try {
-                    for (const band of bands) {
-                        const containerId = `viz-${band}`;
-                        setLoadingState(containerId, true);
-                    }
+                    container.innerHTML =
+                        '<p class="text-muted">Run analysis to load this visualization</p>';
+                });
 
-                    const response = await fetch(
-                        `/visualize_all_eeg`, {
-                            method: "POST",
-                            body: formData,
-                        },
-                    );
-
-                    console.log(`Response received: ${response}`);
-                    const json = await response.json();
-                    const {result: visualizations} = json;
-                    for (const {band, images} of visualizations) {
-                        console.warn(`Visualization for ${band} loaded successfully.`);
-                        if (!bands.includes(band)) {
-                        console.error(`Visualization for ${band} is not supported. What hafen, vella?`);
-                        continue;
-                        }
-
-                        const containerId = `viz-${band}`;
-                        displayVisualization(containerId, images);
-                        analysisData.visualizations[band] = images;
-                    }
-                } catch (error) {
-                    console.error(`Error loading visualizations:`, error);
-                }
+                setTabsEnabled(false);
             }
+
+            function getVisualizationImageUrl(contextId, band) {
+                return `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${band}.png`;
+            }
+
+            function getBandFromTabButtonId(tabId) {
+                return tabId.endsWith("-tab") ? tabId.slice(0, -4) : null;
+            }
+
+            async function createVisualizationContext(file) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const response = await fetch("/api/eeg_visualization_context", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || "Failed to initialize visualization context");
+                }
+
+                return response.json();
+            }
+
+            async function loadBandVisualization(band) {
+                if (!visualizationContextId || !eegBands.includes(band)) {
+                    return;
+                }
+
+                if (loadedVisualizationBands.has(band) || inFlightVisualizationBands.has(band)) {
+                    return;
+                }
+
+                const containerId = `viz-${band}`;
+                setLoadingState(containerId, true);
+                inFlightVisualizationBands.add(band);
+
+                const imageUrl = getVisualizationImageUrl(visualizationContextId, band);
+                const img = new Image();
+                img.alt = `${band} EEG visualization`;
+                img.loading = "lazy";
+
+                img.onload = () => {
+                    displayVisualization(containerId, imageUrl, band);
+                    loadedVisualizationBands.add(band);
+                    inFlightVisualizationBands.delete(band);
+                    analysisData.visualizations[band] = imageUrl;
+                };
+
+                img.onerror = () => {
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        container.innerHTML =
+                            '<p class="text-danger">Failed to load visualization. Try running analysis again.</p>';
+                    }
+                    inFlightVisualizationBands.delete(band);
+                };
+
+                img.src = imageUrl;
+            }
+
+            function setupVisualizationTabLazyLoading() {
+                const tabButtons = document.querySelectorAll('#eegTabs [data-bs-toggle="tab"]');
+                tabButtons.forEach((button) => {
+                    button.addEventListener("shown.bs.tab", (event) => {
+                        const target = event.target;
+                        if (!target || !target.id) return;
+
+                        const band = getBandFromTabButtonId(target.id);
+                        if (band) {
+                            loadBandVisualization(band);
+                        }
+                    });
+                });
+            }
+
+            setupVisualizationTabLazyLoading();
 
             // Display prediction results
             function displayPrediction(classification, confidenceScore) {
@@ -1540,21 +1577,32 @@
                     const notes = document.getElementById("notes").value;
                     if (notes) formData.append("notes", notes);
 
-                    // Create separate FormData for visualizations (file only)
-                    const vizFormData = new FormData();
-                    vizFormData.append("file", analysisData.file);
+                    const topographicFormData = new FormData();
+                    topographicFormData.append("file", analysisData.file);
+
+                    const temporalFormData = new FormData();
+                    temporalFormData.append("file", analysisData.file);
+
+                    resetVisualizationState();
 
                     try {
-                        // Load visualizations in parallel with prediction (which now includes band analysis)
-                        const predictionPromise = await fetch("/predict", {
+                        const predictionRequest = fetch("/predict", {
                             method: "POST",
                             body: formData,
                         });
 
-                        // Process prediction (now includes band analysis)
-                        const predictionData = await predictionPromise.json();
-                        if (predictionData.error) {
-                            alert("Error: " + predictionData.error);
+                        const visualizationContextRequest = createVisualizationContext(analysisData.file)
+                            .then((value) => ({ ok: true, value }))
+                            .catch((error) => ({ ok: false, error }));
+
+                        const [predictionResponse, visualizationContextResult] = await Promise.all([
+                            predictionRequest,
+                            visualizationContextRequest,
+                        ]);
+
+                        const predictionData = await predictionResponse.json();
+                        if (!predictionResponse.ok || predictionData.error) {
+                            alert("Error: " + (predictionData.error || "Failed to analyze EEG recording"));
                             return;
                         }
 
@@ -1613,14 +1661,22 @@
                             bands: bandData,
                         };
 
-                        loadVisualizations(vizFormData);
+                        if (visualizationContextResult.ok) {
+                            visualizationContextId = visualizationContextResult.value.context_id;
+                            setTabsEnabled(true);
+                            loadBandVisualization("raw");
+                        } else {
+                            const rawContainer = document.getElementById("viz-raw");
+                            if (rawContainer) {
+                                rawContainer.innerHTML =
+                                    '<p class="text-warning">Could not initialize EEG visualizations for this upload.</p>';
+                            }
+                        }
 
                         // Load topographic maps in parallel using the file
-                        loadTopographicMaps(vizFormData);
+                        loadTopographicMaps(topographicFormData);
 
                         // Load temporal biomarker evolution
-                        const temporalFormData = new FormData();
-                        temporalFormData.append("file", analysisData.file);
                         loadTemporalBiomarkers(temporalFormData);
                     } catch (error) {
                         console.error("Analysis error:", error);
