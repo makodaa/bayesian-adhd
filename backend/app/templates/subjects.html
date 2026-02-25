@@ -365,6 +365,45 @@
             box-shadow: var(--shadow-card);
         }
 
+        .summary-metrics {
+            padding: 0.2rem 1rem 1rem;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .metric-card {
+            border: 1px solid #dbe6ec;
+            border-radius: var(--radius-sm);
+            background: #f8fbfd;
+            padding: 0.62rem 0.68rem;
+            display: grid;
+            gap: 0.18rem;
+            min-height: 86px;
+        }
+
+        .metric-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-500);
+            font-weight: 700;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            color: var(--text-900);
+            font-weight: 700;
+            line-height: 1.15;
+            font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+        }
+
+        .metric-copy {
+            font-size: 0.78rem;
+            color: var(--text-700);
+            line-height: 1.35;
+        }
+
         .section-head {
             padding: 1rem 1rem 0.5rem;
             display: grid;
@@ -387,7 +426,7 @@
         .toolbar-row {
             padding: 0.6rem 1rem 0.9rem;
             display: grid;
-            grid-template-columns: minmax(260px, 1fr) auto;
+            grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(135px, 1fr)) auto;
             gap: 0.55rem;
             align-items: end;
             border-bottom: 1px solid #e6edf1;
@@ -413,6 +452,13 @@
             padding: 0.52rem 0.62rem;
             font-size: 0.86rem;
             color: var(--text-900);
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.4rem;
         }
 
         .table-wrap {
@@ -681,6 +727,19 @@
             .menu-toggle {
                 display: inline-flex;
             }
+
+            .summary-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .toolbar-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .toolbar-actions {
+                grid-column: span 2;
+                justify-content: flex-end;
+            }
         }
 
         @media (max-width: 768px) {
@@ -700,8 +759,14 @@
                 flex-wrap: wrap;
             }
 
+            .summary-metrics,
             .toolbar-row {
                 grid-template-columns: 1fr;
+            }
+
+            .toolbar-actions {
+                grid-column: auto;
+                justify-content: flex-end;
             }
         }
     </style>
@@ -786,6 +851,35 @@
             <main class="page-body">
                 <section class="section-shell">
                     <div class="section-head">
+                        <h2>Registry Snapshot</h2>
+                        <p>Quick totals to track coverage and recent activity before you drill into individual records.</p>
+                    </div>
+                    <div class="summary-metrics">
+                        <article class="metric-card">
+                            <span class="metric-label">Total Subjects</span>
+                            <span class="metric-value" id="metric-total-subjects">0</span>
+                            <span class="metric-copy">All enrolled subject records</span>
+                        </article>
+                        <article class="metric-card">
+                            <span class="metric-label">With Assessments</span>
+                            <span class="metric-value" id="metric-assessed-subjects">0</span>
+                            <span class="metric-copy">Subjects with at least one EEG result</span>
+                        </article>
+                        <article class="metric-card">
+                            <span class="metric-label">ADHD-Related Latest</span>
+                            <span class="metric-value" id="metric-adhd-related">0</span>
+                            <span class="metric-copy">Latest outcome contains ADHD subtype label</span>
+                        </article>
+                        <article class="metric-card">
+                            <span class="metric-label">Active (30 Days)</span>
+                            <span class="metric-value" id="metric-recent-activity">0</span>
+                            <span class="metric-copy">Subjects with recent assessment activity</span>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="section-shell">
+                    <div class="section-head">
                         <h2>Subject Directory</h2>
                         <p>Select a subject to inspect demographics and previous EEG classifications from this clinical session history.</p>
                     </div>
@@ -795,7 +889,36 @@
                             <label for="search-subjects">Search Subjects</label>
                             <input type="text" id="search-subjects" placeholder="Search by subject code, gender, or classification" />
                         </div>
-                        <button id="clear-search-btn" type="button" class="btn-secondary-app">Clear</button>
+                        <div class="field-wrap">
+                            <label for="gender-filter">Gender</label>
+                            <select id="gender-filter">
+                                <option value="all">All genders</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                                <option value="unknown">Not recorded</option>
+                            </select>
+                        </div>
+                        <div class="field-wrap">
+                            <label for="outcome-filter">Latest Outcome</label>
+                            <select id="outcome-filter">
+                                <option value="all">All outcomes</option>
+                                <option value="adhd">ADHD-related</option>
+                                <option value="non-adhd">Non-ADHD</option>
+                                <option value="pending">No result yet</option>
+                            </select>
+                        </div>
+                        <div class="field-wrap">
+                            <label for="sort-subjects">Sort By</label>
+                            <select id="sort-subjects">
+                                <option value="recent">Most recent activity</option>
+                                <option value="assessments">Most assessments</option>
+                                <option value="code">Subject code</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button id="clear-search-btn" type="button" class="btn-secondary-app">Reset Filters</button>
+                        </div>
                     </div>
 
                     <div class="table-wrap">
@@ -851,6 +974,12 @@
         const appState = {
             allSubjects: [],
             filteredSubjects: [],
+            filters: {
+                search: "",
+                gender: "all",
+                outcome: "all",
+                sort: "recent",
+            },
         };
 
         function byId(id) {
@@ -929,6 +1058,41 @@
             return `<span class="classification-pill ${className}">${escapeHtml(classification)}</span>`;
         }
 
+        function getOutcomeGroup(label) {
+            const className = getClassificationClass(label);
+            if (className === "adhd" || className === "non-adhd") {
+                return className;
+            }
+            return "pending";
+        }
+
+        function normalizeGender(value) {
+            const normalized = String(value || "").trim().toLowerCase();
+            return normalized || "unknown";
+        }
+
+        function toTimestamp(value) {
+            if (!value) {
+                return 0;
+            }
+            const date = new Date(value);
+            const timestamp = date.getTime();
+            return Number.isFinite(timestamp) ? timestamp : 0;
+        }
+
+        function updateSummaryMetrics(subjects) {
+            const total = subjects.length;
+            const assessed = subjects.filter((subject) => Number(subject.recording_count || 0) > 0).length;
+            const adhdRelated = subjects.filter((subject) => getOutcomeGroup(subject.last_result) === "adhd").length;
+            const recentThreshold = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            const recentActivity = subjects.filter((subject) => toTimestamp(subject.last_update) >= recentThreshold).length;
+
+            byId("metric-total-subjects").textContent = String(total);
+            byId("metric-assessed-subjects").textContent = String(assessed);
+            byId("metric-adhd-related").textContent = String(adhdRelated);
+            byId("metric-recent-activity").textContent = String(recentActivity);
+        }
+
         function attachSubjectRowHandlers() {
             const rows = document.querySelectorAll("[data-subject-id]");
             rows.forEach((row) => {
@@ -957,11 +1121,16 @@
             }
 
             if (!subjects || subjects.length === 0) {
+                const hasActiveFilters = Boolean(appState.filters.search)
+                    || appState.filters.gender !== "all"
+                    || appState.filters.outcome !== "all";
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="table-feedback">
-                            <strong>No subjects found</strong>
-                            Refine the search term or run a new assessment to add subject records.
+                            <strong>${hasActiveFilters ? "No matching subjects" : "No subjects found"}</strong>
+                            ${hasActiveFilters
+                        ? "Try resetting filters or broadening the search criteria."
+                        : "Run a new assessment to add subject records to the registry."}
                         </td>
                     </tr>
                 `;
@@ -993,23 +1162,73 @@
             attachSubjectRowHandlers();
         }
 
-        function applySearchFilter() {
-            const input = byId("search-subjects");
-            const term = input ? input.value.trim().toLowerCase() : "";
+        function syncFilterStateFromInputs() {
+            appState.filters.search = byId("search-subjects")?.value.trim().toLowerCase() || "";
+            appState.filters.gender = byId("gender-filter")?.value || "all";
+            appState.filters.outcome = byId("outcome-filter")?.value || "all";
+            appState.filters.sort = byId("sort-subjects")?.value || "recent";
+        }
 
-            if (!term) {
-                appState.filteredSubjects = [...appState.allSubjects];
-                renderSubjectsTable(appState.filteredSubjects);
-                return;
-            }
+        function applyFilters() {
+            syncFilterStateFromInputs();
 
-            appState.filteredSubjects = appState.allSubjects.filter((subject) => {
-                const subjectCode = String(subject.subject_code || "").toLowerCase();
-                const gender = String(subject.gender || "").toLowerCase();
-                const classification = String(subject.last_result || "").toLowerCase();
-                return subjectCode.includes(term) || gender.includes(term) || classification.includes(term);
-            });
+            const searchTerm = appState.filters.search;
+            const genderFilter = appState.filters.gender;
+            const outcomeFilter = appState.filters.outcome;
+            const sortFilter = appState.filters.sort;
 
+            const filtered = appState.allSubjects
+                .filter((subject) => {
+                    if (searchTerm) {
+                        const subjectCode = String(subject.subject_code || "").toLowerCase();
+                        const gender = String(subject.gender || "").toLowerCase();
+                        const classification = String(subject.last_result || "").toLowerCase();
+                        const searchableText = `${subjectCode} ${gender} ${classification}`;
+                        if (!searchableText.includes(searchTerm)) {
+                            return false;
+                        }
+                    }
+
+                    if (genderFilter !== "all") {
+                        const normalizedGender = normalizeGender(subject.gender);
+                        if (genderFilter === "unknown") {
+                            if (normalizedGender !== "unknown") {
+                                return false;
+                            }
+                        } else if (normalizedGender !== genderFilter) {
+                            return false;
+                        }
+                    }
+
+                    if (outcomeFilter !== "all") {
+                        if (getOutcomeGroup(subject.last_result) !== outcomeFilter) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .sort((left, right) => {
+                    if (sortFilter === "code") {
+                        return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
+                    }
+
+                    if (sortFilter === "assessments") {
+                        const recordingDelta = Number(right.recording_count || 0) - Number(left.recording_count || 0);
+                        if (recordingDelta !== 0) {
+                            return recordingDelta;
+                        }
+                        return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
+                    }
+
+                    const recencyDelta = toTimestamp(right.last_update) - toTimestamp(left.last_update);
+                    if (recencyDelta !== 0) {
+                        return recencyDelta;
+                    }
+                    return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
+                });
+
+            appState.filteredSubjects = filtered;
             renderSubjectsTable(appState.filteredSubjects);
         }
 
@@ -1144,9 +1363,10 @@
                 }
 
                 appState.allSubjects = Array.isArray(subjects) ? subjects : [];
-                appState.filteredSubjects = [...appState.allSubjects];
-                applySearchFilter();
+                updateSummaryMetrics(appState.allSubjects);
+                applyFilters();
             } catch (error) {
+                updateSummaryMetrics([]);
                 if (tbody) {
                     tbody.innerHTML = `
                         <tr>
@@ -1204,16 +1424,27 @@
                 showToast("Subject list refreshed.", "success");
             });
 
-            byId("search-subjects")?.addEventListener("input", applySearchFilter);
+            byId("search-subjects")?.addEventListener("input", applyFilters);
+            byId("gender-filter")?.addEventListener("change", applyFilters);
+            byId("outcome-filter")?.addEventListener("change", applyFilters);
+            byId("sort-subjects")?.addEventListener("change", applyFilters);
 
             byId("clear-search-btn")?.addEventListener("click", () => {
-                const input = byId("search-subjects");
-                if (!input) {
+                const searchInput = byId("search-subjects");
+                const genderFilter = byId("gender-filter");
+                const outcomeFilter = byId("outcome-filter");
+                const sortSubjects = byId("sort-subjects");
+
+                if (!searchInput || !genderFilter || !outcomeFilter || !sortSubjects) {
                     return;
                 }
-                input.value = "";
-                applySearchFilter();
-                input.focus();
+
+                searchInput.value = "";
+                genderFilter.value = "all";
+                outcomeFilter.value = "all";
+                sortSubjects.value = "recent";
+                applyFilters();
+                searchInput.focus();
             });
 
             document.addEventListener("keydown", (event) => {
