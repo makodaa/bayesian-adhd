@@ -10,6 +10,11 @@ WINDOW_STEP = int(SAMPLES_PER_WINDOW * (1 - OVERLAP))  # step size for sliding w
 TARGET_FREQUENCY_BINS = np.arange(2.0, 40.5, 0.5)  # target frequency bins
 ALLOWED_EXTENSIONS = {"csv"}
 
+# Visualization cache defaults
+VIZ_CACHE_TTL_SECONDS = 6 * 60 * 60
+VIZ_CACHE_MAX_BYTES = 1024 * 1024 * 1024
+VIZ_CACHE_DIR = "/tmp/bayesian_adhd_viz_cache"
+
 # Frequency Bands & Ranges (in hz)
 CLASSIFYING_FREQUENCY_BANDS = {
     "delta": (0.5, 4),

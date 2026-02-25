@@ -1,6 +1,6 @@
 from os import PathLike
 from pathlib import Path
-from typing import cast, get_args
+from typing import cast
 
 import matplotlib
 from flask import (
@@ -10,14 +10,12 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     session,
     url_for,
 )
 
-from .config import SAMPLE_RATE, TARGET_FREQUENCY_BINS
-from .core.error_handle import error_handle
 from .core.logging_config import get_app_logger
-from .db.connection import get_db_connection
 from .db.repositories.band_powers import BandPowersRepository
 from .db.repositories.clinicians import CliniciansRepository
 from .db.repositories.ratios import RatiosRepository
@@ -40,8 +38,12 @@ from .services.subject_service import SubjectService
 from .services.temporal_biomarker_service import TemporalBiomarkerService
 from .services.topographic_service import TopographicService
 from .services.visualization_service import BandFilter, VisualizationService
-from .utils.mock_data import MockDataGenerator
-from .utils.timer import Timer
+from .services.visualization_cache_service import (
+    ContextAccessError,
+    ContextExpiredError,
+    ContextNotFoundError,
+    VisualizationCacheService,
+)
 
 matplotlib.use("Agg")  # Non-GUI backend
 
@@ -110,6 +112,7 @@ file_service = FileService()
 eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
 visualization_service = VisualizationService()
+visualization_cache_service = VisualizationCacheService()
 topographic_service = TopographicService()
 temporal_biomarker_service = TemporalBiomarkerService()
 clinician_service = ClinicianService(clinicians_repo)
@@ -153,62 +156,6 @@ def initialize_model():
         except Exception as e:
             logger.error(f"Error loading model: {e}", exc_info=True)
             app.model_initialized = False
-
-
-# Helper functions for file processing
-
-
-def visualize_csv(file, eeg_type: BandFilter):
-    """Process CSV and visualize using VisualizationService"""
-    logger.info(f"Visualizing CSV file: {file.filename}, type: {eeg_type}")
-    df = file_service.read_csv(file)
-    file_service.validate_eeg_data(df)
-    return visualization_service.visualize_df(df, eeg_type)
-
-
-def visualize_csv_all(file):
-    """
-    Process CSV and visualize using Visualization Service, and return all of it
-    as an array of base-64 encoded images.
-    """
-
-    logger.info(f"Visualizing CSV file: {file.filename}")
-    df = file_service.read_csv(file)
-    file_service.validate_eeg_data(df)
-
-    results = []
-    for band in VisualizationService.BAND_FILTERS.keys():
-        with Timer() as timer:
-            images = visualization_service.visualize_df(df, band)
-            results.append({"band": band, "images": images})
-
-            logger.info(f"Visualized {band} in {timer.elapsed()}")
-
-    return results
-
-
-@error_handle
-def visualize_file(file, eeg_type: BandFilter = "raw"):
-    """Route file to appropriate visualization handler"""
-    if file.filename is None:
-        return None
-
-    if not file_service.is_allowed_file(file.filename):
-        return {"error": "File extension not supported"}
-
-    return visualize_csv(file, eeg_type)
-
-
-@error_handle
-def visualize_file_all(file):
-    """Route file to appropriate visualization handler"""
-    if file.filename is None:
-        return None
-
-    if not file_service.is_allowed_file(file.filename):
-        return {"error": "File extension not supported"}
-
-    return visualize_csv_all(file)
 
 
 @app.route("/")
@@ -362,71 +309,106 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/visualize_all_eeg", methods=["POST"])
+@app.route("/api/eeg_visualization_context", methods=["POST"])
 @login_required
-def visualize_all_eeg():
+def create_eeg_visualization_context():
+    """Create a cached visualization context for an uploaded EEG file."""
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
 
     file = request.files["file"]
-    if file.filename == "":
+    filename = file.filename
+    if filename is None or filename == "":
         return jsonify({"error": "No selected file"}), 400
 
+    if not file_service.is_allowed_file(filename):
+        return jsonify({"error": "File extension not supported"}), 400
+
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
     try:
-        result = visualize_file_all(file)
-        if result is None:
-            print(f"Warning: visualize_file returned None for {file.filename}")
-            return jsonify(
-                {"error": "Something went wrong while reading the file."}
-            ), 500
-        if isinstance(result, dict) and "error" in result:
-            print(f"Warning: Error from visualize_file: {result['error']}")
-            return jsonify({"error": result["error"]}), 400
-        return jsonify({"result": result}), 200
+        file_bytes = file.stream.read()
+        df = file_service.read_csv_bytes(file_bytes, filename)
+        file_service.validate_eeg_data(df)
+
+        context = visualization_cache_service.create_or_refresh_context(
+            file_bytes=file_bytes,
+            clinician_id=clinician_id,
+            filename=filename,
+        )
+
+        return jsonify(
+            {
+                "context_id": context["context_id"],
+                "bands": list(VisualizationService.BAND_FILTERS.keys()),
+                "expires_at": context["expires_at"],
+                "created": context["created"],
+            }
+        ), 200
     except ValueError as e:
-        print(f"ValueError in visualize_eeg: {str(e)}")
+        logger.warning(f"Visualization context validation failed: {e}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        print(f"Exception in visualize_eeg: {str(e)}")
-        import traceback
-
-        print(f"Traceback: {traceback.format_exc()}")
-        return jsonify({"error": f"Failed to visualize: {str(e)}"}), 500
+        logger.error(f"Error creating visualization context: {e}", exc_info=True)
+        return jsonify({"error": "Failed to create visualization context"}), 500
 
 
-@app.route("/visualize_eeg/<eeg_type>", methods=["POST"])
+@app.route("/api/eeg_visualizations/<context_id>/<band>.png", methods=["GET"])
 @login_required
-def visualize_eeg(eeg_type):
-    if eeg_type not in get_args(BandFilter):
+def get_eeg_visualization_image(context_id: str, band: str):
+    """Return a cached PNG preview for one EEG band."""
+    if band not in VisualizationService.BAND_FILTERS:
         return jsonify({"error": "Invalid EEG type"}), 400
 
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
 
     try:
-        result = visualize_file(file, eeg_type)
-        if result is None:
-            print(f"Warning: visualize_file returned None for {file.filename}")
-            return jsonify(
-                {"error": "Something went wrong while reading the file."}
-            ), 500
-        if isinstance(result, dict) and "error" in result:
-            print(f"Warning: Error from visualize_file: {result['error']}")
-            return jsonify({"error": result["error"]}), 400
-        return jsonify({"result": result}), 200
+        cached_path = visualization_cache_service.get_cached_image_path(
+            context_id=context_id,
+            clinician_id=clinician_id,
+            band=band,
+        )
+        if cached_path is not None:
+            response = send_file(cached_path, mimetype="image/png", conditional=True)
+            response.headers["X-Visualization-Cache"] = "HIT"
+            response.headers["Cache-Control"] = "private, max-age=3600"
+            return response
+
+        csv_bytes = visualization_cache_service.read_context_csv(
+            context_id=context_id,
+            clinician_id=clinician_id,
+        )
+        df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
+        file_service.validate_eeg_data(df)
+
+        image_bytes = visualization_service.render_preview_png(
+            df,
+            cast(BandFilter, band),
+        )
+        image_path = visualization_cache_service.store_image(
+            context_id=context_id,
+            clinician_id=clinician_id,
+            band=band,
+            image_bytes=image_bytes,
+        )
+
+        response = send_file(image_path, mimetype="image/png", conditional=True)
+        response.headers["X-Visualization-Cache"] = "MISS"
+        response.headers["Cache-Control"] = "private, max-age=3600"
+        return response
+    except ContextAccessError:
+        return jsonify({"error": "Not authorized for this visualization context"}), 403
+    except (ContextNotFoundError, ContextExpiredError) as exc:
+        return jsonify({"error": str(exc)}), 404
     except ValueError as e:
-        print(f"ValueError in visualize_eeg: {str(e)}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        print(f"Exception in visualize_eeg: {str(e)}")
-        import traceback
-
-        print(f"Traceback: {traceback.format_exc()}")
-        return jsonify({"error": f"Failed to visualize: {str(e)}"}), 500
+        logger.error(f"Error generating visualization image: {e}", exc_info=True)
+        return jsonify({"error": "Failed to generate visualization"}), 500
 
 
 @app.route("/predict", methods=["POST"])

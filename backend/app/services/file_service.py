@@ -19,18 +19,25 @@ class FileService:
     @staticmethod
     def read_csv(file: FileStorage) -> pd.DataFrame:
         """Read and parse CSV file into DataFrame"""
-        logger.info(f"Reading CSV file: {file.filename}")
         binary = file.stream.read()
+        return FileService.read_csv_bytes(binary, file.filename)
+
+    @staticmethod
+    def read_csv_bytes(binary: bytes, filename: str | None = None) -> pd.DataFrame:
+        """Read and parse CSV bytes into DataFrame."""
+        file_label = filename or "<in-memory>"
+        logger.info(f"Reading CSV content: {file_label}")
+
         try:
             csv_string = binary.decode('utf-8').replace('\r','')
         except UnicodeDecodeError as e:
-            logger.error(f"Failed to decode file '{file.filename}' as UTF-8", exc_info=True)
+            logger.error(f"Failed to decode file '{file_label}' as UTF-8", exc_info=True)
             raise ValueError("Could not decode file content as UTF-8. It might be a binary file.") from e
-        
+
         csv_io = io.StringIO(csv_string)
         df = pd.read_csv(csv_io)
         csv_io.close()
-        
+
         logger.info(f"CSV file loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
     

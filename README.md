@@ -132,7 +132,8 @@ The project includes Jupyter notebooks for model development:
 ## API Endpoints
 
 -   `POST /predict` - Analyze EEG and return classification
--   `POST /visualize_eeg/<type>` - Generate visualization plots
+-   `POST /api/eeg_visualization_context` - Cache uploaded EEG CSV for lazy visualization
+-   `GET /api/eeg_visualizations/<context_id>/<band>.png` - Render or fetch cached EEG band preview
 -   `GET /api/subjects` - List all subjects
 -   `GET /api/clinicians` - List all clinicians
 -   `GET /api/results` - List all analysis results
