@@ -465,6 +465,30 @@
             box-shadow: var(--shadow-card);
         }
 
+        .support-disclaimer {
+            grid-column: 1 / -1;
+            order: 0;
+            border: 1px solid #c9dbe5;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(180deg, #eff6fa 0%, #f5f9fc 100%);
+            padding: 0.72rem 0.82rem;
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .support-disclaimer h3 {
+            margin: 0;
+            font-size: 0.86rem;
+            color: var(--text-900);
+        }
+
+        .support-disclaimer p {
+            margin: 0;
+            font-size: 0.82rem;
+            color: var(--text-700);
+            line-height: 1.45;
+        }
+
         .summary-card {
             grid-column: 1 / -1;
             order: 1;
@@ -1755,6 +1779,12 @@
                             </div>
 
                             <div id="results-content" class="results-content hidden">
+                                <article id="support-disclaimer-section" class="support-disclaimer">
+                                    <h3>Clinical Support Disclaimer</h3>
+                                    <p>This application provides automated clinical decision support and is not a definitive diagnostic tool.</p>
+                                    <p>Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.</p>
+                                </article>
+
                                 <article class="summary-card">
                                     <h3>Classification Summary</h3>
                                     <div id="prediction-result"></div>
