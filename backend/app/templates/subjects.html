@@ -571,19 +571,82 @@
             font-size: 0.94rem;
         }
 
-        .modal-header {
-            border-bottom: 1px solid #d8e3e8;
+        .detail-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 32, 40, 0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 180ms ease-out;
+            z-index: 1500;
+        }
+
+        .detail-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .subject-detail-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: min(560px, 100vw);
+            height: 100vh;
+            background: #f8fbfc;
+            border-left: 1px solid #d8e5ec;
+            box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
+            transform: translateX(100%);
+            transition: transform 190ms ease-out;
+            z-index: 1800;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .subject-detail-drawer.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 1rem 1rem 0.85rem;
+            border-bottom: 1px solid #dbe6ec;
+            display: flex;
+            justify-content: space-between;
+            gap: 0.7rem;
             background: #f5fafc;
         }
 
-        .modal-title {
+        .detail-header h2 {
+            margin: 0;
+            font-size: 1.08rem;
             color: var(--text-900);
-            font-size: 1rem;
+            line-height: 1.3;
         }
 
-        .detail-grid {
+        .detail-header p {
+            margin: 0.28rem 0 0;
+            color: var(--text-700);
+            font-size: 0.82rem;
+        }
+
+        .icon-button {
+            border: 1px solid #d2dfe7;
+            background: #ffffff;
+            border-radius: var(--radius-sm);
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-700);
+            flex-shrink: 0;
+        }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.9rem 1rem 1rem;
             display: grid;
-            gap: 0.9rem;
+            gap: 0.85rem;
         }
 
         .detail-section {
@@ -635,34 +698,105 @@
             word-break: break-word;
         }
 
-        .history-table-wrap {
-            overflow-x: auto;
+        .timeline-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .timeline-card {
             border: 1px solid #dbe6ec;
             border-radius: var(--radius-sm);
+            background: #ffffff;
+            padding: 0.58rem 0.62rem;
+            display: grid;
+            gap: 0.45rem;
         }
 
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 620px;
+        .timeline-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.55rem;
+            align-items: center;
         }
 
-        .history-table th,
-        .history-table td {
-            padding: 0.45rem 0.55rem;
-            border-bottom: 1px solid #e6edf1;
-            text-align: left;
-            font-size: 0.8rem;
-            color: var(--text-700);
+        .timeline-date {
+            font-size: 0.75rem;
+            color: var(--text-500);
+            text-align: right;
             white-space: nowrap;
         }
 
-        .history-table th {
-            background: #f4f8fa;
-            color: var(--text-500);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+        .timeline-meta {
+            font-size: 0.78rem;
+            color: var(--text-700);
+            display: flex;
+            justify-content: space-between;
+            gap: 0.55rem;
+        }
+
+        .timeline-meta strong {
+            color: var(--text-900);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .confidence-mini-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.55rem;
+            font-size: 0.77rem;
+            color: var(--text-700);
+        }
+
+        .confidence-mini-head strong {
+            font-size: 0.78rem;
+            color: var(--text-900);
+        }
+
+        .confidence-mini-track {
+            width: 100%;
+            height: 9px;
+            border-radius: var(--radius-pill);
+            background: #e2e9ee;
+            overflow: hidden;
+            margin-top: 0.2rem;
+        }
+
+        .confidence-mini-fill {
+            height: 100%;
+        }
+
+        .confidence-mini-fill.high {
+            background: linear-gradient(90deg, #3f8f70, #56af87);
+        }
+
+        .confidence-mini-fill.mid {
+            background: linear-gradient(90deg, #bf7f35, #d39a4b);
+        }
+
+        .confidence-mini-fill.low {
+            background: linear-gradient(90deg, #b34b53, #ca6469);
+        }
+
+        .detail-empty {
+            margin: 0;
+            border: 1px dashed #ccdbe3;
+            border-radius: var(--radius-sm);
+            background: #f7fbfd;
+            padding: 0.65rem;
+            font-size: 0.82rem;
+            color: var(--text-700);
+        }
+
+        .detail-footer {
+            border-top: 1px solid #dbe6ec;
+            background: #f8fbfc;
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 0.45rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .loading-state {
@@ -768,6 +902,15 @@
                 grid-column: auto;
                 justify-content: flex-end;
             }
+
+            .detail-footer {
+                justify-content: stretch;
+            }
+
+            .detail-footer .btn-primary-app,
+            .detail-footer .btn-secondary-app {
+                flex: 1 1 auto;
+            }
         }
     </style>
 </head>
@@ -775,6 +918,7 @@
 <body>
     <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+    <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
         <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -951,29 +1095,42 @@
         </div>
     </div>
 
-    <div class="modal fade" id="subjectModal" tabindex="-1" aria-labelledby="subjectModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="subjectModalLabel">Subject Details</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="subject-modal-body">
-                    <div class="loading-state">
-                        <div class="skeleton-row"></div>
-                        <div class="skeleton-row"></div>
-                        <div class="skeleton-row"></div>
-                        <div class="skeleton-row"></div>
-                    </div>
-                </div>
+    <aside class="subject-detail-drawer" id="subject-detail-drawer" aria-hidden="true" aria-labelledby="subject-detail-title">
+        <div class="detail-header">
+            <div>
+                <h2 id="subject-detail-title">Subject Details</h2>
+                <p id="subject-detail-subtitle">Review demographics and assessment timeline.</p>
             </div>
+            <button id="close-detail-btn" class="icon-button" type="button" aria-label="Close subject details">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
-    </div>
+        <div class="detail-body" id="subject-detail-body">
+            <section class="detail-section">
+                <h3>Subject Information</h3>
+                <ul class="detail-list" id="subject-detail-list"></ul>
+            </section>
+            <section class="detail-section">
+                <h3>Assessment Timeline</h3>
+                <div id="subject-assessment-timeline" class="timeline-list"></div>
+            </section>
+        </div>
+        <div class="detail-footer">
+            <button id="detail-view-results-btn" type="button" class="btn-secondary-app">View Assessments</button>
+            <button id="detail-new-assessment-btn" type="button" class="btn-primary-app">New Assessment</button>
+        </div>
+    </aside>
 
     <script>
         const appState = {
             allSubjects: [],
             filteredSubjects: [],
+            selectedSubjectCode: "",
+            isDetailDrawerOpen: false,
             filters: {
                 search: "",
                 gender: "all",
@@ -1025,6 +1182,32 @@
             backdrop.classList.toggle("open", shouldOpen);
         }
 
+        function openDetailDrawer() {
+            const drawer = byId("subject-detail-drawer");
+            const backdrop = byId("detail-backdrop");
+            if (!drawer || !backdrop) {
+                return;
+            }
+
+            appState.isDetailDrawerOpen = true;
+            drawer.classList.add("open");
+            drawer.setAttribute("aria-hidden", "false");
+            backdrop.classList.add("open");
+        }
+
+        function closeDetailDrawer() {
+            const drawer = byId("subject-detail-drawer");
+            const backdrop = byId("detail-backdrop");
+            if (!drawer || !backdrop) {
+                return;
+            }
+
+            appState.isDetailDrawerOpen = false;
+            drawer.classList.remove("open");
+            drawer.setAttribute("aria-hidden", "true");
+            backdrop.classList.remove("open");
+        }
+
         function formatDateTime(value) {
             if (!value) {
                 return "Not available";
@@ -1064,6 +1247,16 @@
                 return className;
             }
             return "pending";
+        }
+
+        function getConfidenceState(confidence) {
+            if (confidence >= 0.8) {
+                return { label: "High", className: "high" };
+            }
+            if (confidence >= 0.6) {
+                return { label: "Moderate", className: "mid" };
+            }
+            return { label: "Low", className: "low" };
         }
 
         function normalizeGender(value) {
@@ -1232,87 +1425,20 @@
             renderSubjectsTable(appState.filteredSubjects);
         }
 
-        function renderSubjectDetails(subject) {
-            const modalBody = byId("subject-modal-body");
-            if (!modalBody) {
+        function renderDetailLoading() {
+            const title = byId("subject-detail-title");
+            const subtitle = byId("subject-detail-subtitle");
+            const subjectList = byId("subject-detail-list");
+            const timeline = byId("subject-assessment-timeline");
+            if (!title || !subtitle || !subjectList || !timeline) {
                 return;
             }
 
-            const demographics = [
-                ["Subject Code", subject.subject_code || "N/A"],
-                ["Age", subject.age ?? "N/A"],
-                ["Gender", subject.gender || "N/A"],
-                ["Assessments", subject.assessments ? subject.assessments.length : 0],
-            ];
-
-            const historyRows = (subject.assessments || []).map((assessment) => {
-                const confidence = Number(assessment.confidence_score);
-                const confidenceText = Number.isFinite(confidence) ? `${(confidence * 100).toFixed(1)}%` : "N/A";
-                const inferencedAt = formatDateTime(assessment.inferenced_at);
-
-                return `
-                    <tr>
-                        <td>${renderClassificationPill(assessment.predicted_class || "No result")}</td>
-                        <td class="mono">${escapeHtml(confidenceText)}</td>
-                        <td>${escapeHtml(assessment.clinician_name || "N/A")}</td>
-                        <td>${escapeHtml(inferencedAt)}</td>
-                    </tr>
-                `;
-            }).join("");
-
-            const historyTable = historyRows
-                ? `
-                    <div class="history-table-wrap">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Classification</th>
-                                    <th>Confidence</th>
-                                    <th>Clinician</th>
-                                    <th>Analysis Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>${historyRows}</tbody>
-                        </table>
-                    </div>
-                `
-                : "<p class='mb-0 text-muted'>No assessments found for this subject.</p>";
-
-            modalBody.innerHTML = `
-                <div class="detail-grid">
-                    <section class="detail-section">
-                        <h3>Subject Information</h3>
-                        <ul class="detail-list">
-                            ${demographics
-                                .map(([label, value]) => `
-                                    <li class="detail-item">
-                                        <span class="detail-label">${escapeHtml(String(label))}</span>
-                                        <span class="detail-value">${escapeHtml(String(value))}</span>
-                                    </li>
-                                `)
-                                .join("")}
-                        </ul>
-                    </section>
-                    <section class="detail-section">
-                        <h3>Assessment History</h3>
-                        ${historyTable}
-                    </section>
-                </div>
-            `;
-        }
-
-        async function viewSubject(subjectId) {
-            const modalElement = byId("subjectModal");
-            const modalBody = byId("subject-modal-body");
-            const modalTitle = byId("subjectModalLabel");
-
-            if (!modalElement || !modalBody || !modalTitle) {
-                return;
-            }
-
-            const modal = new bootstrap.Modal(modalElement);
-            modalTitle.textContent = "Subject Details";
-            modalBody.innerHTML = `
+            title.textContent = "Subject Details";
+            subtitle.textContent = "Loading subject profile and assessment timeline...";
+            appState.selectedSubjectCode = "";
+            subjectList.innerHTML = "";
+            timeline.innerHTML = `
                 <div class="loading-state">
                     <div class="skeleton-row"></div>
                     <div class="skeleton-row"></div>
@@ -1320,8 +1446,79 @@
                     <div class="skeleton-row"></div>
                 </div>
             `;
+        }
 
-            modal.show();
+        function renderSubjectDetails(subject) {
+            const title = byId("subject-detail-title");
+            const subtitle = byId("subject-detail-subtitle");
+            const subjectList = byId("subject-detail-list");
+            const timeline = byId("subject-assessment-timeline");
+            if (!title || !subtitle || !subjectList || !timeline) {
+                return;
+            }
+
+            appState.selectedSubjectCode = String(subject.subject_code || "");
+
+            const assessments = Array.isArray(subject.assessments) ? subject.assessments : [];
+            const demographics = [
+                ["Subject Code", subject.subject_code || "N/A"],
+                ["Age", subject.age ?? "N/A"],
+                ["Gender", subject.gender || "N/A"],
+                ["Total Assessments", assessments.length],
+            ];
+
+            title.textContent = subject.subject_code ? `Subject ${subject.subject_code}` : "Subject Details";
+            subtitle.textContent = `${assessments.length} assessment${assessments.length === 1 ? "" : "s"} on record`;
+
+            subjectList.innerHTML = demographics
+                .map(([label, value]) => `
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(String(label))}</span>
+                        <span class="detail-value">${escapeHtml(String(value))}</span>
+                    </li>
+                `)
+                .join("");
+
+            if (assessments.length === 0) {
+                timeline.innerHTML = "<p class='detail-empty'>No assessments found for this subject yet.</p>";
+                return;
+            }
+
+            timeline.innerHTML = assessments.map((assessment) => {
+                const confidence = Number(assessment.confidence_score);
+                const confidenceRatio = Number.isFinite(confidence) ? Math.max(0, Math.min(100, confidence * 100)) : 0;
+                const confidenceState = getConfidenceState(Number.isFinite(confidence) ? confidence : 0);
+                const confidenceText = Number.isFinite(confidence) ? `${confidenceRatio.toFixed(1)}% (${confidenceState.label})` : "Not available";
+                const inferencedAt = formatDateTime(assessment.inferenced_at);
+                const clinician = assessment.clinician_name || "Not recorded";
+
+                return `
+                    <article class="timeline-card">
+                        <div class="timeline-head">
+                            ${renderClassificationPill(assessment.predicted_class || "No result")}
+                            <span class="timeline-date">${escapeHtml(inferencedAt)}</span>
+                        </div>
+                        <div>
+                            <div class="confidence-mini-head">
+                                <span>Confidence</span>
+                                <strong class="mono">${escapeHtml(confidenceText)}</strong>
+                            </div>
+                            <div class="confidence-mini-track">
+                                <div class="confidence-mini-fill ${confidenceState.className}" style="width:${confidenceRatio.toFixed(1)}%"></div>
+                            </div>
+                        </div>
+                        <div class="timeline-meta">
+                            <span>Clinician</span>
+                            <strong>${escapeHtml(clinician)}</strong>
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        async function viewSubject(subjectId) {
+            renderDetailLoading();
+            openDetailDrawer();
 
             try {
                 const response = await fetch(`/api/subjects/${subjectId}/assessments`);
@@ -1331,10 +1528,16 @@
                     throw new Error(subject.error || "Failed to load subject details.");
                 }
 
-                modalTitle.textContent = `Subject ${subject.subject_code || "Details"}`;
                 renderSubjectDetails(subject);
             } catch (error) {
-                modalBody.innerHTML = `<p class="mb-0 text-danger">${escapeHtml(error.message || "Unable to load subject details.")}</p>`;
+                const subtitle = byId("subject-detail-subtitle");
+                const timeline = byId("subject-assessment-timeline");
+                if (subtitle) {
+                    subtitle.textContent = "Subject details could not be loaded.";
+                }
+                if (timeline) {
+                    timeline.innerHTML = `<p class="detail-empty">${escapeHtml(error.message || "Unable to load subject details.")}</p>`;
+                }
             }
         }
 
@@ -1413,10 +1616,23 @@
         function setupEventHandlers() {
             byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar(true));
             byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+            byId("close-detail-btn")?.addEventListener("click", closeDetailDrawer);
+            byId("detail-backdrop")?.addEventListener("click", closeDetailDrawer);
 
             byId("logout-btn")?.addEventListener("click", handleLogout);
             byId("open-assessment-btn")?.addEventListener("click", () => {
                 window.location.href = "/index.html";
+            });
+
+            byId("detail-new-assessment-btn")?.addEventListener("click", () => {
+                if (appState.selectedSubjectCode) {
+                    sessionStorage.setItem("draft_subject_code", appState.selectedSubjectCode);
+                }
+                window.location.href = "/index.html";
+            });
+
+            byId("detail-view-results-btn")?.addEventListener("click", () => {
+                window.location.href = "/results.html";
             });
 
             byId("refresh-subjects-btn")?.addEventListener("click", async () => {
@@ -1448,8 +1664,13 @@
             });
 
             document.addEventListener("keydown", (event) => {
-                if (event.key === "Escape" && byId("sidebar")?.classList.contains("mobile-open")) {
-                    toggleMobileSidebar(false);
+                if (event.key === "Escape") {
+                    if (byId("sidebar")?.classList.contains("mobile-open")) {
+                        toggleMobileSidebar(false);
+                    }
+                    if (appState.isDetailDrawerOpen) {
+                        closeDetailDrawer();
+                    }
                 }
             });
         }
@@ -1463,9 +1684,6 @@
         document.addEventListener("DOMContentLoaded", initializePage);
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
 </body>
 
 </html>
