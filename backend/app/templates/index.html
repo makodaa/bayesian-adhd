@@ -953,10 +953,8 @@
         }
 
         .export-bar {
-            position: sticky;
-            bottom: 0.85rem;
             margin-top: 0.2rem;
-            background: rgba(255, 255, 255, 0.95);
+            background: #ffffff;
             border: 1px solid #d8e3e8;
             border-radius: 12px;
             box-shadow: var(--shadow-soft);
@@ -1770,7 +1768,6 @@
 
                     <div id="export-bar" class="export-bar hidden">
                         <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
-                        <button id="share-result-btn" type="button" class="btn-secondary-app">Share via Link</button>
                     </div>
                 </section>
             </main>
@@ -3288,30 +3285,6 @@
             }
         }
 
-        async function handleShareLink() {
-            if (!appState.latestResultId) {
-                showToast("Run an assessment before generating a link.", "warning");
-                return;
-            }
-
-            const shareUrl = `${window.location.origin}/results.html?result_id=${encodeURIComponent(appState.latestResultId)}`;
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(shareUrl);
-                } else {
-                    const tempInput = document.createElement("input");
-                    tempInput.value = shareUrl;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(tempInput);
-                }
-                showToast("Link copied. Recipient login is still required.", "success");
-            } catch (error) {
-                showToast("Unable to copy share link.", "warning");
-            }
-        }
-
         function setupEventHandlers() {
             byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar(true));
             byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
@@ -3355,7 +3328,6 @@
             byId("band-view-average")?.addEventListener("click", () => setBandView("average"));
             byId("band-view-electrode")?.addEventListener("click", () => setBandView("electrode"));
             byId("download-pdf-btn")?.addEventListener("click", handlePdfDownload);
-            byId("share-result-btn")?.addEventListener("click", handleShareLink);
 
             document.addEventListener("keydown", (event) => {
                 if (event.key === "Escape") {
