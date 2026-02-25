@@ -1586,21 +1586,6 @@
                     resetVisualizationState();
 
                     try {
-                        const visualizationContextPromise = createVisualizationContext(analysisData.file)
-                            .then((payload) => {
-                                visualizationContextId = payload.context_id;
-                                setTabsEnabled(true);
-                                loadBandVisualization("raw");
-                            })
-                            .catch((error) => {
-                                console.error("Visualization context error:", error);
-                                const rawContainer = document.getElementById("viz-raw");
-                                if (rawContainer) {
-                                    rawContainer.innerHTML =
-                                        '<p class="text-warning">Could not initialize EEG visualizations for this upload.</p>';
-                                }
-                            });
-
                         const predictionResponse = await fetch("/predict", {
                             method: "POST",
                             body: formData,
@@ -1667,13 +1652,32 @@
                             bands: bandData,
                         };
 
+                        if (result.visualization_context_id) {
+                            visualizationContextId = result.visualization_context_id;
+                            setTabsEnabled(true);
+                            loadBandVisualization("raw");
+                        } else {
+                            createVisualizationContext(analysisData.file)
+                                .then((payload) => {
+                                    visualizationContextId = payload.context_id;
+                                    setTabsEnabled(true);
+                                    loadBandVisualization("raw");
+                                })
+                                .catch((error) => {
+                                    console.error("Visualization context error:", error);
+                                    const rawContainer = document.getElementById("viz-raw");
+                                    if (rawContainer) {
+                                        rawContainer.innerHTML =
+                                            '<p class="text-warning">Could not initialize EEG visualizations for this upload.</p>';
+                                    }
+                                });
+                        }
+
                         // Load topographic maps in parallel using the file
                         loadTopographicMaps(topographicFormData);
 
                         // Load temporal biomarker evolution
                         loadTemporalBiomarkers(temporalFormData);
-
-                        await visualizationContextPromise;
                     } catch (error) {
                         console.error("Analysis error:", error);
                         alert(

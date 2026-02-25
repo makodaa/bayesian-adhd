@@ -446,9 +446,30 @@ def predict():
             )
             return jsonify({"error": "Subject code, age, and gender are required"}), 400
 
-        # Process file
-        df = file_service.read_csv(file)
+        # Use logged-in clinician from session for result creation
+        clinician_id = session.get("clinician_id")
+        if not isinstance(clinician_id, int):
+            raise ValueError("Invalid clinician_id")
+        logger.info(f"Using session clinician_id: {clinician_id}")
+
+        # Process file once and keep bytes for visualization cache reuse
+        file_bytes = file.stream.read()
+        df = file_service.read_csv_bytes(file_bytes, filename)
         file_service.validate_eeg_data(df)
+
+        visualization_context_id: str | None = None
+        try:
+            viz_context = visualization_cache_service.create_or_refresh_context(
+                file_bytes=file_bytes,
+                clinician_id=clinician_id,
+                filename=filename,
+            )
+            visualization_context_id = viz_context["context_id"]
+        except Exception as exc:
+            logger.warning(
+                f"Could not create visualization context during predict: {exc}",
+                exc_info=True,
+            )
 
         # Get or create subject (reuse existing subject if code already exists)
         logger.info(
@@ -457,12 +478,6 @@ def predict():
         subject_id = subject_service.get_or_create_subject(
             subject_code, int(age), gender
         )
-
-        # Use logged-in clinician from session for result creation
-        clinician_id = session.get("clinician_id")
-        if not isinstance(clinician_id, int):
-            raise ValueError("Invalid clinician_id")
-        logger.info(f"Using session clinician_id: {clinician_id}")
 
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
@@ -541,6 +556,7 @@ def predict():
                     "result_id": result["result_id"],
                     "clinician_id": result.get("clinician_id"),
                     "band_analysis": result.get("band_analysis", {}),
+                    "visualization_context_id": visualization_context_id,
                 },
             }
         ), 200
