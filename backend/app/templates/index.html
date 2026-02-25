@@ -16,8 +16,11 @@
             --brand-500: #3f8dab;
             --brand-100: #d6ebf4;
             --surface-bg: #eef3f5;
+            --surface-shell: #f8fbfd;
             --surface-card: #ffffff;
             --surface-muted: #f5f8fa;
+            --border-shell: #c6d8e3;
+            --border-card: #dbe3e8;
             --border-soft: #d4dde3;
             --text-900: #1f2f39;
             --text-700: #3f515d;
@@ -25,6 +28,8 @@
             --success-600: #2e7d66;
             --warning-600: #b56f2a;
             --error-600: #b4494f;
+            --shadow-card: 0 8px 22px rgba(20, 50, 63, 0.05);
+            --shadow-shell: 0 10px 24px rgba(20, 50, 63, 0.06);
             --shadow-soft: 0 12px 30px rgba(20, 50, 63, 0.08);
             --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
             --radius-xs: 4px;
@@ -32,7 +37,7 @@
             --radius-md: 8px;
             --radius-pill: 999px;
             --sidebar-width: 82px;
-            --content-width: 1200px;
+            --content-width: 1300px;
         }
 
         * {
@@ -370,20 +375,57 @@
         }
 
         .results-shell {
+            overflow: hidden;
+        }
+
+        .assessment-panel-body {
             display: grid;
             gap: 0.9rem;
         }
 
-        .results-heading h2 {
-            margin: 0;
-            font-size: 1.2rem;
+        .section-toggle.priority-toggle {
+            background: transparent;
+            padding: 0.92rem 1rem 0.88rem;
+            font-size: 1.01rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
             color: var(--text-900);
         }
 
-        .results-heading p {
-            margin: 0.35rem 0 0;
-            font-size: 0.9rem;
-            color: var(--text-700);
+        .section-toggle.priority-toggle:hover {
+            background: transparent;
+            color: var(--brand-800);
+        }
+
+        .section-shell {
+            overflow: hidden;
+            border-radius: var(--radius-md);
+        }
+
+        .section-shell.section-shell--top-level {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #aebfcb;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .section-shell.section-shell--top-level > .section-toggle {
+            border-bottom: none;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .section-shell.section-shell--top-level > .section-toggle[aria-expanded="false"] {
+            border-bottom: none;
+        }
+
+        .section-shell.section-shell--top-level > .section-content {
+            background: transparent;
+            border-top: none;
+            padding-left: 0;
+            padding-right: 0;
+            padding-top: 0.2rem;
         }
 
         .empty-state {
@@ -416,11 +458,11 @@
 
         .summary-card,
         .quality-card,
-        .result-section {
+        .section-shell.section-shell--card {
             background: var(--surface-card);
-            border: 1px solid #dbe3e8;
+            border: 1px solid var(--border-card);
             border-radius: var(--radius-md);
-            box-shadow: 0 8px 22px rgba(20, 50, 63, 0.05);
+            box-shadow: var(--shadow-card);
         }
 
         .summary-card {
@@ -555,10 +597,6 @@
             gap: 0.35rem;
         }
 
-        .result-section {
-            overflow: hidden;
-        }
-
         .section-toggle {
             width: 100%;
             border: none;
@@ -572,16 +610,43 @@
             color: var(--text-900);
             font-size: 0.95rem;
             font-weight: 650;
+            cursor: pointer;
         }
 
         .section-toggle:hover {
             background: #f8fbfd;
         }
 
-        .toggle-symbol {
+        .toggle-symbol,
+        .chevron {
             color: var(--text-500);
-            font-size: 1.08rem;
-            line-height: 1;
+            width: 0.95rem;
+            height: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0;
+            line-height: 0;
+        }
+
+        .toggle-symbol::before,
+        .chevron::before {
+            content: "";
+            width: 0.5rem;
+            height: 0.5rem;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(45deg);
+            transform-origin: center;
+            margin-top: -0.12rem;
+            transition: transform 170ms ease-out, margin-top 170ms ease-out;
+        }
+
+        .section-toggle[aria-expanded="false"] .toggle-symbol::before,
+        .plot-header[aria-expanded="false"] .chevron::before {
+            transform: rotate(-45deg);
+            margin-top: 0;
         }
 
         .section-content {
@@ -594,6 +659,75 @@
             color: var(--text-700);
             font-size: 0.84rem;
             line-height: 1.45;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .workflow-step {
+            background: #f4f8fb;
+            border: 1px solid #d9e4ea;
+            border-radius: var(--radius-sm);
+            padding: 0.62rem 0.68rem;
+            display: grid;
+            gap: 0.26rem;
+        }
+
+        .workflow-step h3 {
+            margin: 0;
+            font-size: 0.86rem;
+            color: var(--text-900);
+        }
+
+        .workflow-step p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-700);
+            line-height: 1.45;
+        }
+
+        .subject-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .subject-summary-item {
+            background: #f5f9fb;
+            border: 1px solid #dbe6ec;
+            border-radius: var(--radius-sm);
+            padding: 0.52rem 0.64rem;
+            display: grid;
+            gap: 0.16rem;
+        }
+
+        .subject-summary-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-500);
+        }
+
+        .subject-summary-value {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-900);
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .subject-summary-empty {
+            margin: 0;
+            grid-column: 1 / -1;
+            font-size: 0.84rem;
+            color: var(--text-700);
+            background: #f7fbfd;
+            border: 1px dashed #ccdbe3;
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.7rem;
         }
 
         .band-view-toggle {
@@ -1572,163 +1706,201 @@
             </header>
 
             <main class="page-body">
-                <section class="results-shell" id="assessment-findings">
-                    <div class="results-heading">
-                        <h2>Assessment Findings</h2>
-                        <p>Start with classification, waveform, and band power. Expand advanced sections as needed.</p>
-                    </div>
-
-                    <div id="results-empty-state" class="empty-state">
-                        <h3>No assessment loaded</h3>
-                        <p>Start a new assessment to view classification, data quality notes, spectral analysis, and export actions.</p>
-                        <button id="empty-start-btn" type="button" class="btn-primary-app">Start Assessment</button>
-                    </div>
-
-                    <div id="results-content" class="results-content hidden">
-                        <article class="summary-card">
-                            <h3>Classification Summary</h3>
-                            <div id="prediction-result"></div>
-                        </article>
-
-                        <article class="result-section" id="spectral-section-card">
-                            <button type="button" class="section-toggle" data-target="spectral-content" aria-expanded="true">
-                                <span>Spectral Band Power Analysis</span>
-                                <span class="toggle-symbol">-</span>
-                            </button>
-                            <div id="spectral-content" class="section-content">
-                                <div class="band-view-toggle" role="group" aria-label="Band power display mode">
-                                    <button type="button" id="band-view-average" class="toggle-btn active">Averaged View</button>
-                                    <button type="button" id="band-view-electrode" class="toggle-btn">Per-Electrode View</button>
-                                </div>
-                                <div id="band-power-bars"></div>
-                                <div id="clinical-ratios" class="ratio-grid"></div>
-                            </div>
-                        </article>
-
-                        <article class="result-section" id="topographic-section-card">
-                            <button type="button" class="section-toggle" data-target="topographic-content" aria-expanded="false">
-                                <span>Topographic Scalp Maps</span>
-                                <span class="toggle-symbol">+</span>
-                            </button>
-                            <div id="topographic-content" class="section-content hidden">
-                                <div id="topo-section">
-                                    <div class="topo-type-toggle">
-                                        <button type="button" class="topo-type-btn active" data-topo-type="absolute">Absolute Power</button>
-                                        <button type="button" class="topo-type-btn" data-topo-type="relative">Relative Power</button>
-                                        <button type="button" class="topo-type-btn" data-topo-type="tbr">TBR</button>
-                                    </div>
-                                    <div id="topo-content">
-                                        <div id="topo-absolute" class="topo-grid"></div>
-                                        <div id="topo-relative" class="topo-grid hidden"></div>
-                                        <div id="topo-tbr" class="topo-grid hidden"></div>
-                                    </div>
-                                    <div id="topo-loading" class="loading-block hidden">
-                                        <div class="skeleton-row"></div>
-                                        <div class="skeleton-row large"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="result-section" id="waveform-section-card">
-                            <button type="button" class="section-toggle" data-target="waveform-content" aria-expanded="true">
-                                <span>EEG Waveform Visualization</span>
-                                <span class="toggle-symbol">-</span>
-                            </button>
-                            <div id="waveform-content" class="section-content">
-                                <ul class="nav nav-tabs visualization-tabs" id="eegTabs" role="tablist">
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
-                                            type="button" role="tab" disabled>Raw</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="filtered-tab" data-bs-toggle="tab" data-bs-target="#filtered-pane"
-                                            type="button" role="tab" disabled>Filtered</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="delta-tab" data-bs-toggle="tab" data-bs-target="#delta-pane"
-                                            type="button" role="tab" disabled>Delta</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="theta-tab" data-bs-toggle="tab" data-bs-target="#theta-pane"
-                                            type="button" role="tab" disabled>Theta</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="alpha-tab" data-bs-toggle="tab" data-bs-target="#alpha-pane"
-                                            type="button" role="tab" disabled>Alpha</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="beta-tab" data-bs-toggle="tab" data-bs-target="#beta-pane"
-                                            type="button" role="tab" disabled>Beta</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="gamma-tab" data-bs-toggle="tab" data-bs-target="#gamma-pane"
-                                            type="button" role="tab" disabled>Gamma</button>
-                                    </li>
-                                </ul>
-                                <div class="tab-content" id="eegTabContent">
-                                    <div class="tab-pane fade show active" id="raw-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-raw">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="filtered-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-filtered">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="delta-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-delta">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="theta-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-theta">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="alpha-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-alpha">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="beta-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-beta">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                    <div class="tab-pane fade" id="gamma-pane" role="tabpanel">
-                                        <div class="visualization-container" id="viz-gamma">Run an assessment to load waveform previews.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </article>
-
-                        <div id="export-bar" class="export-bar hidden">
-                            <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
+                <section class="section-shell section-shell--top-level" id="workflow-section">
+                    <button type="button" class="section-toggle priority-toggle" data-collapsible-toggle data-target="workflow-content" aria-expanded="true">
+                        <span>Clinical Workflow</span>
+                        <span class="toggle-symbol" aria-hidden="true"></span>
+                    </button>
+                    <div id="workflow-content" class="section-content" data-collapsible-content>
+                        <p class="helper-copy">Follow this sequence to keep each EEG assessment clinically documented, validated, and review-ready.</p>
+                        <div class="workflow-grid">
+                            <article class="workflow-step">
+                                <h3>1. Capture Subject Context</h3>
+                                <p>Enter demographics and recording conditions first so the findings can be interpreted with full clinical context.</p>
+                            </article>
+                            <article class="workflow-step">
+                                <h3>2. Validate EEG Upload</h3>
+                                <p>Upload the 19-channel CSV, confirm channel coverage, and review recording metadata before submission.</p>
+                            </article>
+                            <article class="workflow-step">
+                                <h3>3. Review Findings by Priority</h3>
+                                <p>Start with classification and confidence, then expand spectral, waveform, and temporal sections as needed.</p>
+                            </article>
                         </div>
+                    </div>
+                </section>
 
-                        <article id="quality-notice-section" class="quality-card hidden">
-                            <h3>Data Quality Notice</h3>
-                            <ul id="quality-notice-list"></ul>
-                        </article>
+                <section class="section-shell section-shell--top-level" id="subject-summary-section">
+                    <button type="button" class="section-toggle priority-toggle" data-collapsible-toggle data-target="subject-summary-content" aria-expanded="true">
+                        <span>Subject Summary</span>
+                        <span class="toggle-symbol" aria-hidden="true"></span>
+                    </button>
+                    <div id="subject-summary-content" class="section-content" data-collapsible-content>
+                        <p id="subject-summary-helper" class="helper-copy">Run an assessment to populate the subject summary for quick review.</p>
+                        <div id="subject-summary-body" class="subject-summary-grid"></div>
+                    </div>
+                </section>
 
-                        <article class="result-section" id="temporal-card">
-                            <button type="button" class="section-toggle" data-target="temporal-content" aria-expanded="false">
-                                <span>Temporal Biomarker Evolution</span>
-                                <span class="toggle-symbol">+</span>
-                            </button>
-                            <div id="temporal-content" class="section-content hidden">
-                                <p class="helper-copy">Biomarker values are computed in sliding 2-second windows. Expand each group to inspect temporal trends.</p>
-                                <div id="temporal-section">
-                                    <div id="temporal-plots" class="temporal-plot-list"></div>
-                                    <div id="temporal-summary"></div>
-                                    <div id="temporal-loading" class="loading-block hidden">
-                                        <div class="skeleton-row"></div>
-                                        <div class="skeleton-row large"></div>
+                <section class="section-shell section-shell--top-level results-shell" id="assessment-findings">
+                    <button type="button" class="section-toggle priority-toggle" data-collapsible-toggle data-target="clinical-assessment-content" aria-expanded="true">
+                        <span>Assessment Findings</span>
+                        <span class="toggle-symbol" aria-hidden="true"></span>
+                    </button>
+                    <div id="clinical-assessment-content" class="section-content" data-collapsible-content>
+                        <div class="assessment-panel-body">
+                            <div id="results-empty-state" class="empty-state">
+                                <h3>No assessment loaded</h3>
+                                <p>Start a new assessment to view classification, data quality notes, spectral analysis, and export actions.</p>
+                                <button id="empty-start-btn" type="button" class="btn-primary-app">Start Assessment</button>
+                            </div>
+
+                            <div id="results-content" class="results-content hidden">
+                                <article class="summary-card">
+                                    <h3>Classification Summary</h3>
+                                    <div id="prediction-result"></div>
+                                </article>
+
+                                <article class="section-shell section-shell--card" id="spectral-section-card">
+                                    <button type="button" class="section-toggle" data-collapsible-toggle data-target="spectral-content" aria-expanded="true">
+                                        <span>Spectral Band Power Analysis</span>
+                                        <span class="toggle-symbol" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="spectral-content" class="section-content" data-collapsible-content>
+                                        <div class="band-view-toggle" role="group" aria-label="Band power display mode">
+                                            <button type="button" id="band-view-average" class="toggle-btn active">Averaged View</button>
+                                            <button type="button" id="band-view-electrode" class="toggle-btn">Per-Electrode View</button>
+                                        </div>
+                                        <div id="band-power-bars"></div>
+                                        <div id="clinical-ratios" class="ratio-grid"></div>
                                     </div>
-                                </div>
-                            </div>
-                        </article>
+                                </article>
 
-                        <article class="result-section" id="intervention-card">
-                            <button type="button" class="section-toggle" data-target="intervention-content" aria-expanded="false">
-                                <span>Intervention Suggestions</span>
-                                <span class="toggle-symbol">+</span>
-                            </button>
-                            <div id="intervention-content" class="section-content hidden">
-                                <p class="helper-copy">These recommendations are general clinical considerations and do not replace individualized clinical judgment.</p>
-                                <ul id="intervention-suggestions" class="intervention-list"></ul>
+                                <article class="section-shell section-shell--card" id="topographic-section-card">
+                                    <button type="button" class="section-toggle" data-collapsible-toggle data-target="topographic-content" aria-expanded="false">
+                                        <span>Topographic Scalp Maps</span>
+                                        <span class="toggle-symbol" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="topographic-content" class="section-content hidden" data-collapsible-content>
+                                        <div id="topo-section">
+                                            <div class="topo-type-toggle">
+                                                <button type="button" class="topo-type-btn active" data-topo-type="absolute">Absolute Power</button>
+                                                <button type="button" class="topo-type-btn" data-topo-type="relative">Relative Power</button>
+                                                <button type="button" class="topo-type-btn" data-topo-type="tbr">TBR</button>
+                                            </div>
+                                            <div id="topo-content">
+                                                <div id="topo-absolute" class="topo-grid"></div>
+                                                <div id="topo-relative" class="topo-grid hidden"></div>
+                                                <div id="topo-tbr" class="topo-grid hidden"></div>
+                                            </div>
+                                            <div id="topo-loading" class="loading-block hidden">
+                                                <div class="skeleton-row"></div>
+                                                <div class="skeleton-row large"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <article class="section-shell section-shell--card" id="waveform-section-card">
+                                    <button type="button" class="section-toggle" data-collapsible-toggle data-target="waveform-content" aria-expanded="true">
+                                        <span>EEG Waveform Visualization</span>
+                                        <span class="toggle-symbol" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="waveform-content" class="section-content" data-collapsible-content>
+                                        <ul class="nav nav-tabs visualization-tabs" id="eegTabs" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
+                                                    type="button" role="tab" disabled>Raw</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="filtered-tab" data-bs-toggle="tab" data-bs-target="#filtered-pane"
+                                                    type="button" role="tab" disabled>Filtered</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="delta-tab" data-bs-toggle="tab" data-bs-target="#delta-pane"
+                                                    type="button" role="tab" disabled>Delta</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="theta-tab" data-bs-toggle="tab" data-bs-target="#theta-pane"
+                                                    type="button" role="tab" disabled>Theta</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="alpha-tab" data-bs-toggle="tab" data-bs-target="#alpha-pane"
+                                                    type="button" role="tab" disabled>Alpha</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="beta-tab" data-bs-toggle="tab" data-bs-target="#beta-pane"
+                                                    type="button" role="tab" disabled>Beta</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="gamma-tab" data-bs-toggle="tab" data-bs-target="#gamma-pane"
+                                                    type="button" role="tab" disabled>Gamma</button>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content" id="eegTabContent">
+                                            <div class="tab-pane fade show active" id="raw-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-raw">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="filtered-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-filtered">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="delta-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-delta">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="theta-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-theta">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="alpha-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-alpha">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="beta-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-beta">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                            <div class="tab-pane fade" id="gamma-pane" role="tabpanel">
+                                                <div class="visualization-container" id="viz-gamma">Run an assessment to load waveform previews.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <div id="export-bar" class="export-bar hidden">
+                                    <button id="download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
+                                </div>
+
+                                <article id="quality-notice-section" class="quality-card hidden">
+                                    <h3>Data Quality Notice</h3>
+                                    <ul id="quality-notice-list"></ul>
+                                </article>
+
+                                <article class="section-shell section-shell--card" id="temporal-card">
+                                    <button type="button" class="section-toggle" data-collapsible-toggle data-target="temporal-content" aria-expanded="false">
+                                        <span>Temporal Biomarker Evolution</span>
+                                        <span class="toggle-symbol" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="temporal-content" class="section-content hidden" data-collapsible-content>
+                                        <p class="helper-copy">Biomarker values are computed in sliding 2-second windows. Expand each group to inspect temporal trends.</p>
+                                        <div id="temporal-section">
+                                            <div id="temporal-plots" class="temporal-plot-list"></div>
+                                            <div id="temporal-summary"></div>
+                                            <div id="temporal-loading" class="loading-block hidden">
+                                                <div class="skeleton-row"></div>
+                                                <div class="skeleton-row large"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <article class="section-shell section-shell--card" id="intervention-card">
+                                    <button type="button" class="section-toggle" data-collapsible-toggle data-target="intervention-content" aria-expanded="false">
+                                        <span>Intervention Suggestions</span>
+                                        <span class="toggle-symbol" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="intervention-content" class="section-content hidden" data-collapsible-content>
+                                        <p class="helper-copy">These recommendations are general clinical considerations and do not replace individualized clinical judgment.</p>
+                                        <ul id="intervention-suggestions" class="intervention-list"></ul>
+                                    </div>
+                                </article>
                             </div>
-                        </article>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -2175,6 +2347,92 @@
             subtitle.textContent = `${meta.sizeKb} KB | ${meta.rowCount.toLocaleString()} samples`;
         }
 
+        function formatContextValue(value, fallback = "Not provided") {
+            if (value === null || value === undefined) {
+                return fallback;
+            }
+            const normalized = String(value).trim();
+            return normalized ? normalized : fallback;
+        }
+
+        function formatBooleanContext(value) {
+            if (value === "true" || value === true) return "Yes";
+            if (value === "false" || value === false) return "No";
+            return "Not provided";
+        }
+
+        function normalizeContextField(value) {
+            if (value === null || value === undefined) return "";
+            return String(value).trim();
+        }
+
+        function isContextAlignedWithLatest(context) {
+            const latest = appState.latestAssessmentContext;
+            if (!context || !latest) return false;
+
+            const trackedFields = [
+                "subjectCode",
+                "age",
+                "gender",
+                "sleepHours",
+                "foodIntake",
+                "caffeinated",
+                "medicated",
+                "medicationIntake",
+                "notes",
+            ];
+
+            return trackedFields.every(
+                (field) => normalizeContextField(context[field]) === normalizeContextField(latest[field])
+            );
+        }
+
+        function renderSubjectSummary(context, result = null) {
+            const helper = byId("subject-summary-helper");
+            const body = byId("subject-summary-body");
+            if (!helper || !body) return;
+
+            if (!context || !String(context.subjectCode || "").trim()) {
+                helper.textContent = "Run an assessment to populate the subject summary for quick review.";
+                body.innerHTML = "<p class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</p>";
+                return;
+            }
+
+            const confidence = Number(result && result.confidence_score);
+            const confidenceText = Number.isFinite(confidence)
+                ? `${Math.max(0, Math.min(100, confidence * 100)).toFixed(1)}%`
+                : "Pending";
+            const hasResult = Boolean(result && (result.classification || Number.isFinite(confidence)));
+
+            helper.textContent = hasResult
+                ? "Quick view of the latest subject context used for interpretation."
+                : "Current subject metadata draft. Run assessment to add classification findings.";
+
+            const items = [
+                ["Subject Code", formatContextValue(context.subjectCode, "-")],
+                ["Age", formatContextValue(context.age, "-")],
+                ["Gender", formatContextValue(context.gender, "-")],
+                ["Sleep Hours", formatContextValue(context.sleepHours)],
+                ["Food Intake", formatContextValue(context.foodIntake)],
+                ["Caffeine", formatBooleanContext(context.caffeinated)],
+                ["Medication", formatBooleanContext(context.medicated)],
+                ["Medication Details", formatContextValue(context.medicationIntake)],
+                ["CSV File", formatContextValue(context.fileMeta && context.fileMeta.name, "Not selected")],
+                ["Recording Duration", context.fileMeta ? formatDuration(context.fileMeta.durationSec) : "-"],
+                ["Latest Classification", formatContextValue(result && result.classification, "Pending")],
+                ["Confidence", confidenceText],
+            ];
+
+            body.innerHTML = items
+                .map(([label, value]) => `
+                    <div class="subject-summary-item">
+                        <span class="subject-summary-label">${escapeHtml(label)}</span>
+                        <span class="subject-summary-value">${escapeHtml(value)}</span>
+                    </div>
+                `)
+                .join("");
+        }
+
         function updateDraftIndicator() {
             const fields = [
                 byId("subject-code")?.value,
@@ -2189,6 +2447,15 @@
                 || Boolean(document.querySelector("input[name='medicated']:checked"));
             const hasDraft = fields.some((value) => Boolean(value && String(value).trim())) || hasRadioSelection || Boolean(appState.file);
             setHidden("draft-indicator", !hasDraft);
+
+            if (hasDraft) {
+                const draftContext = collectAssessmentContext();
+                const alignedWithLatest = !appState.file && isContextAlignedWithLatest(draftContext);
+                renderSubjectSummary(draftContext, alignedWithLatest ? appState.latestResult : null);
+                return;
+            }
+
+            renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
         }
 
         function collectAssessmentContext() {
@@ -2301,21 +2568,54 @@
             return true;
         }
 
-        function initCollapsibleSections() {
-            document.querySelectorAll(".section-toggle").forEach((button) => {
-                button.addEventListener("click", () => {
-                    const targetId = button.getAttribute("data-target");
-                    const content = byId(targetId);
-                    if (!content) return;
+        function setCollapsibleState(targetId, expanded) {
+            if (!targetId) return;
+            const button = document.querySelector(`[data-collapsible-toggle][data-target='${targetId}']`);
+            const content = byId(targetId);
+            if (!button || !content) return;
 
-                    const currentlyOpen = button.getAttribute("aria-expanded") === "true";
-                    button.setAttribute("aria-expanded", currentlyOpen ? "false" : "true");
-                    content.classList.toggle("hidden", currentlyOpen);
-                    const symbol = button.querySelector(".toggle-symbol");
-                    if (symbol) {
-                        symbol.textContent = currentlyOpen ? "+" : "-";
-                    }
+            button.setAttribute("aria-expanded", expanded ? "true" : "false");
+            content.classList.toggle("hidden", !expanded);
+        }
+
+        function initCollapsibleSections() {
+            document.querySelectorAll("[data-collapsible-toggle]").forEach((button) => {
+                const targetId = button.getAttribute("data-target");
+                if (!targetId) return;
+
+                const expanded = button.getAttribute("aria-expanded") === "true";
+                setCollapsibleState(targetId, expanded);
+
+                button.addEventListener("click", () => {
+                    const isExpanded = button.getAttribute("aria-expanded") === "true";
+                    setCollapsibleState(targetId, !isExpanded);
                 });
+            });
+        }
+
+        function applyAssessmentPriorityDisclosure() {
+            setCollapsibleState("workflow-content", false);
+            setCollapsibleState("subject-summary-content", false);
+            setCollapsibleState("clinical-assessment-content", true);
+        }
+
+        function scrollToAssessmentFindings() {
+            const findingsSection = byId("assessment-findings");
+            const appMain = document.querySelector(".app-main");
+            if (!findingsSection || !appMain) return;
+
+            const stickyHeader = document.querySelector(".page-header");
+            const headerHeight = stickyHeader ? stickyHeader.getBoundingClientRect().height : 0;
+            const spacing = 14;
+
+            const appMainRect = appMain.getBoundingClientRect();
+            const findingsRect = findingsSection.getBoundingClientRect();
+            const relativeTop = findingsRect.top - appMainRect.top;
+            const targetTop = appMain.scrollTop + relativeTop - headerHeight - spacing;
+
+            appMain.scrollTo({
+                top: Math.max(0, targetTop),
+                behavior: "smooth",
             });
         }
 
@@ -2804,13 +3104,13 @@
             }
 
             container.innerHTML = plots.map((plot, index) => {
-                const collapsed = index > 0 ? "collapsed" : "";
-                const symbol = index > 0 ? "+" : "-";
+                const isExpanded = index === 0;
+                const collapsed = isExpanded ? "" : "collapsed";
                 return `
                     <div class="temporal-plot-card">
-                        <button type="button" class="plot-header" data-temporal-toggle>
+                        <button type="button" class="plot-header" data-temporal-toggle aria-expanded="${isExpanded ? "true" : "false"}">
                             <span>${escapeHtml(plot.group)}</span>
-                            <span class="chevron">${symbol}</span>
+                            <span class="chevron" aria-hidden="true"></span>
                         </button>
                         <div class="plot-body ${collapsed}">
                             <img src="${plot.image}" alt="${escapeHtml(plot.group)} temporal evolution" loading="lazy" />
@@ -2822,12 +3122,11 @@
             container.querySelectorAll("[data-temporal-toggle]").forEach((button) => {
                 button.addEventListener("click", () => {
                     const body = button.nextElementSibling;
-                    const chevron = button.querySelector(".chevron");
-                    if (!body || !chevron) return;
+                    if (!body) return;
 
                     const collapsed = body.classList.contains("collapsed");
                     body.classList.toggle("collapsed", !collapsed);
-                    chevron.textContent = collapsed ? "-" : "+";
+                    button.setAttribute("aria-expanded", collapsed ? "true" : "false");
                 });
             });
         }
@@ -2982,6 +3281,7 @@
                 displayClinicalRatios((result.band_analysis || {}).band_ratios || {});
                 renderDataQualityNotice(context, result.confidence_score || 0);
                 renderInterventionSuggestions(result.classification || "Unknown");
+                renderSubjectSummary(context, result);
 
                 setHidden("results-empty-state", true);
                 setHidden("results-content", false);
@@ -3003,11 +3303,8 @@
                 leaveProcessingMode();
                 closeAssessmentDrawer(true);
                 setStep(1);
-
-                const findingsSection = byId("assessment-findings");
-                if (findingsSection) {
-                    findingsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
+                applyAssessmentPriorityDisclosure();
+                scrollToAssessmentFindings();
 
                 const fileInput = byId("file");
                 if (fileInput) fileInput.value = "";
@@ -3300,6 +3597,10 @@
             renderFileMetadata(null);
             resetVisualizationState();
             initCollapsibleSections();
+            setCollapsibleState("workflow-content", true);
+            setCollapsibleState("subject-summary-content", true);
+            setCollapsibleState("clinical-assessment-content", true);
+            renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
             setupVisualizationTabLazyLoading();
             setupTopographicToggleButtons();
             setupSubjectAutofill();
