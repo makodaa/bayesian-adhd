@@ -465,29 +465,6 @@
             box-shadow: var(--shadow-card);
         }
 
-        .support-disclaimer {
-            grid-column: 1 / -1;
-            order: 2;
-            border: 1px solid #c9dbe5;
-            border-radius: var(--radius-sm);
-            background: linear-gradient(180deg, #eff6fa 0%, #f5f9fc 100%);
-            padding: 0.72rem 0.82rem;
-            display: grid;
-            gap: 0.3rem;
-        }
-
-        .support-disclaimer h3 {
-            margin: 0;
-            font-size: 0.86rem;
-            color: var(--text-900);
-        }
-
-        .support-disclaimer p {
-            margin: 0;
-            font-size: 0.82rem;
-            color: var(--text-700);
-            line-height: 1.45;
-        }
 
         .summary-card {
             grid-column: 1 / -1;
@@ -1791,12 +1768,6 @@
                                     <div id="prediction-result"></div>
                                 </article>
 
-                                <article id="support-disclaimer-section" class="support-disclaimer">
-                                    <h3>Disclaimer</h3>
-                                    <p>This application provides automated clinical decision support and is not a definitive diagnostic tool.</p>
-                                    <p>Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.</p>
-                                </article>
-
                                 <article id="quality-notice-section" class="quality-card hidden">
                                     <h3 id="quality-notice-title">Warning</h3>
                                     <div id="quality-notice-content"></div>
@@ -2665,12 +2636,13 @@
         function clinicalImpressionText(classification, confidence) {
             const confidencePercent = (confidence * 100).toFixed(1);
             const isNonAdhd = String(classification).toLowerCase().includes("non-adhd");
+            const disclaimer = "This application provides automated clinical decision support and is not a definitive diagnostic tool. Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.";
 
             if (isNonAdhd) {
-                return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures at ${confidencePercent}% confidence. This finding should be interpreted with clinical history, behavioral evaluation, and longitudinal follow-up as needed.`;
+                return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures at ${confidencePercent}% confidence. This finding should be interpreted with clinical history, behavioral evaluation, and longitudinal follow-up as needed. ${disclaimer}`;
             }
 
-            return `The EEG pattern is consistent with ${classification} at ${confidencePercent}% confidence. This output is a decision-support signal and should be interpreted alongside clinical interviews, developmental history, and other assessment tools.`;
+            return `The EEG pattern is consistent with ${classification} at ${confidencePercent}% confidence. This output is a decision-support signal and should be interpreted alongside clinical interviews, developmental history, and other assessment tools. ${disclaimer}`;
         }
 
         function displayPrediction(classification, confidenceScore) {
