@@ -1,1096 +1,605 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Clinician Management - BayesianADHD</title>
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-            crossorigin="anonymous"
-        />
-        <style>
-            :root {
-                --primary-color: #5a6c7d;
-                --secondary-color: #6c9bd1;
-                --sidebar-width: 250px;
-                --sidebar-collapsed-width: 60px;
-            }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinician Accounts - BayesianADHD</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        --brand-900: #14323f;
+        --brand-800: #1b4658;
+        --brand-700: #225c72;
+        --brand-600: #2b718c;
+        --brand-500: #3f8dab;
+        --surface-bg: #eef3f5;
+        --surface-shell: #f8fbfd;
+        --surface-card: #ffffff;
+        --surface-muted: #f5f8fa;
+        --border-shell: #c6d8e3;
+        --border-card: #dbe3e8;
+        --border-soft: #d4dde3;
+        --text-900: #1f2f39;
+        --text-700: #3f515d;
+        --text-500: #607484;
+        --success-600: #2e7d66;
+        --warning-600: #b56f2a;
+        --error-600: #b4494f;
+        --shadow-card: 0 8px 22px rgba(20, 50, 63, 0.05);
+        --shadow-shell: 0 10px 24px rgba(20, 50, 63, 0.06);
+        --shadow-soft: 0 12px 30px rgba(20, 50, 63, 0.08);
+        --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
+        --radius-xs: 4px;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-pill: 999px;
+        --sidebar-width: 82px;
+        --content-width: 1240px;
+      }
 
-            body {
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f5f7fa;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-            }
+      * {
+        box-sizing: border-box;
+      }
 
-            .navbar {
-                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-                padding: 0 1rem;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                height: 70px;
-                display: flex;
-                align-items: center;
-            }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--text-900);
+        background: radial-gradient(circle at 15% -10%, #f7fbfd 0%, var(--surface-bg) 45%, #e8eef2 100%);
+      }
 
-            .navbar-left {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
 
-            .navbar-brand {
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: white !important;
-                margin: 0;
-            }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      a:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
 
-            .navbar-toggle {
-                background: none;
-                border: none;
-                font-size: 1.5rem;
-                cursor: pointer;
-                color: white;
-                padding: 0.5rem;
-                margin: 0;
-                line-height: 1;
-                transition: opacity 0.2s;
-            }
+      .toast-container {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2300;
+        width: min(90vw, 560px);
+        display: grid;
+        gap: 0.6rem;
+        pointer-events: none;
+      }
 
-            .navbar-toggle:hover {
-                opacity: 0.8;
-            }
+      .toast-message {
+        background: #183945;
+        color: #f4f9fb;
+        border-radius: var(--radius-md);
+        padding: 0.85rem 1rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 0.92rem;
+        line-height: 1.4;
+        opacity: 0;
+        transform: translateY(-8px);
+        animation: toast-enter 180ms ease-out forwards;
+      }
 
-            .layout-wrapper {
-                display: flex;
-                height: calc(100vh - 70px);
-                margin-top: 70px;
-                width: 100%;
-            }
+      .toast-message.success {
+        background: #1f604f;
+      }
 
-            .sidebar {
-                width: var(--sidebar-width);
-                min-width: var(--sidebar-width);
-                background: white;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-                transition: all 0.3s ease;
-                overflow-y: auto;
-                overflow-x: hidden;
-                display: flex;
-                flex-direction: column;
-                flex-shrink: 0;
-            }
+      .toast-message.warning {
+        background: #7f521e;
+      }
 
-            .sidebar.collapsed {
-                width: var(--sidebar-collapsed-width);
-                min-width: var(--sidebar-collapsed-width);
-            }
+      .toast-message.error {
+        background: #7f3034;
+      }
 
-            .sidebar-nav {
-                flex: 1;
-                padding: 1.5rem 0;
-            }
+      @keyframes toast-enter {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-            .nav-item {
-                list-style: none;
-            }
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 32, 40, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease-out;
+        z-index: 1400;
+      }
 
-            .nav-link {
-                display: flex;
-                align-items: center;
-                padding: 0.875rem 1rem;
-                color: var(--primary-color);
-                text-decoration: none;
-                transition: all 0.3s ease;
-                white-space: nowrap;
-                font-size: 0.95rem;
-                font-weight: 500;
-            }
+      .sidebar-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
 
-            .nav-link:hover {
-                background: #f8f9fa;
-            }
+      .app-shell {
+        display: flex;
+        min-height: 100vh;
+      }
 
-            .nav-link.active {
-                background: #e9ecef;
-                border-right: 3px solid var(--secondary-color);
-                font-weight: 600;
-            }
+      .app-sidebar {
+        width: var(--sidebar-width);
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        background: linear-gradient(180deg, var(--brand-900) 0%, #173f50 100%);
+        color: #e5f2f7;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 0.65rem;
+        z-index: 1200;
+      }
 
-            .nav-link svg {
-                min-width: 24px;
-                margin-right: 1rem;
-                transition: margin 0.3s ease;
-            }
+      .sidebar-brand {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1.2rem;
+      }
 
-            .nav-link span {
-                opacity: 1;
-                transition: opacity 0.2s ease;
-            }
+      .brand-mark {
+        display: inline-flex;
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-md);
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #4b9ab8, #2f6e86);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #f5fbfe;
+      }
 
-            .sidebar.collapsed .nav-link {
-                justify-content: center;
-                padding: 0.875rem 0;
-            }
+      .sidebar-nav {
+        flex: 1;
+        display: grid;
+        gap: 0.35rem;
+      }
 
-            .sidebar.collapsed .nav-link svg {
-                margin-right: 0;
-            }
+      .sidebar-link {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        color: #d6eaf2;
+        text-decoration: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 48px;
+        transition: background-color 170ms ease-out, color 170ms ease-out;
+      }
 
-            .sidebar.collapsed .nav-link span {
-                opacity: 0;
-                width: 0;
-                overflow: hidden;
-            }
+      .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+      }
 
-            .main-content {
-                flex: 1;
-                padding: 2rem;
-                overflow-y: auto;
-                overflow-x: hidden;
-                min-width: 0;
-            }
+      .sidebar-link.active {
+        background: rgba(105, 185, 214, 0.27);
+        color: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(182, 228, 243, 0.35);
+      }
 
-            .content-header {
-                margin-bottom: 2rem;
-            }
+      .sidebar-link svg {
+        width: 22px;
+        height: 22px;
+        stroke-width: 1.7;
+      }
 
-            .content-header h1 {
-                font-size: 2rem;
-                color: var(--primary-color);
-                margin-bottom: 0.5rem;
-            }
+      .sidebar-link span {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
 
-            .card {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                margin-bottom: 1.5rem;
-            }
+      .sidebar-footer {
+        border-top: 1px solid rgba(230, 246, 253, 0.2);
+        padding-top: 0.8rem;
+        text-align: center;
+      }
 
-            .table-container {
-                overflow-x: auto;
-            }
+      .sidebar-user-label {
+        margin: 0;
+        color: rgba(230, 246, 253, 0.74);
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
 
-            .btn-primary {
-                background-color: var(--secondary-color);
-                border: none;
-            }
+      .sidebar-user-name {
+        margin: 0.25rem 0 0.65rem;
+        font-size: 0.78rem;
+        color: #f0f9fc;
+        word-break: break-word;
+        line-height: 1.3;
+      }
 
-            .btn-primary:hover {
-                background-color: #5a8bc4;
-            }
+      .sidebar-logout {
+        border: 1px solid rgba(220, 243, 250, 0.5);
+        color: #f0f9fc;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        padding: 0.32rem 0.7rem;
+        font-size: 0.76rem;
+        font-weight: 600;
+        transition: background-color 170ms ease-out;
+      }
 
-            .search-box {
-                max-width: 400px;
-            }
+      .sidebar-logout:hover {
+        background: rgba(240, 249, 252, 0.14);
+      }
 
-            .badge {
-                padding: 0.25rem 0.75rem;
-                border-radius: 12px;
-                font-size: 0.85rem;
-            }
+      .app-main {
+        flex: 1;
+        min-width: 0;
+        max-height: 100vh;
+        overflow: auto;
+      }
 
-            .clickable-row {
-                cursor: pointer;
-            }
+      .page-header {
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        backdrop-filter: blur(8px);
+        background: rgba(238, 243, 245, 0.92);
+        border-bottom: 1px solid #dbe3e8;
+      }
 
-            .clickable-row:hover {
-                background-color: #f8f9fa;
-            }
+      .page-header-inner {
+        max-width: calc(var(--content-width) + 3rem);
+        margin: 0 auto;
+        padding: 1.05rem 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+      }
 
-            .modal-header {
-                background: linear-gradient(135deg, #8fa5b8, #a8c5e4);
-                color: white;
-            }
+      .page-title-group {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+      }
 
-            .modal-header .btn-close {
-                filter: brightness(0) invert(1);
-            }
+      .menu-toggle {
+        border: 1px solid var(--border-soft);
+        background: #fff;
+        border-radius: var(--radius-sm);
+        width: 40px;
+        height: 40px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-800);
+        flex-shrink: 0;
+      }
 
-            .info-section {
-                margin-bottom: 1.5rem;
-            }
+      .page-title-group h1 {
+        margin: 0;
+        font-size: 1.42rem;
+        font-weight: 700;
+        color: var(--text-900);
+      }
 
-            .info-section h6 {
-                color: var(--primary-color);
-                font-weight: 600;
-                margin-bottom: 1rem;
-                padding-bottom: 0.5rem;
-                border-bottom: 2px solid #e9ecef;
-            }
+      .page-title-group p {
+        margin: 0.35rem 0 0;
+        color: var(--text-700);
+        font-size: 0.94rem;
+        max-width: 760px;
+      }
 
-            .info-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 0.5rem 0;
-                border-bottom: 1px solid #f0f0f0;
-            }
+      .page-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-shrink: 0;
+      }
 
-            .info-row:last-child {
-                border-bottom: none;
-            }
+      .btn-primary-app,
+      .btn-secondary-app {
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 0 1rem;
+        height: 36px;
+        font-size: 0.91rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        transition: transform 170ms ease-out, box-shadow 170ms ease-out, background-color 170ms ease-out;
+      }
 
-            .info-label {
-                font-weight: 500;
-                color: #6c757d;
-            }
+      .btn-primary-app {
+        background: linear-gradient(140deg, var(--brand-700), var(--brand-600));
+        color: #f6fbfd;
+        box-shadow: 0 6px 14px rgba(35, 98, 120, 0.25);
+      }
 
-            .info-value {
-                color: var(--primary-color);
-                font-weight: 500;
-            }
+      .btn-primary-app:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(35, 98, 120, 0.32);
+      }
 
-            .assessment-table {
-                margin-top: 1rem;
-            }
+      .btn-secondary-app {
+        background: #f9fcfd;
+        color: var(--brand-700);
+        border: 1px solid var(--border-soft);
+      }
 
-            .assessment-table th {
-                background-color: #f8f9fa;
-                color: var(--primary-color);
-                font-weight: 600;
-            }
+      .btn-secondary-app:hover:not(:disabled) {
+        background: #f0f6f9;
+      }
 
-            .badge-adhd {
-                background-color: #c9846a;
-                color: white;
-            }
+      .btn-primary-app:disabled,
+      .btn-secondary-app:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
 
-            .badge-non-adhd {
-                background-color: #6c9bd1;
-                color: white;
-            }
+      .page-body {
+        max-width: var(--content-width);
+        margin: 0 auto;
+        padding: 1.5rem;
+        display: grid;
+        gap: 1rem;
+      }
 
-            .assessment-table-wrapper {
-                max-height: 180px;
-                overflow-y: auto;
-            }
-        </style>
-    </head>
+      .section-shell {
+        background: var(--surface-card);
+        border: 1px solid var(--border-card);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-card);
+      }
 
-    <body>
-        <!-- Navigation Bar -->
-        <nav class="navbar">
-            <div class="navbar-left">
-                <button class="navbar-toggle" id="sidebar-toggle">
-                    <span>☰</span>
-                </button>
-                <span class="navbar-brand">BayesianADHD</span>
-            </div>
-            <div
-                style="
-                    margin-left: auto;
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                "
-            >
-                <span
-                    style="color: white; font-weight: 500"
-                    id="clinician-name"
-                ></span>
-                <button
-                    id="logout-btn"
-                    style="
-                        background: rgba(255, 255, 255, 0.2);
-                        border: 1px solid white;
-                        color: white;
-                        padding: 0.5rem 1rem;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        transition: all 0.3s ease;
-                    "
-                >
-                    Logout
-                </button>
-            </div>
+      .section-head {
+        padding: 1rem 1rem 0.5rem;
+        display: grid;
+        gap: 0.3rem;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: 1.02rem;
+        color: var(--text-900);
+      }
+
+      .section-head p {
+        margin: 0;
+        font-size: 0.86rem;
+        color: var(--text-700);
+        line-height: 1.45;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 992px) {
+        .app-sidebar {
+          width: 250px;
+          position: fixed;
+          transform: translateX(-100%);
+          transition: transform 190ms ease-out;
+          padding: 1rem;
+        }
+
+        .app-sidebar.mobile-open {
+          transform: translateX(0);
+        }
+
+        .sidebar-link {
+          justify-content: flex-start;
+          gap: 0.65rem;
+          padding: 0 0.7rem;
+        }
+
+        .sidebar-link span {
+          position: static;
+          opacity: 1;
+          pointer-events: auto;
+          font-size: 0.89rem;
+          font-weight: 600;
+        }
+
+        .sidebar-footer {
+          text-align: left;
+        }
+
+        .menu-toggle {
+          display: inline-flex;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .page-header-inner,
+        .page-body {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+
+        .page-header-inner {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .page-actions {
+          justify-content: flex-end;
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <div class="app-shell">
+      <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <span class="brand-mark">BA</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="/subjects.html" class="sidebar-link" title="Subjects" aria-label="Subjects">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Subjects</span>
+          </a>
+          <a href="/results.html" class="sidebar-link" title="Assessments" aria-label="Assessments">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a href="/clinicians.html" class="sidebar-link active" title="Clinicians" aria-label="Clinicians">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Clinicians</span>
+          </a>
         </nav>
 
-        <div class="layout-wrapper">
-            <!-- Sidebar -->
-            <aside class="sidebar collapsed" id="sidebar">
-                <nav class="sidebar-nav">
-                    <ul style="padding: 0; margin: 0">
-                        <li class="nav-item">
-                            <a href="/index.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                                    ></path>
-                                    <polyline
-                                        points="9 22 9 12 15 12 15 22"
-                                    ></polyline>
-                                </svg>
-                                <span>Analysis</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/subjects.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                                    ></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Subjects</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/clinicians.html" class="nav-link active">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                                    ></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span>Clinicians</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/results.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path
-                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                    ></path>
-                                    <polyline
-                                        points="14 2 14 8 20 8"
-                                    ></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                                <span>Results</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/about.html" class="nav-link">
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                <span>About</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </aside>
-
-            <!-- Main Content -->
-            <main class="main-content">
-                <div class="content-header">
-                    <h1>Clinician Management</h1>
-                    <p class="text-muted">View and manage clinician profiles</p>
-                </div>
-
-                <!-- Actions Bar -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <input
-                                    type="text"
-                                    class="form-control search-box"
-                                    id="search-clinicians"
-                                    placeholder="Search clinicians..."
-                                />
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <button
-                                    class="btn btn-primary"
-                                    id="add-clinician-btn"
-                                >
-                                    + Add Clinician
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Clinicians Table -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-container">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Occupation</th>
-                                        <th>Assessments</th>
-                                        <th>Last Activity</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clinicians-table-body">
-                                    <tr>
-                                        <td
-                                            colspan="5"
-                                            class="text-center text-muted"
-                                        >
-                                            No clinicians found. Add a clinician
-                                            to get started.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        <div class="sidebar-footer">
+          <p class="sidebar-user-label">Signed in as</p>
+          <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
+          <button id="logout-btn" class="sidebar-logout" type="button">Logout</button>
         </div>
+      </aside>
 
-        <!-- Clinician Details Modal -->
-        <div
-            class="modal fade"
-            id="clinicianModal"
-            tabindex="-1"
-            aria-labelledby="clinicianModalLabel"
-            aria-hidden="true"
-        >
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="clinicianModalLabel">
-                            Clinician Details
-                        </h5>
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"
-                        ></button>
-                    </div>
-                    <div class="modal-body" id="modal-body-content">
-                        <div class="text-center">
-                            <div
-                                class="spinner-border text-primary"
-                                role="status"
-                            >
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      <div class="app-main">
+        <header class="page-header">
+          <div class="page-header-inner">
+            <div class="page-title-group">
+              <button id="sidebar-toggle" class="menu-toggle" type="button" aria-label="Toggle navigation menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+              <div>
+                <h1>Clinician Accounts</h1>
+                <p>Manage registered clinician accounts and review assessment activity.</p>
+              </div>
             </div>
-        </div>
-
-        <!-- Add Clinician Modal -->
-        <div
-            class="modal fade"
-            id="addClinicianModal"
-            tabindex="-1"
-            aria-labelledby="addClinicianModalLabel"
-            aria-hidden="true"
-        >
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addClinicianModalLabel">
-                            Add Clinician
-                        </h5>
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"
-                        ></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="add-clinician-form">
-                            <div class="mb-3">
-                                <label class="form-label">First name</label>
-                                <input
-                                    type="text"
-                                    id="add-first-name"
-                                    class="form-control"
-                                    required
-                                />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Last name</label>
-                                <input
-                                    type="text"
-                                    id="add-last-name"
-                                    class="form-control"
-                                    required
-                                />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Occupation</label>
-                                <input
-                                    type="text"
-                                    id="add-occupation"
-                                    class="form-control"
-                                />
-                            </div>
-                            <div class="mb-3" style="position: relative">
-                                <label class="form-label">Password</label>
-                                <input
-                                    type="password"
-                                    id="add-password"
-                                    class="form-control"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    id="toggle-add-password"
-                                    aria-label="Show password"
-                                    style="
-                                        position: absolute;
-                                        right: 8px;
-                                        top: 38px;
-                                        background: none;
-                                        border: none;
-                                        padding: 4px;
-                                        cursor: pointer;
-                                    "
-                                >
-                                    <svg
-                                        id="add-eye-icon"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path
-                                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                                        ></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="mb-3" style="position: relative">
-                                <label class="form-label"
-                                    >Confirm Password</label
-                                >
-                                <input
-                                    type="password"
-                                    id="add-password-confirm"
-                                    class="form-control"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    id="toggle-add-password-confirm"
-                                    aria-label="Show confirm password"
-                                    style="
-                                        position: absolute;
-                                        right: 8px;
-                                        top: 38px;
-                                        background: none;
-                                        border: none;
-                                        padding: 4px;
-                                        cursor: pointer;
-                                    "
-                                >
-                                    <svg
-                                        id="add-confirm-eye-icon"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path
-                                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                                        ></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div
-                                id="add-clinician-error"
-                                class="text-danger"
-                                style="display: none"
-                            ></div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button
-                            type="button"
-                            class="btn btn-secondary"
-                            data-bs-dismiss="modal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            id="submit-add-clinician"
-                            class="btn btn-primary"
-                        >
-                            Create
-                        </button>
-                    </div>
-                </div>
+            <div class="page-actions">
+              <button id="open-add-clinician-btn" type="button" class="btn-primary-app">Add Clinician</button>
             </div>
-        </div>
+          </div>
+        </header>
 
-        <script>
-            // Load clinician name from server session and setup logout
-            document.addEventListener("DOMContentLoaded", async function () {
-                try {
-                    const resp = await fetch("/api/me");
-                    if (!resp.ok) {
-                        // Not authenticated - redirect to login
-                        window.location.href = "/login.html";
-                        return;
-                    }
-                    const me = await resp.json();
-                    const clinicianName = me.clinician_name || "Clinician";
-                    const clinicianOccupation = me.clinician_occupation || "";
-                    // keep sessionStorage for backward compatibility
-                    sessionStorage.setItem("clinician_name", clinicianName);
-                    sessionStorage.setItem(
-                        "clinician_occupation",
-                        clinicianOccupation
-                    );
+        <main class="page-body">
+          <section class="section-shell">
+            <div class="section-head">
+              <h2>Registered Clinicians</h2>
+              <p>All accounts with access to the BayesianADHD platform.</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
 
-                    document.getElementById("clinician-name").textContent =
-                        clinicianName;
+    <script>
+      // ── Utilities ──
 
-                    const addClinicianBtn =
-                        document.getElementById("add-clinician-btn");
-                    if (
-                        addClinicianBtn &&
-                        clinicianName !== "Admin Clinician"
-                    ) {
-                        addClinicianBtn.style.display = "none";
-                    }
+      function byId(id) {
+        return document.getElementById(id);
+      }
 
-                    document
-                        .getElementById("logout-btn")
-                        .addEventListener("click", async function () {
-                            try {
-                                const response = await fetch("/api/logout", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                });
+      function showToast(message, variant = 'error') {
+        const container = byId('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast-message ${variant}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        window.setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-8px)';
+          window.setTimeout(() => toast.remove(), 180);
+        }, 6000);
+      }
 
-                                if (response.ok) {
-                                    sessionStorage.clear();
-                                    window.location.href = "/login.html";
-                                } else {
-                                    window.location.href = "/login.html";
-                                }
-                            } catch (error) {
-                                console.error("Error during logout:", error);
-                                window.location.href = "/login.html";
-                            }
-                        });
-                } catch (error) {
-                    console.error("Error fetching current clinician:", error);
-                    window.location.href = "/login.html";
-                }
-            });
+      // ── Shell bootstrap ──
 
-            // Sidebar toggle
-            document
-                .getElementById("sidebar-toggle")
-                .addEventListener("click", function () {
-                    document
-                        .getElementById("sidebar")
-                        .classList.toggle("collapsed");
-                });
+      async function loadCurrentClinician() {
+        try {
+          const res = await fetch('/api/me');
+          if (res.status === 401 || !res.ok) { window.location.href = '/login.html'; return; }
+          const data = await res.json();
+          const el = byId('sidebar-clinician-name');
+          if (el && data.clinician_name) el.textContent = data.clinician_name;
+        } catch { window.location.href = '/login.html'; }
+      }
 
-            let allClinicians = [];
+      function toggleMobileSidebar(open) {
+        const sidebar = byId('sidebar');
+        const backdrop = byId('sidebar-backdrop');
+        if (!sidebar || !backdrop) return;
+        const shouldOpen = typeof open === 'boolean' ? open : !sidebar.classList.contains('mobile-open');
+        sidebar.classList.toggle('mobile-open', shouldOpen);
+        backdrop.classList.toggle('open', shouldOpen);
+      }
 
-            // Load clinicians
-            async function loadClinicians() {
-                try {
-                    const response = await fetch("/api/clinicians");
-                    allClinicians = await response.json();
+      async function handleLogout() {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+        } finally {
+          window.location.href = '/login.html';
+        }
+      }
 
-                    const loggedInClinician =
-                        sessionStorage.getItem("clinician_name") || "";
+      byId('sidebar-toggle')?.addEventListener('click', () => toggleMobileSidebar());
+      byId('sidebar-backdrop')?.addEventListener('click', () => toggleMobileSidebar(false));
+      byId('logout-btn')?.addEventListener('click', handleLogout);
 
-                    const tbody = document.getElementById(
-                        "clinicians-table-body"
-                    );
-                    if (allClinicians.length === 0) {
-                        tbody.innerHTML =
-                            '<tr><td colspan="5" class="text-center text-muted">No clinicians found.</td></tr>';
-                        return;
-                    }
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          if (byId('sidebar')?.classList.contains('mobile-open')) toggleMobileSidebar(false);
+        }
+      });
 
-                    tbody.innerHTML = allClinicians
-                        .map((clinician) => {
-                            const isActive = !!clinician.is_active;
-                            const statusClass = isActive
-                                ? "bg-success"
-                                : "bg-secondary";
-                            const statusText = isActive ? "Active" : "Inactive";
-                            return `
-                        <tr class="clickable-row" onclick="viewClinician(${
-                            clinician.id
-                        })">
-                            <td>${clinician.name}</td>
-                            <td>${clinician.occupation || "N/A"}</td>
-                            <td>${clinician.assessments_count || "0"}</td>
-                            <td>${
-                                clinician.last_activity
-                                    ? new Date(
-                                          clinician.last_activity
-                                      ).toLocaleString()
-                                    : "N/A"
-                            }</td>
-                            <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        </tr>
-                    `;
-                        })
-                        .join("");
-                } catch (error) {
-                    console.error("Error loading clinicians:", error);
-                    alert("Failed to load clinicians");
-                }
-            }
+      // ── Init ──
 
-            // View clinician details
-            async function viewClinician(clinicianId) {
-                const modal = new bootstrap.Modal(
-                    document.getElementById("clinicianModal")
-                );
-                const modalBody = document.getElementById("modal-body-content");
-
-                // Show loading state
-                modalBody.innerHTML = `
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            `;
-
-                modal.show();
-
-                try {
-                    const response = await fetch(
-                        `/api/clinicians/${clinicianId}`
-                    );
-                    const clinician = await response.json();
-
-                    if (clinician.error) {
-                        modalBody.innerHTML = `<div class="alert alert-danger">${clinician.error}</div>`;
-                        return;
-                    }
-
-                    // Build clinician info
-                    const fullName = [
-                        clinician.first_name,
-                        clinician.middle_name,
-                        clinician.last_name,
-                    ]
-                        .filter(Boolean)
-                        .join(" ");
-
-                    // Build assessments table
-                    let assessmentsHTML = "";
-                    if (
-                        clinician.assessments &&
-                        clinician.assessments.length > 0
-                    ) {
-                        assessmentsHTML = `
-                        <div class="assessment-table-wrapper">
-                            <div class="table-container">
-                                <table class="table table-sm assessment-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Subject Code</th>
-                                            <th>Age</th>
-                                            <th>Gender</th>
-                                            <th>Classification</th>
-                                            <th>Confidence</th>
-                                            <th>Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${clinician.assessments
-                                            .map((assessment) => {
-                                                const badgeClass =
-                                                    assessment.predicted_class ===
-                                                        "Combined / C (ADHD-C)" ||
-                                                    assessment.predicted_class ===
-                                                        "Hyperactive-Impulsive (ADHD-H)" ||
-                                                    assessment.predicted_class ===
-                                                        "Inattentive (ADHD-I)"
-                                                        ? "badge-adhd"
-                                                        : "badge-non-adhd";
-                                                const confidence = (
-                                                    assessment.confidence_score *
-                                                    100
-                                                ).toFixed(2);
-                                                const date = new Date(
-                                                    assessment.inferenced_at
-                                                ).toLocaleString();
-                                                return `
-                                    <tr>
-                                    <td>${assessment.subject_code}</td>
-                                    <td>${assessment.age || "N/A"}</td>
-                                    <td>${assessment.gender || "N/A"}</td>
-                                    <td><span class="badge ${badgeClass}">${
-                                                    assessment.predicted_class
-                                                }</span></td>
-                                    <td>${confidence}%</td>
-                                    <td>${date}</td>
-                                    </tr>
-                                `;
-                                            })
-                                            .join("")}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                    } else {
-                        assessmentsHTML =
-                            '<p class="text-muted">No assessments found.</p>';
-                    }
-
-                    modalBody.innerHTML = `
-                    <div class="info-section">
-                        <h6>Clinician Information</h6>
-                        <div class="info-row">
-                            <span class="info-label">Name</span>
-                            <span class="info-value">${fullName}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Occupation</span>
-                            <span class="info-value">${
-                                clinician.occupation || "N/A"
-                            }</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Total Assessments</span>
-                            <span class="info-value">${
-                                clinician.assessments.length
-                            }</span>
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h6>Assessments</h6>
-                        ${assessmentsHTML}
-                    </div>
-                `;
-                } catch (error) {
-                    console.error("Error loading clinician details:", error);
-                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load clinician details</div>`;
-                }
-            }
-
-            // Search functionality
-            document
-                .getElementById("search-clinicians")
-                .addEventListener("input", function (e) {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = document.querySelectorAll(
-                        "#clinicians-table-body tr"
-                    );
-
-                    rows.forEach((row) => {
-                        const text = row.textContent.toLowerCase();
-                        row.style.display = text.includes(searchTerm)
-                            ? ""
-                            : "none";
-                    });
-                });
-
-            // Add clinician functionality - show modal for admin
-            document
-                .getElementById("add-clinician-btn")
-                .addEventListener("click", function () {
-                    const clinicianName =
-                        sessionStorage.getItem("clinician_name") || "Clinician";
-                    if (clinicianName !== "Admin Clinician") {
-                        alert("Only the administrator can add clinicians.");
-                        return;
-                    }
-
-                    const modalEl =
-                        document.getElementById("addClinicianModal");
-                    const modal = new bootstrap.Modal(modalEl);
-                    // clear form
-                    document.getElementById("add-first-name").value = "";
-                    document.getElementById("add-last-name").value = "";
-                    document.getElementById("add-occupation").value = "";
-                    document.getElementById("add-password").value = "";
-                    document.getElementById(
-                        "add-clinician-error"
-                    ).style.display = "none";
-                    modal.show();
-                });
-
-            // Toggle add-clinician password visibility (both password and confirm)
-            (function () {
-                function toggleAddPassword() {
-                    const pwd = document.getElementById("add-password");
-                    const pwdConfirm = document.getElementById(
-                        "add-password-confirm"
-                    );
-                    const eye = document.getElementById("add-eye-icon");
-                    const confirmEye = document.getElementById(
-                        "add-confirm-eye-icon"
-                    );
-                    const show = pwd.type === "password";
-                    pwd.type = show ? "text" : "password";
-                    if (pwdConfirm)
-                        pwdConfirm.type = show ? "text" : "password";
-                    const eyeOff =
-                        '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/>';
-                    const eyeOn =
-                        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-                    if (eye) eye.innerHTML = show ? eyeOff : eyeOn;
-                    if (confirmEye)
-                        confirmEye.innerHTML = show ? eyeOff : eyeOn;
-                }
-
-                const btn = document.getElementById("toggle-add-password");
-                if (btn) btn.addEventListener("click", toggleAddPassword);
-                const btn2 = document.getElementById(
-                    "toggle-add-password-confirm"
-                );
-                if (btn2) btn2.addEventListener("click", toggleAddPassword);
-            })();
-
-            // Submit add clinician form
-            document
-                .getElementById("submit-add-clinician")
-                .addEventListener("click", async function () {
-                    const firstName = document
-                        .getElementById("add-first-name")
-                        .value.trim();
-                    const lastName = document
-                        .getElementById("add-last-name")
-                        .value.trim();
-                    const occupation = document
-                        .getElementById("add-occupation")
-                        .value.trim();
-                    const password =
-                        document.getElementById("add-password").value;
-                    const passwordConfirmElem = document.getElementById(
-                        "add-password-confirm"
-                    );
-                    const passwordConfirm = passwordConfirmElem
-                        ? passwordConfirmElem.value
-                        : "";
-                    const errorDiv = document.getElementById(
-                        "add-clinician-error"
-                    );
-
-                    if (!firstName || !lastName || !password) {
-                        errorDiv.textContent =
-                            "First name, last name and password are required.";
-                        errorDiv.style.display = "block";
-                        return;
-                    }
-
-                    if (password !== passwordConfirm) {
-                        errorDiv.textContent =
-                            "Password and confirmation do not match.";
-                        errorDiv.style.display = "block";
-                        return;
-                    }
-
-                    try {
-                        const resp = await fetch("/api/clinicians", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                first_name: firstName,
-                                last_name: lastName,
-                                middle_name: null,
-                                occupation: occupation,
-                                password: password,
-                            }),
-                        });
-
-                        const data = await resp.json();
-                        if (!resp.ok) {
-                            errorDiv.textContent =
-                                data.error || "Failed to add clinician.";
-                            errorDiv.style.display = "block";
-                            return;
-                        }
-
-                        // Success
-                        const modal = bootstrap.Modal.getInstance(
-                            document.getElementById("addClinicianModal")
-                        );
-                        modal.hide();
-                        alert("Clinician added successfully!");
-                        loadClinicians();
-                    } catch (err) {
-                        console.error("Error adding clinician:", err);
-                        errorDiv.textContent =
-                            "An error occurred while adding clinician.";
-                        errorDiv.style.display = "block";
-                    }
-                });
-
-            // Initialize
-            loadClinicians();
-        </script>
-
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-            crossorigin="anonymous"
-        ></script>
-    </body>
+      document.addEventListener('DOMContentLoaded', loadCurrentClinician);
+    </script>
+  </body>
 </html>
