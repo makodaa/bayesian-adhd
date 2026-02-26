@@ -30,9 +30,9 @@
         --success-600: #2e7d66;
         --warning-600: #b56f2a;
         --error-600: #b4494f;
-        --shadow-card: 0 8px 22px rgba(20, 50, 63, 0.05);
-        --shadow-shell: 0 10px 24px rgba(20, 50, 63, 0.06);
-        --shadow-soft: 0 12px 30px rgba(20, 50, 63, 0.08);
+         --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
+         --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
+         --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
         --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
         --radius-xs: 4px;
         --radius-sm: 6px;
@@ -325,18 +325,16 @@
         display: inline-flex;
         align-items: center;
         white-space: nowrap;
-        transition: transform 170ms ease-out, box-shadow 170ms ease-out, background-color 170ms ease-out;
+        transition: background-color 170ms ease-out;
       }
 
       .btn-primary-app {
-        background: linear-gradient(140deg, var(--brand-700), var(--brand-600));
+        background: var(--brand-600);
         color: #f6fbfd;
-        box-shadow: 0 6px 14px rgba(35, 98, 120, 0.25);
       }
 
       .btn-primary-app:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 20px rgba(35, 98, 120, 0.32);
+        background: var(--brand-700);
       }
 
       .btn-secondary-app {
@@ -353,7 +351,6 @@
       .btn-secondary-app:disabled {
         opacity: 0.55;
         cursor: not-allowed;
-        transform: none;
         box-shadow: none;
       }
 
