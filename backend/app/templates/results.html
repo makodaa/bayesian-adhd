@@ -558,7 +558,7 @@
         height: 100vh;
         background: #f8fbfc;
         border-left: 1px solid #d8e5ec;
-        box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
+        box-shadow: none;
         transform: translateX(100%);
         transition: transform 190ms ease-out;
         z-index: 1800;
@@ -568,6 +568,7 @@
 
       .result-detail-drawer.open {
         transform: translateX(0);
+        box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
       }
 
       .detail-header {
