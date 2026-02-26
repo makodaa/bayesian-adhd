@@ -391,6 +391,172 @@
         line-height: 1.45;
       }
 
+      .toolbar-row {
+        padding: 0.65rem 1rem 0.9rem;
+        display: grid;
+        grid-template-columns: minmax(240px, 1.4fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
+        gap: 0.6rem;
+        align-items: end;
+        border-bottom: 1px solid #e6edf1;
+      }
+
+      .field-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.28rem;
+      }
+
+      .field-wrap label {
+        margin: 0;
+        font-size: 0.79rem;
+        font-weight: 600;
+        color: var(--text-700);
+        line-height: 1.2;
+      }
+
+      .field-wrap input,
+      .field-wrap select {
+        border: 1px solid #cddae2;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.52rem 0.62rem;
+        font-size: 0.86rem;
+        color: var(--text-900);
+        height: 36px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        padding-bottom: 1px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .assessment-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+
+      .assessment-table thead {
+        background: #f4f8fa;
+      }
+
+      .assessment-table th,
+      .assessment-table td {
+        border-bottom: 1px solid #e6edf1;
+        padding: 0.65rem 0.8rem;
+        text-align: left;
+        vertical-align: middle;
+        font-size: 0.84rem;
+        color: var(--text-700);
+        white-space: nowrap;
+      }
+
+      .assessment-table th {
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-500);
+        font-weight: 700;
+      }
+
+      .assessment-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .result-row {
+        cursor: pointer;
+        transition: background-color 150ms ease-out;
+      }
+
+      .result-row:hover {
+        background: #f7fbfd;
+      }
+
+      .result-row:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(43, 113, 140, 0.3);
+      }
+
+      .subject-code {
+        color: var(--text-900);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+      }
+
+      .classification-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill);
+        border: 1px solid transparent;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
+      .classification-pill.adhd {
+        background: #fff2e9;
+        border-color: #efcfb7;
+        color: #9f5d24;
+      }
+
+      .classification-pill.non-adhd {
+        background: #eaf5f0;
+        border-color: #c5e3d7;
+        color: #2e7d66;
+      }
+
+      .classification-pill.pending {
+        background: #f1f6f9;
+        border-color: #d2e0e8;
+        color: #5c7384;
+      }
+
+      .table-feedback {
+        padding: 1.3rem 1rem 1.4rem;
+        text-align: center;
+        color: var(--text-700);
+        font-size: 0.86rem;
+      }
+
+      .table-feedback strong {
+        display: block;
+        color: var(--text-900);
+        margin-bottom: 0.25rem;
+        font-size: 0.94rem;
+      }
+
+      .loading-state {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.6rem 0;
+      }
+
+      .skeleton-row {
+        border-radius: var(--radius-xs);
+        height: 14px;
+        background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
+        background-size: 240% 100%;
+        animation: shimmer 1.2s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
       .hidden {
         display: none !important;
       }
@@ -429,6 +595,17 @@
         .menu-toggle {
           display: inline-flex;
         }
+
+        .toolbar-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .toolbar-actions {
+          grid-column: span 2;
+          justify-content: flex-end;
+          align-items: center;
+          padding-bottom: 0;
+        }
       }
 
       @media (max-width: 768px) {
@@ -446,6 +623,15 @@
         .page-actions {
           justify-content: flex-end;
           flex-wrap: wrap;
+        }
+
+        .toolbar-row {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar-actions {
+          grid-column: auto;
+          justify-content: flex-end;
         }
       }
     </style>
@@ -532,6 +718,57 @@
               <h2>Assessment Log</h2>
               <p>All EEG classification records. Click a row to open the full result detail.</p>
             </div>
+
+            <div class="toolbar-row">
+              <div class="field-wrap">
+                <label for="search-results">Search Subject</label>
+                <input type="text" id="search-results" placeholder="Subject code..." />
+              </div>
+              <div class="field-wrap">
+                <label for="filter-classification">Classification</label>
+                <select id="filter-classification">
+                  <option value="all">All classifications</option>
+                  <option value="adhd">ADHD</option>
+                  <option value="non-adhd">Non-ADHD</option>
+                </select>
+              </div>
+              <div class="field-wrap">
+                <label for="sort-results">Sort By</label>
+                <select id="sort-results">
+                  <option value="recent">Most recent</option>
+                  <option value="confidence">Highest confidence</option>
+                  <option value="subject">Subject code</option>
+                </select>
+              </div>
+              <div class="toolbar-actions">
+                <button id="reset-filters-btn" type="button" class="btn-secondary-app">Reset Filters</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="assessment-table">
+                <thead>
+                  <tr>
+                    <th>Subject Code</th>
+                    <th>Classification</th>
+                    <th>Confidence</th>
+                    <th>Clinician</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="results-table-body">
+                  <tr>
+                    <td colspan="5" class="table-feedback">
+                      <div class="loading-state">
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
         </main>
       </div>
@@ -542,6 +779,15 @@
 
       function byId(id) {
         return document.getElementById(id);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
 
       function showToast(message, variant = 'error') {
@@ -591,9 +837,181 @@
       byId('sidebar-backdrop')?.addEventListener('click', () => toggleMobileSidebar(false));
       byId('logout-btn')?.addEventListener('click', handleLogout);
 
+      // ── App state ──
+
+      const appState = {
+        allResults: [],
+        filteredResults: [],
+        filters: { search: '', classification: 'all', sort: 'recent' }
+      };
+
+      // ── Classification helpers ──
+
+      function getClassificationClass(label) {
+        const n = String(label || '').trim().toLowerCase();
+        if (!n) return 'pending';
+        if (n.includes('non-adhd') || n.includes('non adhd')) return 'non-adhd';
+        if (n.includes('adhd')) return 'adhd';
+        return 'pending';
+      }
+
+      function renderClassificationPill(label) {
+        const cls = getClassificationClass(label);
+        return `<span class="classification-pill ${cls}">${escapeHtml(label || 'No result')}</span>`;
+      }
+
+      function getConfidenceState(confidence) {
+        if (confidence >= 0.8) return { label: 'High', className: 'high' };
+        if (confidence >= 0.6) return { label: 'Moderate', className: 'mid' };
+        return { label: 'Low', className: 'low' };
+      }
+
+      // ── Filters ──
+
+      function syncFilterState() {
+        appState.filters.search = byId('search-results')?.value.trim().toLowerCase() || '';
+        appState.filters.classification = byId('filter-classification')?.value || 'all';
+        appState.filters.sort = byId('sort-results')?.value || 'recent';
+      }
+
+      function applyFilters() {
+        syncFilterState();
+        const { search, classification, sort } = appState.filters;
+
+        const filtered = appState.allResults
+          .filter(r => {
+            if (search && !String(r.subject_code || '').toLowerCase().includes(search)) return false;
+            if (classification !== 'all') {
+              if (getClassificationClass(r.predicted_class) !== classification) return false;
+            }
+            return true;
+          })
+          .sort((a, b) => {
+            if (sort === 'subject') return String(a.subject_code || '').localeCompare(String(b.subject_code || ''));
+            if (sort === 'confidence') return (b.confidence_score || 0) - (a.confidence_score || 0);
+            return new Date(b.inferenced_at || 0) - new Date(a.inferenced_at || 0);
+          });
+
+        appState.filteredResults = filtered;
+        renderResultsTable(filtered);
+      }
+
+      // ── Table rendering ──
+
+      function renderResultsTable(results) {
+        const tbody = byId('results-table-body');
+        if (!tbody) return;
+
+        if (!results || results.length === 0) {
+          const hasFilters = appState.filters.search || appState.filters.classification !== 'all';
+          tbody.innerHTML = `<tr><td colspan="5" class="table-feedback">
+            <strong>${hasFilters ? 'No matching results' : 'No results yet'}</strong>
+            ${hasFilters ? 'Try resetting filters.' : 'Complete an assessment to see records here.'}
+          </td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = results.map(r => {
+          const confidence = Number.isFinite(r.confidence_score)
+            ? (r.confidence_score * 100).toFixed(2) + '%'
+            : 'N/A';
+          const clinician = [r.first_name, r.last_name].filter(Boolean).join(' ') || 'N/A';
+          const date = r.inferenced_at ? new Date(r.inferenced_at).toLocaleString() : 'N/A';
+          return `<tr class="result-row" data-result-id="${r.result_id}" tabindex="0" role="button" aria-label="Open result for ${escapeHtml(r.subject_code || '')}">
+            <td class="subject-code">${escapeHtml(r.subject_code || '-')}</td>
+            <td>${renderClassificationPill(r.predicted_class)}</td>
+            <td class="mono">${escapeHtml(confidence)}</td>
+            <td>${escapeHtml(clinician)}</td>
+            <td>${escapeHtml(date)}</td>
+          </tr>`;
+        }).join('');
+        attachResultRowHandlers();
+      }
+
+      function attachResultRowHandlers() {
+        document.querySelectorAll('[data-result-id]').forEach(row => {
+          const open = () => viewResult(Number(row.getAttribute('data-result-id')));
+          row.addEventListener('click', open);
+          row.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+          });
+        });
+      }
+
+      async function loadResults() {
+        const tbody = byId('results-table-body');
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="5" class="table-feedback"><div class="loading-state">
+            <div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>
+          </div></td></tr>`;
+        }
+        try {
+          const res = await fetch('/api/results');
+          appState.allResults = await res.json();
+          applyFilters();
+        } catch {
+          showToast('Failed to load results', 'error');
+        }
+      }
+
+      // ── Filter controls ──
+
+      byId('search-results')?.addEventListener('input', applyFilters);
+      byId('filter-classification')?.addEventListener('change', applyFilters);
+      byId('sort-results')?.addEventListener('change', applyFilters);
+      byId('reset-filters-btn')?.addEventListener('click', () => {
+        const s = byId('search-results');
+        const c = byId('filter-classification');
+        const o = byId('sort-results');
+        if (s) s.value = '';
+        if (c) c.value = 'all';
+        if (o) o.value = 'recent';
+        applyFilters();
+      });
+
+      // ── Export CSV ──
+
+      byId('export-results-btn')?.addEventListener('click', () => {
+        if (!appState.allResults.length) { showToast('No results to export', 'warning'); return; }
+        const rows = [
+          ['Subject Code', 'Classification', 'Confidence', 'Date'],
+          ...appState.allResults.map(r => [
+            r.subject_code,
+            r.predicted_class,
+            (r.confidence_score * 100).toFixed(2) + '%',
+            new Date(r.inferenced_at).toLocaleString()
+          ])
+        ];
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `assessments_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // ── Stub: viewResult (drawer added in next commit) ──
+
+      function viewResult(resultId) {
+        // placeholder - result detail drawer will open here
+      }
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          if (byId('sidebar')?.classList.contains('mobile-open')) toggleMobileSidebar(false);
+        }
+      });
+
       // ── Init ──
 
-      document.addEventListener('DOMContentLoaded', loadCurrentClinician);
+      async function initializePage() {
+        await loadCurrentClinician();
+        await loadResults();
+      }
+
+      document.addEventListener('DOMContentLoaded', initializePage);
     </script>
   </body>
 </html>
