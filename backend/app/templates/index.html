@@ -588,21 +588,41 @@
             background: linear-gradient(180deg, #fffaf5 0%, #fffdf9 100%);
         }
 
-        .quality-card .notice-list {
-            margin: 0;
-            padding-left: 1rem;
-            color: var(--text-700);
-            font-size: 0.88rem;
-            line-height: 1.5;
+        .quality-card .warning-rows {
             display: grid;
-            gap: 0.35rem;
+            gap: 0.45rem;
         }
 
-        .quality-card .notice-line {
-            margin: 0;
-            color: var(--text-700);
+        .quality-card .warning-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.55rem;
             font-size: 0.88rem;
+            color: var(--text-700);
             line-height: 1.5;
+        }
+
+        .severity-chip {
+            display: inline-block;
+            flex-shrink: 0;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 0.1em 0.45em;
+            border-radius: var(--radius-xs);
+            white-space: nowrap;
+        }
+
+        .severity-chip--high {
+            background: #fdf0e4;
+            color: var(--warning-600);
+            border: 1px solid #e9c99a;
+        }
+
+        .severity-chip--moderate {
+            background: #f5f8e8;
+            color: #5f7326;
+            border: 1px solid #c9d98a;
         }
 
         .section-toggle {
@@ -2673,29 +2693,50 @@
             const content = byId("quality-notice-content");
             if (!section || !title || !content) return;
 
+            // Each notice: { severity: "high"|"moderate", message: string }
             const notices = [];
             const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
+            const age = context.age !== "" && context.age !== null && context.age !== undefined
+                ? Number(context.age) : null;
 
-            if (sleepValue === null || Number.isNaN(sleepValue)) {
-                notices.push("Sleep duration was not recorded. Missing context can affect interpretation confidence.");
-            } else if (sleepValue < 4) {
-                notices.push("Reported sleep duration is under 4 hours, which may reduce EEG reliability for this session.");
+            // Confidence < 60% — High
+            if ((Number(confidenceScore) || 0) < 0.6) {
+                notices.push({ severity: "high", message: "Model confidence is below 60%. Consider corroborating with additional clinical and behavioral data." });
             }
 
-            if (context.caffeinated === "true") {
-                notices.push("Recent caffeine intake was reported and may influence EEG activity patterns.");
+            // Sleep < 4h — High
+            if (sleepValue !== null && !Number.isNaN(sleepValue) && sleepValue < 4) {
+                notices.push({ severity: "high", message: "Reported sleep duration is under 4 hours, which may reduce EEG reliability for this session." });
             }
 
-            if (context.medicated === "true") {
-                notices.push("Current medication status was reported and may affect EEG-derived features.");
+            // Medication yes + missing details — High
+            if (context.medicated === "true" && !String(context.medicationIntake || "").trim()) {
+                notices.push({ severity: "high", message: "Medication status is marked as yes, but medication details were not provided." });
+            }
 
-                if (!String(context.medicationIntake || "").trim()) {
-                    notices.push("Medication status is marked as yes, but medication details were not provided.");
+            // Age high severity: < 4 or > 15
+            if (age !== null && !Number.isNaN(age)) {
+                if (age < 4 || age > 15) {
+                    notices.push({ severity: "high", message: `Subject age (${age}) is outside the model's validated range of 7–12. Findings may not be reliable for this age group.` });
+                } else if (age < 7 || age > 12) {
+                    // Moderate: 5–6 or 13–14 (already know age is 4–15 here, so 4 and 15 fall in high above)
+                    notices.push({ severity: "moderate", message: `Subject age (${age}) is near the boundary of the model's validated range of 7–12. Interpret findings with additional caution.` });
                 }
             }
 
-            if ((Number(confidenceScore) || 0) < 0.6) {
-                notices.push("Model confidence is below 60%. Consider corroborating with additional clinical and behavioral data.");
+            // Sleep missing — Moderate
+            if (sleepValue === null || Number.isNaN(sleepValue)) {
+                notices.push({ severity: "moderate", message: "Sleep duration was not recorded. Missing context can affect interpretation confidence." });
+            }
+
+            // Caffeine yes — Moderate
+            if (context.caffeinated === "true") {
+                notices.push({ severity: "moderate", message: "Recent caffeine intake was reported and may influence EEG activity patterns." });
+            }
+
+            // Medication yes + details present — Moderate
+            if (context.medicated === "true" && String(context.medicationIntake || "").trim()) {
+                notices.push({ severity: "moderate", message: "Current medication status was reported and may affect EEG-derived features." });
             }
 
             if (notices.length === 0) {
@@ -2704,12 +2745,19 @@
                 return;
             }
 
+            // Sort: high first, then moderate
+            const order = { high: 0, moderate: 1 };
+            notices.sort((a, b) => order[a.severity] - order[b.severity]);
+
             title.textContent = notices.length > 1 ? "Warnings" : "Warning";
-            if (notices.length === 1) {
-                content.innerHTML = `<p class="notice-line">${escapeHtml(notices[0])}</p>`;
-            } else {
-                content.innerHTML = `<ul class="notice-list">${notices.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
-            }
+
+            const rows = notices.map(({ severity, message }) => {
+                const chipClass = severity === "high" ? "severity-chip--high" : "severity-chip--moderate";
+                const chipLabel = severity === "high" ? "High Severity" : "Moderate Severity";
+                return `<div class="warning-row"><span class="severity-chip ${chipClass}">${chipLabel}</span>${escapeHtml(message)}</div>`;
+            }).join("");
+
+            content.innerHTML = `<div class="warning-rows">${rows}</div>`;
             section.classList.remove("hidden");
         }
 
