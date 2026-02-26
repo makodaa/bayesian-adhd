@@ -538,6 +538,316 @@
         font-size: 0.94rem;
       }
 
+      .detail-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 32, 40, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease-out;
+        z-index: 1500;
+      }
+
+      .detail-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .result-detail-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(600px, 100vw);
+        height: 100vh;
+        background: #f8fbfc;
+        border-left: 1px solid #d8e5ec;
+        box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
+        transform: translateX(100%);
+        transition: transform 190ms ease-out;
+        z-index: 1800;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .result-detail-drawer.open {
+        transform: translateX(0);
+      }
+
+      .detail-header {
+        padding: 1rem 1rem 0.9rem;
+        border-bottom: 1px solid #dbe6ec;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+        background: #f5fafc;
+        flex-shrink: 0;
+      }
+
+      .detail-header h2 {
+        margin: 0;
+        font-size: 1.06rem;
+        color: var(--text-900);
+        line-height: 1.3;
+      }
+
+      .detail-header p {
+        margin: 0.26rem 0 0;
+        color: var(--text-700);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .icon-button {
+        border: 1px solid #d2dfe7;
+        background: #ffffff;
+        border-radius: var(--radius-sm);
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-700);
+        flex-shrink: 0;
+      }
+
+      .detail-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.9rem 1rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .detail-section {
+        border: 1px solid #dbe6ec;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .detail-section h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-900);
+      }
+
+      .detail-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .detail-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        font-size: 0.84rem;
+        color: var(--text-700);
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid #eef3f6;
+      }
+
+      .detail-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .detail-label {
+        color: var(--text-500);
+      }
+
+      .detail-value {
+        color: var(--text-900);
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+      }
+
+      .detail-footer {
+        border-top: 1px solid #dbe6ec;
+        background: #f8fbfc;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+
+      .confidence-mini-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.55rem;
+        font-size: 0.77rem;
+        color: var(--text-700);
+      }
+
+      .confidence-mini-head strong {
+        font-size: 0.77rem;
+        font-weight: 600;
+        color: var(--text-900);
+      }
+
+      .confidence-mini-track {
+        width: 100%;
+        height: 9px;
+        border-radius: var(--radius-pill);
+        background: #e2e9ee;
+        overflow: hidden;
+      }
+
+      .confidence-mini-fill {
+        height: 100%;
+      }
+
+      .confidence-mini-fill.high {
+        background: linear-gradient(90deg, #3f8f70, #56af87);
+      }
+
+      .confidence-mini-fill.mid {
+        background: linear-gradient(90deg, #bf7f35, #d39a4b);
+      }
+
+      .confidence-mini-fill.low {
+        background: linear-gradient(90deg, #b34b53, #ca6469);
+      }
+
+      /* Band power bars */
+      .band-bar-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .band-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.82rem;
+      }
+
+      .band-bar-label {
+        width: 56px;
+        color: var(--text-700);
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .band-bar-track {
+        flex: 1;
+        height: 8px;
+        border-radius: var(--radius-pill);
+        background: #e2e9ee;
+        overflow: hidden;
+      }
+
+      .band-bar-fill {
+        height: 100%;
+        border-radius: var(--radius-pill);
+        transition: width 0.5s ease-out;
+      }
+
+      .band-bar-value {
+        width: 48px;
+        text-align: right;
+        color: var(--text-900);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.79rem;
+      }
+
+      /* Topo grid */
+      .topo-toggle-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.6rem;
+      }
+
+      .topo-type-btn {
+        padding: 0.25rem 0.65rem;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-pill);
+        background: #fff;
+        color: var(--brand-700);
+        font-size: 0.76rem;
+        font-weight: 600;
+        transition: background-color 150ms, color 150ms;
+        cursor: pointer;
+      }
+
+      .topo-type-btn.active {
+        background: var(--brand-700);
+        color: #fff;
+        border-color: var(--brand-700);
+      }
+
+      .topo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.4rem;
+      }
+
+      .topo-card {
+        border: 1px solid var(--border-card);
+        border-radius: var(--radius-sm);
+        background: #fff;
+        padding: 0.35rem;
+        text-align: center;
+      }
+
+      .topo-card img {
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-xs);
+      }
+
+      /* Temporal plot cards */
+      .temporal-plot-card {
+        border: 1px solid var(--border-card);
+        border-radius: var(--radius-sm);
+        background: #fff;
+        overflow: hidden;
+        margin-bottom: 0.4rem;
+      }
+
+      .temporal-plot-header {
+        padding: 0.4rem 0.65rem;
+        background: #f4f8fa;
+        border-bottom: 1px solid #e6edf1;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .temporal-plot-header:hover {
+        background: #edf4f8;
+      }
+
+      .temporal-plot-body {
+        padding: 0.4rem;
+      }
+
+      .temporal-plot-body.collapsed {
+        display: none;
+      }
+
+      .temporal-plot-body img {
+        width: 100%;
+        height: auto;
+      }
+
       .loading-state {
         display: grid;
         gap: 0.35rem;
@@ -633,6 +943,15 @@
           grid-column: auto;
           justify-content: flex-end;
         }
+
+        .detail-footer {
+          justify-content: stretch;
+        }
+
+        .detail-footer .btn-primary-app,
+        .detail-footer .btn-secondary-app {
+          flex: 1 1 auto;
+        }
       }
     </style>
   </head>
@@ -640,6 +959,7 @@
   <body>
     <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+    <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -773,6 +1093,30 @@
         </main>
       </div>
     </div>
+
+    <!-- Result Detail Drawer -->
+    <aside class="result-detail-drawer" id="result-detail-drawer" aria-hidden="true" aria-labelledby="result-detail-title">
+      <div class="detail-header">
+        <div>
+          <h2 id="result-detail-title">Result Details</h2>
+          <p id="result-detail-subtitle">Loading assessment record...</p>
+        </div>
+        <button id="close-result-detail-btn" class="icon-button" type="button" aria-label="Close result details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="detail-body" id="result-detail-body">
+        <!-- populated by JS -->
+      </div>
+      <div class="detail-footer">
+        <button id="result-download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
+        <button id="close-result-detail-footer-btn" type="button" class="btn-secondary-app">Close</button>
+      </div>
+    </aside>
 
     <script>
       // ── Utilities ──
@@ -992,15 +1336,363 @@
         URL.revokeObjectURL(url);
       });
 
-      // ── Stub: viewResult (drawer added in next commit) ──
+      // ── Drawer lifecycle ──
 
-      function viewResult(resultId) {
-        // placeholder - result detail drawer will open here
+      let currentResultId = null;
+
+      function openResultDrawer() {
+        const drawer = byId('result-detail-drawer');
+        const backdrop = byId('detail-backdrop');
+        if (!drawer || !backdrop) return;
+        drawer.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+        backdrop.classList.add('open');
       }
 
+      function closeResultDrawer() {
+        const drawer = byId('result-detail-drawer');
+        const backdrop = byId('detail-backdrop');
+        if (!drawer || !backdrop) return;
+        drawer.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+        backdrop.classList.remove('open');
+      }
+
+      byId('close-result-detail-btn')?.addEventListener('click', closeResultDrawer);
+      byId('close-result-detail-footer-btn')?.addEventListener('click', closeResultDrawer);
+      byId('detail-backdrop')?.addEventListener('click', closeResultDrawer);
       document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
           if (byId('sidebar')?.classList.contains('mobile-open')) toggleMobileSidebar(false);
+          closeResultDrawer();
+        }
+      });
+
+      // ── Band colors ──
+
+      const BAND_COLORS = {
+        delta: '#9C27B0',
+        theta: '#2196F3',
+        alpha: '#4CAF50',
+        beta:  '#FF9800',
+        gamma: '#F44336',
+      };
+
+      // ── Result detail rendering ──
+
+      function renderResultDetail(data) {
+        const body = byId('result-detail-body');
+        if (!body) return;
+
+        byId('result-detail-title').textContent = `Result: ${data.subject_code || 'Details'}`;
+        byId('result-detail-subtitle').textContent =
+          data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : 'Assessment record';
+
+        // Confidence bar
+        const conf = Number(data.confidence_score);
+        const confRatio = Number.isFinite(conf) ? Math.max(0, Math.min(100, conf * 100)) : 0;
+        const confState = getConfidenceState(Number.isFinite(conf) ? conf : 0);
+        const confText = Number.isFinite(conf) ? `${confRatio.toFixed(1)}% (${confState.label})` : 'N/A';
+
+        // Classification section
+        const classificationSection = `
+          <section class="detail-section">
+            <h3>Classification</h3>
+            <div>${renderClassificationPill(data.predicted_class)}</div>
+            <div>
+              <div class="confidence-mini-head">
+                <span>Confidence</span>
+                <strong class="mono">${escapeHtml(confText)}</strong>
+              </div>
+              <div class="confidence-mini-track">
+                <div class="confidence-mini-fill ${confState.className}" style="width:${confRatio.toFixed(1)}%"></div>
+              </div>
+            </div>
+            <ul class="detail-list">
+              <li class="detail-item">
+                <span class="detail-label">Clinician</span>
+                <span class="detail-value">${escapeHtml([data.clinician_first_name, data.clinician_middle_name, data.clinician_last_name].filter(Boolean).join(' ') || 'N/A')}</span>
+              </li>
+              <li class="detail-item">
+                <span class="detail-label">Date</span>
+                <span class="detail-value">${escapeHtml(data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : 'N/A')}</span>
+              </li>
+            </ul>
+          </section>`;
+
+        // Subject & Recording section
+        const subjectItems = [
+          ['Subject Code', data.subject_code],
+          ['Age', data.age != null ? String(data.age) + ' years' : null],
+          ['Gender', data.gender],
+          ['File', data.file_name],
+          ['Sleep Hours', data.sleep_hours != null ? String(data.sleep_hours) + ' h' : null],
+          ['Caffeinated', data.caffeinated != null ? (data.caffeinated ? 'Yes' : 'No') : null],
+          ['Medicated', data.medicated != null ? (data.medicated ? 'Yes' : 'No') : null],
+          ['Medication Details', data.medication_intake],
+          ['Notes', data.notes],
+        ].filter(([, v]) => v != null && v !== '');
+
+        const subjectSection = `
+          <section class="detail-section">
+            <h3>Subject &amp; Recording</h3>
+            <ul class="detail-list">
+              ${subjectItems.map(([label, value]) => `
+                <li class="detail-item">
+                  <span class="detail-label">${escapeHtml(label)}</span>
+                  <span class="detail-value">${escapeHtml(String(value))}</span>
+                </li>`).join('')}
+            </ul>
+          </section>`;
+
+        // Band power section
+        const averageBandPowers = {};
+        if (data.band_powers && data.band_powers.length > 0) {
+          data.band_powers.forEach(bp => {
+            if (!averageBandPowers[bp.frequency_band]) averageBandPowers[bp.frequency_band] = [];
+            averageBandPowers[bp.frequency_band].push(bp.relative_power);
+          });
+          Object.keys(averageBandPowers).forEach(band => {
+            const vals = averageBandPowers[band];
+            averageBandPowers[band] = vals.reduce((a, b) => a + b, 0) / vals.length;
+          });
+        }
+        const BAND_ORDER = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+        const bandBars = BAND_ORDER
+          .filter(band => averageBandPowers[band] !== undefined)
+          .map(band => {
+            const pct = (averageBandPowers[band] * 100).toFixed(1);
+            const color = BAND_COLORS[band] || '#607484';
+            return `<div class="band-bar-row">
+              <span class="band-bar-label">${escapeHtml(band.charAt(0).toUpperCase() + band.slice(1))}</span>
+              <div class="band-bar-track">
+                <div class="band-bar-fill" style="width:${pct}%;background:${color};"></div>
+              </div>
+              <span class="band-bar-value">${pct}%</span>
+            </div>`;
+          }).join('');
+
+        const bandSection = `
+          <section class="detail-section">
+            <h3>Spectral Band Power</h3>
+            ${bandBars ? `<div class="band-bar-wrap">${bandBars}</div>` : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No band power data available.</p>'}
+          </section>`;
+
+        // Clinical ratios section
+        let ratioItems = '';
+        if (data.ratios && data.ratios.length > 0) {
+          ratioItems = data.ratios.map(ratio => {
+            const displayName = ratio.ratio_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `<li class="detail-item">
+              <span class="detail-label">${escapeHtml(displayName)}</span>
+              <span class="detail-value mono">${escapeHtml(ratio.ratio_value.toFixed(3))}</span>
+            </li>`;
+          }).join('');
+        }
+        const ratioSection = `
+          <section class="detail-section">
+            <h3>Clinical Ratios</h3>
+            ${ratioItems
+              ? `<ul class="detail-list">${ratioItems}</ul>`
+              : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No ratio data available.</p>'}
+          </section>`;
+
+        // Notes & disclaimers section
+        const disclaimers = [];
+        const sleepNum = data.sleep_hours != null ? Number(data.sleep_hours) : null;
+        if (sleepNum !== null && !isNaN(sleepNum) && sleepNum < 4) {
+          disclaimers.push('Subject has less than 4 hours of sleep, which may affect EEG recordings and results.');
+        }
+        if (data.caffeinated === true) {
+          disclaimers.push('Subject had recent caffeine intake, which can alter EEG recordings and may affect analysis.');
+        }
+        if (data.medicated === true) {
+          disclaimers.push('Subject is medicated, which can impact EEG recordings and may affect analysis.');
+        }
+
+        const notesSection = `
+          <section class="detail-section">
+            <h3>Notes &amp; Disclaimers</h3>
+            <div style="background:#fff3cd;border:1px solid #e9d87a;padding:0.65rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;margin-bottom:${disclaimers.length ? '0.5rem' : '0'}">
+              <strong>Important:</strong> This system does not provide a definitive diagnosis. Results are for informational purposes only and must not be used as the sole basis for clinical decisions.
+            </div>
+            ${disclaimers.length ? `<div style="background:#fff8e6;border:1px solid #f0d080;padding:0.55rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;">
+              <ul style="margin:0;padding-left:1.2rem;">
+                ${disclaimers.map(d => `<li style="margin:0.2rem 0">${escapeHtml(d)}</li>`).join('')}
+              </ul>
+            </div>` : ''}
+          </section>`;
+
+        // Topo maps placeholder (populated async)
+        const topoSection = `
+          <section class="detail-section" id="drawer-topo-section">
+            <h3>Topographic Maps</h3>
+            <div class="topo-toggle-row" id="drawer-topo-toggle">
+              <button class="topo-type-btn active" data-topo="absolute">Absolute Power</button>
+              <button class="topo-type-btn" data-topo="relative">Relative Power</button>
+              <button class="topo-type-btn" data-topo="tbr">TBR</button>
+            </div>
+            <div id="drawer-topo-absolute" class="topo-grid"></div>
+            <div id="drawer-topo-relative" class="topo-grid hidden"></div>
+            <div id="drawer-topo-tbr" class="hidden"></div>
+            <div id="drawer-topo-loading" class="loading-state">
+              <div class="skeleton-row"></div><div class="skeleton-row"></div>
+            </div>
+          </section>`;
+
+        // Temporal biomarkers placeholder (populated async)
+        const temporalSection = `
+          <section class="detail-section" id="drawer-temporal-section">
+            <h3>Temporal Biomarkers</h3>
+            <div id="drawer-temporal-plots"></div>
+            <div id="drawer-temporal-loading" class="loading-state">
+              <div class="skeleton-row"></div><div class="skeleton-row"></div>
+            </div>
+          </section>`;
+
+        body.innerHTML = classificationSection + subjectSection + bandSection + ratioSection + notesSection + topoSection + temporalSection;
+
+        // Setup topo toggle
+        document.querySelectorAll('[data-topo]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-topo');
+            document.querySelectorAll('[data-topo]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            ['absolute', 'relative', 'tbr'].forEach(t => {
+              const el = byId(`drawer-topo-${t}`);
+              if (el) el.classList.toggle('hidden', t !== type);
+            });
+          });
+        });
+      }
+
+      // ── Topo maps ──
+
+      async function loadDrawerTopoMaps(resultId) {
+        const loading = byId('drawer-topo-loading');
+        const absGrid = byId('drawer-topo-absolute');
+        const relGrid = byId('drawer-topo-relative');
+        const tbrDiv  = byId('drawer-topo-tbr');
+        if (!absGrid) return;
+
+        try {
+          const res = await fetch(`/api/topographic_maps/${resultId}`);
+          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          const data = await res.json();
+          const BAND_ORDER = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+
+          let absHtml = '';
+          BAND_ORDER.forEach(band => {
+            const img = data.absolute_power_maps[band];
+            if (img) absHtml += `<div class="topo-card"><img src="${img}" alt="${band} absolute" loading="lazy" /></div>`;
+          });
+          absGrid.innerHTML = absHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
+
+          let relHtml = '';
+          BAND_ORDER.forEach(band => {
+            const img = data.relative_power_maps[band];
+            if (img) relHtml += `<div class="topo-card"><img src="${img}" alt="${band} relative" loading="lazy" /></div>`;
+          });
+          relGrid.innerHTML = relHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
+
+          if (data.tbr_map) {
+            tbrDiv.innerHTML = `<div class="topo-grid" style="max-width:200px;"><div class="topo-card"><img src="${data.tbr_map}" alt="TBR" loading="lazy" /></div></div>`;
+          } else {
+            tbrDiv.innerHTML = '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No TBR map</p>';
+          }
+        } catch (err) {
+          if (absGrid) absGrid.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load maps: ${escapeHtml(err.message)}</p>`;
+        } finally {
+          if (loading) loading.remove();
+        }
+      }
+
+      // ── Temporal biomarkers ──
+
+      async function loadDrawerTemporalBiomarkers(resultId) {
+        const loading = byId('drawer-temporal-loading');
+        const container = byId('drawer-temporal-plots');
+        if (!container) return;
+
+        try {
+          const res = await fetch(`/api/temporal_biomarkers/${resultId}`);
+          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          const data = await res.json();
+
+          if (!data.plots || data.plots.length === 0) {
+            container.innerHTML = '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No temporal plots available.</p>';
+          } else {
+            container.innerHTML = data.plots.map((plot, i) => {
+              const collapsed = i > 0 ? 'collapsed' : '';
+              const chevron = i > 0 ? '&#9654;' : '&#9660;';
+              return `<div class="temporal-plot-card">
+                <div class="temporal-plot-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.chevron').innerHTML=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
+                  <span>${escapeHtml(plot.group)}</span>
+                  <span class="chevron">${chevron}</span>
+                </div>
+                <div class="temporal-plot-body ${collapsed}">
+                  <img src="${plot.image}" alt="${escapeHtml(plot.group)}" loading="lazy" />
+                </div>
+              </div>`;
+            }).join('');
+          }
+        } catch (err) {
+          if (container) container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load temporal biomarkers: ${escapeHtml(err.message)}</p>`;
+        } finally {
+          if (loading) loading.remove();
+        }
+      }
+
+      // ── View result ──
+
+      async function viewResult(resultId) {
+        currentResultId = null;
+        byId('result-download-pdf-btn').disabled = true;
+        byId('result-detail-title').textContent = 'Result Details';
+        byId('result-detail-subtitle').textContent = 'Loading...';
+        byId('result-detail-body').innerHTML = `
+          <div class="loading-state">
+            <div class="skeleton-row"></div><div class="skeleton-row"></div>
+            <div class="skeleton-row"></div><div class="skeleton-row"></div>
+          </div>`;
+        openResultDrawer();
+
+        try {
+          const res = await fetch(`/api/results/${resultId}`);
+          const data = await res.json();
+          if (data.error) { showToast(data.error, 'error'); closeResultDrawer(); return; }
+          currentResultId = resultId;
+          byId('result-download-pdf-btn').disabled = false;
+          renderResultDetail(data);
+          loadDrawerTopoMaps(resultId);
+          loadDrawerTemporalBiomarkers(resultId);
+        } catch {
+          showToast('Failed to load result details', 'error');
+          closeResultDrawer();
+        }
+      }
+
+      // ── PDF download ──
+
+      byId('result-download-pdf-btn')?.addEventListener('click', async () => {
+        if (!currentResultId) return;
+        const btn = byId('result-download-pdf-btn');
+        btn.disabled = true; btn.textContent = 'Generating...';
+        try {
+          const res = await fetch(`/api/results/${currentResultId}/pdf`);
+          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const cd = res.headers.get('Content-Disposition');
+          a.download = cd?.match(/filename="?([^"]+)"?/)?.[1] || `Report_${currentResultId}.pdf`;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          showToast('Failed to download PDF: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false; btn.textContent = 'Download PDF Report';
         }
       });
 
