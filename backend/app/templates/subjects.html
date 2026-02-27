@@ -1428,10 +1428,10 @@
             const recentThreshold = Date.now() - (30 * 24 * 60 * 60 * 1000);
             const recentActivity = subjects.filter((subject) => toTimestamp(subject.last_update) >= recentThreshold).length;
 
-            byId("metric-total-subjects").textContent = String(total);
-            byId("metric-assessed-subjects").textContent = String(assessed);
-            byId("metric-adhd-related").textContent = String(adhdRelated);
-            byId("metric-recent-activity").textContent = String(recentActivity);
+            byId("metric-total-subjects") && (byId("metric-total-subjects").textContent = String(total));
+            byId("metric-assessed-subjects") && (byId("metric-assessed-subjects").textContent = String(assessed));
+            byId("metric-adhd-related") && (byId("metric-adhd-related").textContent = String(adhdRelated));
+            byId("metric-recent-activity") && (byId("metric-recent-activity").textContent = String(recentActivity));
         }
 
         function attachSubjectRowHandlers() {
