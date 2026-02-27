@@ -77,6 +77,6 @@ class ClinicianService:
                 'occupation': c.get('occupation', ''),
                 'assessments_count': c.get('assessments_count', 0),
                 'last_activity': c.get('last_activity'),
-                'is_active': c.get('is_active', False)
+                'is_active': True
             })
         return formatted

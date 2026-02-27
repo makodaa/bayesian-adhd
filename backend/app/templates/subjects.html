@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BayesADHD - Subject Registry</title>
+    <title>BayesADHD - Subject Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
     <style>
@@ -145,31 +145,90 @@
             flex-direction: column;
             padding: 1rem 0.65rem;
             z-index: 1200;
+            overflow: hidden;
+            transition: width 200ms ease-out;
+        }
+
+        .app-sidebar.expanded {
+            width: 210px;
         }
 
         .sidebar-brand {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 1.2rem;
+            gap: 0.5rem;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .sidebar-brand-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .brand-mark {
             display: inline-flex;
-            width: 42px;
-            height: 42px;
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
             border-radius: var(--radius-md);
             align-items: center;
             justify-content: center;
-            background: linear-gradient(145deg, #4b9ab8, #2f6e86);
             font-weight: 700;
+            font-size: 1rem;
             letter-spacing: 0.04em;
             color: #f5fbfe;
+            background: none;
+        }
+
+        .brand-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #e5f2f7;
+            white-space: nowrap;
+            overflow: hidden;
+            opacity: 0;
+            max-width: 0;
+            transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        }
+
+        .app-sidebar.expanded .brand-name {
+            opacity: 1;
+            max-width: 140px;
+        }
+
+        .sidebar-expand-btn {
+            background: none;
+            border: none;
+            color: rgba(230, 246, 253, 0.7);
+            padding: 0.25rem;
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: color 150ms ease-out, background-color 150ms ease-out;
+        }
+
+        .sidebar-expand-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-expand-btn svg {
+            width: 16px;
+            height: 16px;
         }
 
         .sidebar-nav {
-            flex: 1;
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: 0.35rem;
         }
 
@@ -181,8 +240,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 48px;
-            transition: background-color 170ms ease-out, color 170ms ease-out;
+            height: 44px;
+            gap: 0;
+            overflow: hidden;
+            transition: background-color 170ms ease-out, color 170ms ease-out, gap 200ms ease-out, justify-content 200ms ease-out;
+        }
+
+        .app-sidebar.expanded .sidebar-link {
+            justify-content: flex-start;
+            gap: 0.65rem;
+            padding: 0 0.7rem;
         }
 
         .sidebar-link:hover {
@@ -200,18 +267,29 @@
             width: 22px;
             height: 22px;
             stroke-width: 1.7;
+            flex-shrink: 0;
         }
 
         .sidebar-link span {
-            position: absolute;
+            font-size: 0.89rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
             opacity: 0;
-            pointer-events: none;
+            max-width: 0;
+            transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        }
+
+        .app-sidebar.expanded .sidebar-link span {
+            opacity: 1;
+            max-width: 140px;
         }
 
         .sidebar-footer {
             border-top: 1px solid rgba(230, 246, 253, 0.2);
             padding-top: 0.8rem;
-            text-align: center;
+            margin-top: auto;
+            overflow: hidden;
         }
 
         .sidebar-user-label {
@@ -220,6 +298,13 @@
             font-size: 0.68rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            display: none;
+        }
+
+        .app-sidebar.expanded .sidebar-user-label {
+            display: block;
         }
 
         .sidebar-user-name {
@@ -228,21 +313,61 @@
             color: #f0f9fc;
             word-break: break-word;
             line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            display: none;
+        }
+
+        .app-sidebar.expanded .sidebar-user-name {
+            display: block;
         }
 
         .sidebar-logout {
-            border: 1px solid rgba(220, 243, 250, 0.5);
-            color: #f0f9fc;
+            border: 1px solid rgba(220, 243, 250, 0.35);
+            color: rgba(230, 246, 253, 0.8);
             background: transparent;
             border-radius: var(--radius-sm);
-            padding: 0.32rem 0.7rem;
+            padding: 0;
+            width: 36px;
+            height: 36px;
             font-size: 0.76rem;
             font-weight: 600;
-            transition: background-color 170ms ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            overflow: hidden;
+            transition: background-color 170ms ease-out, color 170ms ease-out, width 200ms ease-out, padding 200ms ease-out;
+            white-space: nowrap;
+        }
+
+        .app-sidebar.expanded .sidebar-logout {
+            width: 100%;
+            padding: 0.32rem 0.7rem;
+            gap: 0.5rem;
+        }
+
+        .sidebar-logout svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logout-label {
+            overflow: hidden;
+            max-width: 0;
+            opacity: 0;
+            transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        }
+
+        .app-sidebar.expanded .sidebar-logout-label {
+            max-width: 140px;
+            opacity: 1;
         }
 
         .sidebar-logout:hover {
             background: rgba(240, 249, 252, 0.14);
+            color: #ffffff;
         }
 
         .app-main {
@@ -848,7 +973,7 @@
 
         @media (max-width: 992px) {
             .app-sidebar {
-                width: 250px;
+                width: 220px !important;
                 position: fixed;
                 transform: translateX(-100%);
                 transition: transform 190ms ease-out;
@@ -860,21 +985,35 @@
             }
 
             .sidebar-link {
-                justify-content: flex-start;
-                gap: 0.65rem;
+                justify-content: flex-start !important;
+                gap: 0.65rem !important;
                 padding: 0 0.7rem;
             }
 
             .sidebar-link span {
-                position: static;
-                opacity: 1;
-                pointer-events: auto;
-                font-size: 0.89rem;
-                font-weight: 600;
+                max-width: 160px !important;
+                opacity: 1 !important;
             }
 
-            .sidebar-footer {
-                text-align: left;
+            .brand-name {
+                max-width: 160px !important;
+                opacity: 1 !important;
+            }
+
+            .sidebar-user-label,
+            .sidebar-user-name {
+                display: block !important;
+            }
+
+            .sidebar-logout {
+                width: 100% !important;
+                padding: 0.32rem 0.7rem !important;
+                gap: 0.5rem !important;
+            }
+
+            .sidebar-logout-label {
+                max-width: 160px !important;
+                opacity: 1 !important;
             }
 
             .menu-toggle {
@@ -944,7 +1083,17 @@
     <div class="app-shell">
         <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
             <div class="sidebar-brand">
-                <span class="brand-mark">BA</span>
+                <div class="sidebar-brand-inner">
+                    <span class="brand-mark">B</span>
+                    <span class="brand-name">BayesianADHD</span>
+                </div>
+                <button class="sidebar-expand-btn" id="sidebar-expand-btn" type="button" aria-label="Toggle sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
@@ -985,7 +1134,14 @@
             <div class="sidebar-footer">
                 <p class="sidebar-user-label">Signed in as</p>
                 <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
-                <button id="logout-btn" class="sidebar-logout" type="button">Logout</button>
+                <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span class="sidebar-logout-label" id="sidebar-logout-name">Logout</span>
+                </button>
             </div>
         </aside>
 
@@ -1002,7 +1158,7 @@
                             </svg>
                         </button>
                         <div>
-                            <h1>Subject Registry</h1>
+                            <h1>Subject Management</h1>
                             <p>Browse enrolled subjects, review latest EEG classifications, and open detailed history for follow-up context.</p>
                         </div>
                     </div>
@@ -1016,36 +1172,7 @@
             <main class="page-body">
                 <section class="section-shell">
                     <div class="section-head">
-                        <h2>Registry Snapshot</h2>
-                        <p>Quick totals to track coverage and recent activity before you drill into individual records.</p>
-                    </div>
-                    <div class="summary-metrics">
-                        <article class="metric-card">
-                            <span class="metric-label">Total Subjects</span>
-                            <span class="metric-value" id="metric-total-subjects">0</span>
-                            <span class="metric-copy">All enrolled subject records</span>
-                        </article>
-                        <article class="metric-card">
-                            <span class="metric-label">With Assessments</span>
-                            <span class="metric-value" id="metric-assessed-subjects">0</span>
-                            <span class="metric-copy">Subjects with at least one EEG result</span>
-                        </article>
-                        <article class="metric-card">
-                            <span class="metric-label">ADHD-Related Latest</span>
-                            <span class="metric-value" id="metric-adhd-related">0</span>
-                            <span class="metric-copy">Latest outcome contains ADHD subtype label</span>
-                        </article>
-                        <article class="metric-card">
-                            <span class="metric-label">Active (30 Days)</span>
-                            <span class="metric-value" id="metric-recent-activity">0</span>
-                            <span class="metric-copy">Subjects with recent assessment activity</span>
-                        </article>
-                    </div>
-                </section>
-
-                <section class="section-shell">
-                    <div class="section-head">
-                        <h2>Subject Directory</h2>
+                        <h2>List of all subjects</h2>
                         <p>Select a subject to inspect demographics and previous EEG classifications from this clinical session history.</p>
                     </div>
 
@@ -1615,6 +1742,8 @@
 
                 const me = await response.json();
                 byId("sidebar-clinician-name").textContent = me.clinician_name || "Clinician";
+                const logoutLabel = byId("sidebar-logout-name");
+                if (logoutLabel) logoutLabel.textContent = me.clinician_name || "Logout";
                 sessionStorage.setItem("clinician_name", me.clinician_name || "Clinician");
                 sessionStorage.setItem("clinician_occupation", me.clinician_occupation || "");
             } catch (error) {
@@ -1637,6 +1766,11 @@
         function setupEventHandlers() {
             byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar(true));
             byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+
+            byId("sidebar-expand-btn")?.addEventListener("click", () => {
+                const sidebar = byId("sidebar");
+                if (sidebar) sidebar.classList.toggle("expanded");
+            });
             byId("close-detail-btn")?.addEventListener("click", closeDetailDrawer);
             byId("detail-backdrop")?.addEventListener("click", closeDetailDrawer);
 
