@@ -366,9 +366,13 @@ def create_eeg_visualization_context():
 @app.route("/api/eeg_visualizations/<context_id>/<band>.png", methods=["GET"])
 @login_required
 def get_eeg_visualization_image(context_id: str, band: str):
-    """Return a cached PNG preview for one EEG band."""
+    """Return a cached PNG for one EEG band. Supports ?quality=preview|detail."""
     if band not in VisualizationService.BAND_FILTERS:
         return jsonify({"error": "Invalid EEG type"}), 400
+
+    quality = request.args.get("quality", "preview")
+    if quality not in ("preview", "detail"):
+        quality = "preview"
 
     clinician_id = session.get("clinician_id")
     if not isinstance(clinician_id, int):
@@ -376,17 +380,22 @@ def get_eeg_visualization_image(context_id: str, band: str):
 
     try:
         logger.info(
-            f"Visualization request: clinician={clinician_id}, context={context_id}, band={band}"
+            f"Visualization request: clinician={clinician_id}, context={context_id}, "
+            f"band={band}, quality={quality}"
         )
         cached_path = visualization_cache_service.get_cached_image_path(
             context_id=context_id,
             clinician_id=clinician_id,
             band=band,
+            quality=quality,
         )
         if cached_path is not None:
-            logger.info(f"Visualization cache HIT for context={context_id}, band={band}")
+            logger.info(
+                f"Visualization cache HIT for context={context_id}, band={band}, quality={quality}"
+            )
             response = send_file(cached_path, mimetype="image/png", conditional=True)
             response.headers["X-Visualization-Cache"] = "HIT"
+            response.headers["X-Visualization-Quality"] = quality
             response.headers["Cache-Control"] = "private, max-age=3600"
             return response
 
@@ -397,21 +406,32 @@ def get_eeg_visualization_image(context_id: str, band: str):
         df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
         file_service.validate_eeg_data(df)
 
-        image_bytes = visualization_service.render_preview_png(
-            df,
-            cast(BandFilter, band),
-        )
+        if quality == "detail":
+            image_bytes = visualization_service.render_detail_png(
+                df,
+                cast(BandFilter, band),
+            )
+        else:
+            image_bytes = visualization_service.render_preview_png(
+                df,
+                cast(BandFilter, band),
+            )
+
         image_path = visualization_cache_service.store_image(
             context_id=context_id,
             clinician_id=clinician_id,
             band=band,
             image_bytes=image_bytes,
+            quality=quality,
         )
 
-        logger.info(f"Visualization cache MISS for context={context_id}, band={band}")
+        logger.info(
+            f"Visualization cache MISS for context={context_id}, band={band}, quality={quality}"
+        )
 
         response = send_file(image_path, mimetype="image/png", conditional=True)
         response.headers["X-Visualization-Cache"] = "MISS"
+        response.headers["X-Visualization-Quality"] = quality
         response.headers["Cache-Control"] = "private, max-age=3600"
         return response
     except ContextAccessError:

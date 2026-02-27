@@ -10,12 +10,13 @@ from ..config import SAMPLE_RATE
 from ..core.logging_config import get_app_logger
 
 BandFilter = Literal["filtered", "delta", "theta", "alpha", "beta", "gamma", "raw"]
+RenderQuality = Literal["preview", "detail"]
 
 logger = get_app_logger(__name__)
 
 
 class VisualizationService:
-    """Generate lightweight EEG preview visualizations."""
+    """Generate EEG preview and high-quality detail visualizations."""
 
     BAND_FILTERS: dict[BandFilter, tuple[float, float] | tuple[None, None]] = {
         "filtered": (0.5, 40),
@@ -27,8 +28,13 @@ class VisualizationService:
         "raw": (None, None),
     }
 
+    # Preview profile — fast, lightweight
     PREVIEW_DPI = 130
     PREVIEW_MAX_POINTS = 2500
+
+    # Detail profile — high-quality for modal full-screen view
+    DETAIL_DPI = 220
+    DETAIL_MAX_POINTS = 8000
 
     @staticmethod
     def _downsample(data: np.ndarray, max_points: int) -> tuple[np.ndarray, int]:
@@ -79,8 +85,15 @@ class VisualizationService:
             logger.warning("Signal too short for preview filtering; returning unfiltered data")
             return data
 
-    def render_preview_png(self, df: pd.DataFrame, eeg_type: BandFilter) -> bytes:
-        """Render a low-cost stacked EEG preview and return PNG bytes."""
+    def _render_png(
+        self,
+        df: pd.DataFrame,
+        eeg_type: BandFilter,
+        dpi: int,
+        max_points: int,
+        quality: RenderQuality = "preview",
+    ) -> bytes:
+        """Render a stacked EEG visualization and return PNG bytes."""
         if eeg_type not in self.BAND_FILTERS:
             raise ValueError("Invalid EEG type")
 
@@ -93,7 +106,7 @@ class VisualizationService:
 
         low, high = self.BAND_FILTERS[eeg_type]
         filtered = self._apply_filter(signal_data, low, high)
-        reduced, step = self._downsample(filtered, self.PREVIEW_MAX_POINTS)
+        reduced, step = self._downsample(filtered, max_points)
         normalized = self._normalize_signals(reduced)
 
         sample_count, channel_count = normalized.shape
@@ -105,20 +118,31 @@ class VisualizationService:
         height = min(max(4.0, 1.2 + channel_count * 0.32), 14.0)
         width = min(max(10.0, time_axis[-1] / 5.0 if len(time_axis) > 1 else 10.0), 18.0)
 
-        fig, ax = plt.subplots(1, 1, figsize=(width, height), dpi=self.PREVIEW_DPI)
+        # Detail mode: scale up figure dimensions proportionally
+        if quality == "detail":
+            scale = 1.55
+            height = min(height * scale, 22.0)
+            width = min(width * scale, 28.0)
+
+        linewidth = 0.45 if quality == "detail" else 0.6
+        fontsize_ticks = 8 if quality == "detail" else 7
+        fontsize_xlabel = 9 if quality == "detail" else 8
+        fontsize_title = 11 if quality == "detail" else 10
+
+        fig, ax = plt.subplots(1, 1, figsize=(width, height), dpi=dpi)
         for idx in range(channel_count):
             ax.plot(
                 time_axis,
                 normalized[:, idx] + offsets[idx],
-                linewidth=0.6,
+                linewidth=linewidth,
                 color="#1f77b4",
                 alpha=0.9,
             )
 
         ax.set_yticks(offsets)
-        ax.set_yticklabels(channel_names, fontsize=7)
-        ax.set_xlabel("Time (seconds)", fontsize=8)
-        ax.set_title(f"{eeg_type.capitalize()} EEG Preview", fontsize=10)
+        ax.set_yticklabels(channel_names, fontsize=fontsize_ticks)
+        ax.set_xlabel("Time (seconds)", fontsize=fontsize_xlabel)
+        ax.set_title(f"{eeg_type.capitalize()} EEG — {quality.capitalize()} View", fontsize=fontsize_title)
         ax.grid(axis="x", alpha=0.25)
         ax.margins(x=0)
         ax.spines["top"].set_visible(False)
@@ -133,7 +157,7 @@ class VisualizationService:
         fig.savefig(
             buffer,
             format="png",
-            dpi=self.PREVIEW_DPI,
+            dpi=dpi,
             bbox_inches="tight",
             facecolor="white",
             edgecolor="none",
@@ -141,3 +165,21 @@ class VisualizationService:
         plt.close(fig)
         buffer.seek(0)
         return buffer.read()
+
+    def render_preview_png(self, df: pd.DataFrame, eeg_type: BandFilter) -> bytes:
+        """Render a low-cost stacked EEG preview and return PNG bytes."""
+        return self._render_png(
+            df, eeg_type,
+            dpi=self.PREVIEW_DPI,
+            max_points=self.PREVIEW_MAX_POINTS,
+            quality="preview",
+        )
+
+    def render_detail_png(self, df: pd.DataFrame, eeg_type: BandFilter) -> bytes:
+        """Render a high-quality EEG visualization for full-screen viewing."""
+        return self._render_png(
+            df, eeg_type,
+            dpi=self.DETAIL_DPI,
+            max_points=self.DETAIL_MAX_POINTS,
+            quality="detail",
+        )

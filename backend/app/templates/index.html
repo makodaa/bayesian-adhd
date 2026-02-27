@@ -1113,6 +1113,225 @@
             max-width: 100%;
             max-height: 430px;
             border-radius: var(--radius-xs);
+            cursor: zoom-in;
+        }
+
+        /* ── EEG Expand button ── */
+        .viz-expand-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid var(--border-card);
+            background: var(--surface-card);
+            color: var(--text-700);
+            border-radius: var(--radius-sm);
+            font-size: 0.77rem;
+            font-weight: 600;
+            padding: 0.28rem 0.58rem;
+            cursor: pointer;
+            transition: background 140ms ease-out, color 140ms ease-out;
+        }
+
+        .viz-expand-btn:hover {
+            background: var(--brand-100);
+            color: var(--brand-700);
+            border-color: var(--brand-500);
+        }
+
+        .viz-expand-btn svg {
+            flex-shrink: 0;
+        }
+
+        .waveform-tab-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .waveform-tab-bar .visualization-tabs {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* ── EEG Full-screen modal ── */
+        .eeg-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2400;
+            background: rgba(14, 28, 36, 0.72);
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 180ms ease-out;
+        }
+
+        .eeg-modal-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .eeg-modal {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: #f8fbfc;
+            overflow: hidden;
+        }
+
+        .eeg-modal-header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 1rem 0.65rem 1.25rem;
+            border-bottom: 1px solid var(--border-card);
+            background: var(--surface-card);
+        }
+
+        .eeg-modal-title {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 650;
+            color: var(--text-900);
+            flex: 1;
+            min-width: 0;
+        }
+
+        .eeg-modal-band-switcher {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .eeg-modal-band-btn {
+            border: 1px solid var(--border-card);
+            background: #f6fbfd;
+            color: var(--text-700);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.28rem 0.58rem;
+            cursor: pointer;
+            transition: background 130ms ease-out, color 130ms ease-out, border-color 130ms ease-out;
+            white-space: nowrap;
+        }
+
+        .eeg-modal-band-btn:hover {
+            background: var(--brand-100);
+            color: var(--brand-700);
+            border-color: var(--brand-500);
+        }
+
+        .eeg-modal-band-btn.active {
+            background: var(--brand-700);
+            border-color: var(--brand-700);
+            color: #f2fbff;
+        }
+
+        .eeg-modal-close-btn {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border: 1px solid var(--border-card);
+            background: var(--surface-card);
+            border-radius: var(--radius-sm);
+            color: var(--text-500);
+            cursor: pointer;
+            transition: background 130ms ease-out, color 130ms ease-out;
+        }
+
+        .eeg-modal-close-btn:hover {
+            background: #fdecea;
+            color: var(--error-600);
+            border-color: #e8b8bb;
+        }
+
+        .eeg-modal-body {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1.25rem;
+            background: #f4f8fa;
+        }
+
+        .eeg-modal-canvas {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            background: #fff;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-card);
+            box-shadow: var(--shadow-soft);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .eeg-modal-canvas img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: var(--radius-md);
+        }
+
+        .eeg-modal-canvas .eeg-modal-skeleton {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1.25rem;
+            background: #fff;
+            border-radius: var(--radius-md);
+        }
+
+        .eeg-modal-canvas .eeg-modal-skeleton .skeleton-row {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .eeg-modal-footer {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.25rem;
+            border-top: 1px solid var(--border-card);
+            background: var(--surface-card);
+            font-size: 0.78rem;
+            color: var(--text-500);
+        }
+
+        .eeg-modal-footer kbd {
+            display: inline-block;
+            padding: 0.1em 0.4em;
+            font-size: 0.71rem;
+            font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+            background: #eef3f5;
+            border: 1px solid #c0cdd5;
+            border-radius: var(--radius-xs);
+            color: var(--text-700);
+            line-height: 1.4;
+        }
+
+        .eeg-modal-footer-sep {
+            color: var(--border-card);
+            margin: 0 0.2rem;
         }
 
         .loading-block {
@@ -1998,36 +2217,52 @@
                                         <span class="toggle-symbol" aria-hidden="true"></span>
                                     </button>
                                     <div id="waveform-content" class="section-content" data-collapsible-content>
-                                        <ul class="nav nav-tabs visualization-tabs" id="eegTabs" role="tablist">
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
-                                                    type="button" role="tab" disabled>Raw</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="filtered-tab" data-bs-toggle="tab" data-bs-target="#filtered-pane"
-                                                    type="button" role="tab" disabled>Filtered</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="delta-tab" data-bs-toggle="tab" data-bs-target="#delta-pane"
-                                                    type="button" role="tab" disabled>Delta</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="theta-tab" data-bs-toggle="tab" data-bs-target="#theta-pane"
-                                                    type="button" role="tab" disabled>Theta</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="alpha-tab" data-bs-toggle="tab" data-bs-target="#alpha-pane"
-                                                    type="button" role="tab" disabled>Alpha</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="beta-tab" data-bs-toggle="tab" data-bs-target="#beta-pane"
-                                                    type="button" role="tab" disabled>Beta</button>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link" id="gamma-tab" data-bs-toggle="tab" data-bs-target="#gamma-pane"
-                                                    type="button" role="tab" disabled>Gamma</button>
-                                            </li>
-                                        </ul>
+                                        <div class="waveform-tab-bar">
+                                            <ul class="nav nav-tabs visualization-tabs" id="eegTabs" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane"
+                                                        type="button" role="tab" disabled>Raw</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="filtered-tab" data-bs-toggle="tab" data-bs-target="#filtered-pane"
+                                                        type="button" role="tab" disabled>Filtered</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="delta-tab" data-bs-toggle="tab" data-bs-target="#delta-pane"
+                                                        type="button" role="tab" disabled>Delta</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="theta-tab" data-bs-toggle="tab" data-bs-target="#theta-pane"
+                                                        type="button" role="tab" disabled>Theta</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="alpha-tab" data-bs-toggle="tab" data-bs-target="#alpha-pane"
+                                                        type="button" role="tab" disabled>Alpha</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="beta-tab" data-bs-toggle="tab" data-bs-target="#beta-pane"
+                                                        type="button" role="tab" disabled>Beta</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="gamma-tab" data-bs-toggle="tab" data-bs-target="#gamma-pane"
+                                                        type="button" role="tab" disabled>Gamma</button>
+                                                </li>
+                                            </ul>
+                                            <button
+                                                id="eeg-expand-btn"
+                                                type="button"
+                                                class="viz-expand-btn"
+                                                aria-label="Expand EEG waveform to full screen"
+                                                disabled>
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                                    <polyline points="9 21 3 21 3 15"></polyline>
+                                                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                                                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                                                </svg>
+                                                Expand
+                                            </button>
+                                        </div>
                                         <div class="tab-content" id="eegTabContent">
                                             <div class="tab-pane fade show active" id="raw-pane" role="tabpanel">
                                                 <div class="visualization-container" id="viz-raw">Run an assessment to load waveform previews.</div>
@@ -2091,6 +2326,55 @@
                     </div>
                 </section>
             </main>
+        </div>
+    </div>
+
+    <!-- EEG Full-Screen Modal -->
+    <div
+        id="eeg-modal-overlay"
+        class="eeg-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="eeg-modal-title"
+        aria-hidden="true">
+        <div class="eeg-modal" id="eeg-modal">
+            <div class="eeg-modal-header">
+                <h2 class="eeg-modal-title" id="eeg-modal-title">
+                    EEG Waveform — <span id="eeg-modal-band-label">Raw</span>
+                </h2>
+                <div class="eeg-modal-band-switcher" role="group" aria-label="Select EEG band">
+                    <button class="eeg-modal-band-btn active" data-modal-band="raw" type="button">Raw</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="filtered" type="button">Filtered</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="delta" type="button">Delta</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="theta" type="button">Theta</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">Alpha</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="beta" type="button">Beta</button>
+                    <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">Gamma</button>
+                </div>
+                <button
+                    id="eeg-modal-close-btn"
+                    class="eeg-modal-close-btn"
+                    type="button"
+                    aria-label="Close EEG viewer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="eeg-modal-body">
+                <div class="eeg-modal-canvas" id="eeg-modal-canvas">
+                    <!-- skeleton and image rendered here by JS -->
+                </div>
+            </div>
+
+            <div class="eeg-modal-footer">
+                Press <kbd>Esc</kbd> to close
+                <span class="eeg-modal-footer-sep">·</span>
+                <kbd>←</kbd> <kbd>→</kbd> to switch bands
+            </div>
         </div>
     </div>
 
@@ -3115,6 +3399,8 @@
                     tab.disabled = !enabled;
                 }
             });
+            const expandBtn = byId("eeg-expand-btn");
+            if (expandBtn) expandBtn.disabled = !enabled;
         }
 
         function clearVisualizationObjectUrls() {
@@ -3814,6 +4100,8 @@
 
             document.addEventListener("keydown", (event) => {
                 if (event.key === "Escape") {
+                    // If EEG modal is open, let its own handler close it
+                    if (byId("eeg-modal-overlay")?.classList.contains("is-open")) return;
                     if (byId("sidebar")?.classList.contains("mobile-open")) {
                         toggleMobileSidebar(false);
                     }
@@ -3823,6 +4111,304 @@
                 }
             });
         }
+
+        // ── EEG Full-Screen Modal Controller ──
+
+        const eegModal = (() => {
+            const BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
+            const BAND_LABELS = {
+                raw: "Raw", filtered: "Filtered",
+                delta: "Delta", theta: "Theta",
+                alpha: "Alpha", beta: "Beta", gamma: "Gamma",
+            };
+
+            let currentBand = "raw";
+            let isOpen = false;
+            let triggerElement = null;
+            let hqAbortController = null;
+
+            const overlay = () => byId("eeg-modal-overlay");
+            const canvas  = () => byId("eeg-modal-canvas");
+            const bandLabel = () => byId("eeg-modal-band-label");
+
+            function getFocusableElements() {
+                const modal = byId("eeg-modal");
+                if (!modal) return [];
+                return Array.from(
+                    modal.querySelectorAll(
+                        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                    )
+                ).filter((el) => el.offsetParent !== null);
+            }
+
+            function trapFocus(event) {
+                if (!isOpen) return;
+                const focusable = getFocusableElements();
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.key === "Tab") {
+                    if (event.shiftKey) {
+                        if (document.activeElement === first) {
+                            event.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            event.preventDefault();
+                            first.focus();
+                        }
+                    }
+                }
+            }
+
+            function handleKeydown(event) {
+                if (!isOpen) return;
+                if (event.key === "Escape") {
+                    close();
+                    return;
+                }
+                if (event.key === "ArrowRight") {
+                    const idx = BANDS.indexOf(currentBand);
+                    switchBand(BANDS[(idx + 1) % BANDS.length]);
+                    return;
+                }
+                if (event.key === "ArrowLeft") {
+                    const idx = BANDS.indexOf(currentBand);
+                    switchBand(BANDS[(idx - 1 + BANDS.length) % BANDS.length]);
+                    return;
+                }
+                trapFocus(event);
+            }
+
+            function updateBandButtons(band) {
+                document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+                    btn.classList.toggle("active", btn.getAttribute("data-modal-band") === band);
+                });
+            }
+
+            function showSkeleton() {
+                const c = canvas();
+                if (!c) return;
+                c.innerHTML = `
+                    <div class="eeg-modal-skeleton">
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                    </div>`;
+            }
+
+            function showPreviewImage(src, band, quality) {
+                const c = canvas();
+                if (!c) return;
+                c.innerHTML = `
+                    <img src="${src}" alt="${escapeHtml(BAND_LABELS[band] || band)} EEG waveform" id="eeg-modal-img" />`;
+            }
+
+            function switchBand(band) {
+                if (!BANDS.includes(band)) return;
+                // Abort any in-flight HQ request
+                if (hqAbortController) {
+                    hqAbortController.abort();
+                    hqAbortController = null;
+                }
+                currentBand = band;
+                updateBandButtons(band);
+                if (bandLabel()) bandLabel().textContent = BAND_LABELS[band] || band;
+
+                // Show preview immediately if available, otherwise skeleton
+                const previewUrl = appState.visualizations[band];
+                if (previewUrl) {
+                    showPreviewImage(previewUrl, band, "preview");
+                } else {
+                    showSkeleton();
+                    // Load preview first
+                    loadBandVisualization(band).then(() => {
+                        if (currentBand !== band || !isOpen) return;
+                        const url = appState.visualizations[band];
+                        if (url) showPreviewImage(url, band, "preview");
+                    });
+                }
+
+                // Then request HQ in background (Iteration 3 progressive swap)
+                requestHQImage(band);
+            }
+
+            // Iteration 3: fetch high-quality render and swap in
+            async function requestHQImage(band) {
+                if (!appState.visualizationContextId) return;
+                const contextId = appState.visualizationContextId;
+                const thisBand = band;
+                const hqKey = `hq_${thisBand}`;
+
+                // If already cached, swap in immediately without a network request
+                const cachedHqUrl = appState.visualizations[hqKey];
+                if (cachedHqUrl) {
+                    const img = byId("eeg-modal-img");
+                    if (img && img.src !== cachedHqUrl) {
+                        img.style.opacity = "0";
+                        img.src = cachedHqUrl;
+                        requestAnimationFrame(() => {
+                            img.style.transition = "opacity 220ms ease-out";
+                            img.style.opacity = "1";
+                        });
+                    }
+                    return;
+                }
+
+                hqAbortController = new AbortController();
+                const signal = hqAbortController.signal;
+
+                try {
+                    const url = `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${thisBand}.png?quality=detail`;
+                    const response = await fetch(url, { signal, cache: "no-store" });
+                    if (!response.ok || signal.aborted) return;
+
+                    const blob = await response.blob();
+                    if (!blob.type.includes("image") || signal.aborted) return;
+
+                    if (currentBand !== thisBand || !isOpen) return;
+
+                    const objectUrl = URL.createObjectURL(blob);
+                    appState.visualizations[hqKey] = objectUrl;
+
+                    // Progressive swap: replace image src smoothly
+                    const img = byId("eeg-modal-img");
+                    if (img) {
+                        const newImg = new Image();
+                        newImg.onload = () => {
+                            if (currentBand !== thisBand || !isOpen) return;
+                            img.src = objectUrl;
+                            img.style.opacity = "0";
+                            requestAnimationFrame(() => {
+                                img.style.transition = "opacity 220ms ease-out";
+                                img.style.opacity = "1";
+                            });
+                        };
+                        newImg.src = objectUrl;
+                    } else {
+                        // Image element was replaced (band switch); show full
+                        showPreviewImage(objectUrl, thisBand, "detail");
+                    }
+                } catch (err) {
+                    if (err.name !== "AbortError") {
+                        // HQ failed silently — preview stays visible
+                    }
+                }
+            }
+
+            function open(band) {
+                if (!appState.visualizationContextId) return;
+                currentBand = band || getActiveBand();
+                isOpen = true;
+
+                const ov = overlay();
+                if (!ov) return;
+                ov.classList.add("is-open");
+                ov.setAttribute("aria-hidden", "false");
+                document.body.style.overflow = "hidden";
+
+                updateBandButtons(currentBand);
+                if (bandLabel()) bandLabel().textContent = BAND_LABELS[currentBand] || currentBand;
+
+                // Show preview immediately, then HQ
+                const previewUrl = appState.visualizations[currentBand];
+                if (previewUrl) {
+                    showPreviewImage(previewUrl, currentBand, "preview");
+                } else {
+                    showSkeleton();
+                    loadBandVisualization(currentBand).then(() => {
+                        if (!isOpen) return;
+                        const url = appState.visualizations[currentBand];
+                        if (url) showPreviewImage(url, currentBand, "preview");
+                    });
+                }
+                requestHQImage(currentBand);
+
+                // Focus close button
+                requestAnimationFrame(() => {
+                    const closeBtn = byId("eeg-modal-close-btn");
+                    if (closeBtn) closeBtn.focus();
+                });
+
+                document.addEventListener("keydown", handleKeydown);
+            }
+
+            function close() {
+                isOpen = false;
+                if (hqAbortController) {
+                    hqAbortController.abort();
+                    hqAbortController = null;
+                }
+
+                const ov = overlay();
+                if (ov) {
+                    ov.classList.remove("is-open");
+                    ov.setAttribute("aria-hidden", "true");
+                }
+                document.body.style.overflow = "";
+                document.removeEventListener("keydown", handleKeydown);
+
+                // Restore focus to trigger element
+                if (triggerElement && triggerElement.focus) {
+                    triggerElement.focus();
+                }
+                triggerElement = null;
+            }
+
+            function getActiveBand() {
+                const activeTab = document.querySelector("#eegTabs .nav-link.active");
+                if (activeTab && activeTab.id) {
+                    const b = activeTab.id.replace("-tab", "");
+                    if (BANDS.includes(b)) return b;
+                }
+                return "raw";
+            }
+
+            function init() {
+                // Close button
+                byId("eeg-modal-close-btn")?.addEventListener("click", close);
+
+                // Overlay click outside modal content
+                overlay()?.addEventListener("click", (e) => {
+                    if (e.target === overlay()) close();
+                });
+
+                // Band switcher buttons in modal
+                document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const band = btn.getAttribute("data-modal-band");
+                        if (band) switchBand(band);
+                    });
+                });
+
+                // Expand button in waveform section
+                byId("eeg-expand-btn")?.addEventListener("click", () => {
+                    triggerElement = byId("eeg-expand-btn");
+                    open(getActiveBand());
+                });
+
+                // Click on waveform image to expand
+                document.addEventListener("click", (e) => {
+                    const img = e.target.closest(".visualization-container img");
+                    if (!img) return;
+                    if (!appState.visualizationContextId) return;
+                    triggerElement = img;
+                    const pane = img.closest("[id^='viz-']");
+                    let band = "raw";
+                    if (pane) {
+                        const b = pane.id.replace("viz-", "");
+                        if (BANDS.includes(b)) band = b;
+                    }
+                    open(band);
+                });
+            }
+
+            return { init, open, close, switchBand };
+        })();
 
         async function initializePage() {
             setStep(1);
@@ -3839,6 +4425,7 @@
             setupSubjectAutofill();
             setupUploadInteractions();
             setupEventHandlers();
+            eegModal.init();
 
             await loadCurrentClinician();
             await loadSubjects();

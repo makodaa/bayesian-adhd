@@ -33,6 +33,7 @@ class VisualizationCacheService:
     """Filesystem cache for uploaded EEG files and generated band images."""
 
     CACHE_PROFILE = "preview_v1"
+    DETAIL_CACHE_PROFILE = "detail_v1"
     CONTEXT_SUFFIX = ".context.json"
 
     def __init__(
@@ -57,8 +58,9 @@ class VisualizationCacheService:
     def _csv_path(self, context_id: str) -> Path:
         return self.cache_dir / f"{context_id}.csv"
 
-    def _image_path(self, context_id: str, band: str) -> Path:
-        return self.cache_dir / f"{context_id}__{self.CACHE_PROFILE}__{band}.png"
+    def _image_path(self, context_id: str, band: str, quality: str = "preview") -> Path:
+        profile = self.DETAIL_CACHE_PROFILE if quality == "detail" else self.CACHE_PROFILE
+        return self.cache_dir / f"{context_id}__{profile}__{band}.png"
 
     @staticmethod
     def _write_bytes_atomic(path: Path, payload: bytes) -> None:
@@ -260,14 +262,14 @@ class VisualizationCacheService:
         return payload
 
     def get_cached_image_path(
-        self, context_id: str, clinician_id: int, band: str
+        self, context_id: str, clinician_id: int, band: str, quality: str = "preview"
     ) -> Path | None:
         """Return cached image path if present and authorized."""
         meta = self._load_meta(context_id)
         if str(meta.get("clinician_id")) != str(clinician_id):
             raise ContextAccessError("Not authorized for visualization context")
 
-        image_path = self._image_path(context_id, band)
+        image_path = self._image_path(context_id, band, quality)
         if image_path.exists():
             self._touch_context(context_id, meta)
             return image_path
@@ -279,6 +281,7 @@ class VisualizationCacheService:
         clinician_id: int,
         band: str,
         image_bytes: bytes,
+        quality: str = "preview",
     ) -> Path:
         """Store a generated PNG image and return its path."""
         if not image_bytes:
@@ -288,7 +291,7 @@ class VisualizationCacheService:
         if str(meta.get("clinician_id")) != str(clinician_id):
             raise ContextAccessError("Not authorized for visualization context")
 
-        image_path = self._image_path(context_id, band)
+        image_path = self._image_path(context_id, band, quality)
         self._write_bytes_atomic(image_path, image_bytes)
 
         bands = set(meta.get("bands", []))
