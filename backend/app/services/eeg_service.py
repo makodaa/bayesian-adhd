@@ -8,9 +8,11 @@ from scipy import signal
 from scipy.integrate import simpson
 
 from ..config import (
+    BROADBAND,
     CLASSIFYING_FREQUENCY_BANDS,
     DISPLAY_FREQUENCY_BANDS,
     ELECTRODE_CHANNELS,
+    MODEL_FREQUENCY_BANDS,
     SAMPLE_RATE,
     SAMPLES_PER_WINDOW,
     TARGET_FREQUENCY_BINS,
@@ -84,8 +86,8 @@ class EEGService:
         # --- Filter for ICA (1–80 Hz typical) ---
         raw.filter(1.0, 60.0, fir_design="firwin", verbose=False)
 
-        # --- Fit ICA ---
-        ica = mne.preprocessing.ICA(n_components=0.95, method="fastica", verbose=False)
+        # --- Fit ICA (fixed component count: n_channels - 1) ---
+        ica = mne.preprocessing.ICA(n_components=len(ch_names) - 1, method="fastica", verbose=False)
         ica.fit(raw, picks="eeg", decim=3)
 
         # --- Detect EOG-like (blink) components if present ---
@@ -99,17 +101,15 @@ class EEGService:
         n_ic = sources.shape[0]
         sfreq = raw.info["sfreq"]
 
-        # from scipy.signal import welch
-        # muscle_candidates = []
-        # for ic_idx in range(n_ic):
-        #     f, Pxx = welch(sources[ic_idx], sfreq, nperseg=512)
-        #     hf_mask = (f >= 20)
-        #     hf_ratio = Pxx[hf_mask].sum() / np.sum(Pxx)
-        #     if hf_ratio > 0.25:  # threshold – tune as needed
-        #         muscle_candidates.append(ic_idx)
+        muscle_candidates = []
+        for ic_idx in range(n_ic):
+            f, Pxx = signal.welch(sources[ic_idx], sfreq, nperseg=512)
+            hf_mask = (f >= 20)
+            hf_ratio = Pxx[hf_mask].sum() / np.sum(Pxx)
+            if hf_ratio > 0.25:  # threshold – tune as needed
+                muscle_candidates.append(ic_idx)
 
-        # exclude = list(set(eog_inds + muscle_candidates))
-        exclude = list(set(eog_inds))
+        exclude = list(set(eog_inds + muscle_candidates))
         ica.exclude = exclude
         if len(exclude) > 0:
             print(f"ICA removed components: {exclude}")
@@ -163,6 +163,33 @@ class EEGService:
 
         return band_power
 
+    def compute_relative_band_powers(
+        self, channel_data: np.ndarray, fs: float
+    ) -> dict[str, float]:
+        """Compute relative band power for all model bands for a single channel.
+
+        Relative power = band_power / total_broadband_power
+        where total_broadband_power is integrated over BROADBAND.
+        A single Welch PSD is computed and reused for all bands.
+        """
+        freqs, psd = signal.welch(
+            channel_data, fs, nperseg=min(256, len(channel_data))
+        )
+
+        # Total broadband power (denominator)
+        bb_mask = (freqs >= BROADBAND[0]) & (freqs <= BROADBAND[1])
+        total_power = simpson(psd[bb_mask], freqs[bb_mask])
+
+        rel_powers: dict[str, float] = {}
+        for band_name, (low, high) in MODEL_FREQUENCY_BANDS.items():
+            idx = (freqs >= low) & (freqs <= high)
+            abs_power = simpson(psd[idx], freqs[idx])
+            rel_powers[band_name] = (
+                abs_power / total_power if total_power > 0 else np.nan
+            )
+
+        return rel_powers
+
     def classify(self, df: pd.DataFrame) -> tuple[str, float, dict]:
         """Classify EEG data for ADHD probability"""
         logger.info(f"Starting EEG classification on {len(df)} samples")
@@ -206,77 +233,49 @@ class EEGService:
 
         # From now on, the subset_df is just the electrodes.
         df = df[ELECTRODE_CHANNELS]
-        df = self.apply_filter(df, 0.5, 60)
+        df = self.apply_filter(df, 0.5, 30)
         df = self.apply_ica_cleaning_to_dataset(df)
 
         n_samples = len(df)
 
-        # Initialize power accumulators
-        powers = {band: 0 for band in CLASSIFYING_FREQUENCY_BANDS.keys()}
+        # Compute relative band powers for each channel and average
+        rel_powers = {band: 0.0 for band in MODEL_FREQUENCY_BANDS}
 
-        # Compute band powers for each channel and average across channels
         for channel in ELECTRODE_CHANNELS:
             if channel in df.columns:
-                eeg_data = df[channel].values
-
-                for band_name, band_range in CLASSIFYING_FREQUENCY_BANDS.items():
-                    powers[band_name] += self.compute_band_power(
-                        eeg_data, SAMPLE_RATE, band_range
-                    )
+                ch_rel = self.compute_relative_band_powers(
+                    df[channel].values, SAMPLE_RATE
+                )
+                for band_name in MODEL_FREQUENCY_BANDS:
+                    rel_powers[band_name] += ch_rel[band_name]
 
         # Average across channels
         n_channels = len(ELECTRODE_CHANNELS)
-        for band_name in powers.keys():
-            powers[band_name] /= n_channels
+        for band_name in rel_powers:
+            rel_powers[band_name] /= n_channels
 
-        # Compute ratios
-        tbr = powers["theta"] / powers["beta"] if powers["beta"] != 0 else np.nan
-        tar = powers["theta"] / powers["alpha"] if powers["alpha"] != 0 else np.nan
+        # Compute ratios from relative powers
+        tbr = rel_powers["theta"] / rel_powers["beta"] if rel_powers["beta"] else np.nan
+        tar = rel_powers["theta"] / rel_powers["alpha"] if rel_powers["alpha"] else np.nan
 
-        # Compute total power and relative powers for frontend display
-        total_power = sum(powers.values())
-        relative_powers = {
-            band: float(power / total_power) if total_power > 0 else 0.0
-            for band, power in powers.items()
-        }
-
-        # Standard bands for frontend display (exclude fast_alpha and high_beta)
-
-        # Prepare band data for return (matches frontend expectations)
-        # Full data includes all bands for database storage
+        # Prepare band data for return
         band_data = {
-            "average_absolute_power": {
-                band: float(power) for band, power in powers.items()
+            "average_relative_power": {
+                band: float(power) for band, power in rel_powers.items()
             },
-            "average_relative_power": relative_powers,
             "band_ratios": {
                 "theta_beta_ratio": float(tbr) if not np.isnan(tbr) else 0.0,
                 "theta_alpha_ratio": float(tar) if not np.isnan(tar) else 0.0,
             },
         }
 
-        # Filtered data for frontend display (only standard 5 bands)
-        band_data["display_bands"] = {
-            "average_absolute_power": {
-                band: power
-                for band, power in band_data["average_absolute_power"].items()
-                if band in DISPLAY_FREQUENCY_BANDS
-            },
-            "average_relative_power": {
-                band: power
-                for band, power in band_data["average_relative_power"].items()
-                if band in DISPLAY_FREQUENCY_BANDS
-            },
-            "band_ratios": band_data["band_ratios"],
-        }
-
-        # Store power results for model features
+        # Store relative power results for model features (matching training notebook)
         power_results = {
-            "theta": powers["theta"],
-            "beta": powers["beta"],
-            "alpha": powers["alpha"],
-            "fast_alpha": powers["fast_alpha"],
-            "high_beta": powers["high_beta"],
+            "theta": rel_powers["theta"],
+            "beta": rel_powers["beta"],
+            "alpha": rel_powers["alpha"],
+            "fast_alpha": rel_powers["fast_alpha"],
+            "high_beta": rel_powers["high_beta"],
             "tbr": tbr,
             "tar": tar,
         }
