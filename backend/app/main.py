@@ -480,6 +480,16 @@ def predict():
             )
             return jsonify({"error": "Subject code, age, and gender are required"}), 400
 
+        # Validate optional numeric fields
+        if sleep_hours is not None and sleep_hours != "":
+            try:
+                sleep_hours_float = float(sleep_hours)
+                if not (0 <= sleep_hours_float <= 99.99):
+                    return jsonify({"error": "Sleep hours must be between 0 and 99.99"}), 400
+                sleep_hours = str(sleep_hours_float)
+            except ValueError:
+                return jsonify({"error": "Invalid value for sleep hours"}), 400
+
         # Use logged-in clinician from session for result creation
         clinician_id = session.get("clinician_id")
         if not isinstance(clinician_id, int):
