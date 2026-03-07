@@ -1,1493 +1,1645 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BayesADHD - Subject Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
     <style>
-        :root {
-            --brand-900: #14323f;
-            --brand-800: #1b4658;
-            --brand-700: #225c72;
-            --brand-600: #2b718c;
-            --brand-500: #3f8dab;
-            --surface-bg: #eef3f5;
-            --surface-shell: #f8fbfd;
-            --surface-card: #ffffff;
-            --surface-muted: #f5f8fa;
-            --border-shell: #c6d8e3;
-            --border-card: #dbe3e8;
-            --border-soft: #d4dde3;
-            --text-900: #1f2f39;
-            --text-700: #3f515d;
-            --text-500: #607484;
-            --success-600: #2e7d66;
-            --warning-600: #b56f2a;
-            --error-600: #b4494f;
-             --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
-             --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
-             --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
-            --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
-            --radius-xs: 4px;
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-pill: 999px;
-            --sidebar-width: 82px;
-            --content-width: 1240px;
+      :root {
+        --brand-900: #14323f;
+        --brand-800: #1b4658;
+        --brand-700: #225c72;
+        --brand-600: #2b718c;
+        --brand-500: #3f8dab;
+        --surface-bg: #eef3f5;
+        --surface-shell: #f8fbfd;
+        --surface-card: #ffffff;
+        --surface-muted: #f5f8fa;
+        --border-shell: #c6d8e3;
+        --border-card: #dbe3e8;
+        --border-soft: #d4dde3;
+        --text-900: #1f2f39;
+        --text-700: #3f515d;
+        --text-500: #607484;
+        --success-600: #2e7d66;
+        --warning-600: #b56f2a;
+        --error-600: #b4494f;
+        --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
+        --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
+        --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
+        --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
+        --radius-xs: 4px;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-pill: 999px;
+        --sidebar-width: 82px;
+        --content-width: 1240px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--text-900);
+        background: radial-gradient(
+          circle at 15% -10%,
+          #f7fbfd 0%,
+          var(--surface-bg) 45%,
+          #e8eef2 100%
+        );
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      a:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .toast-container {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2300;
+        width: min(90vw, 560px);
+        display: grid;
+        gap: 0.6rem;
+        pointer-events: none;
+      }
+
+      .toast-message {
+        background: #183945;
+        color: #f4f9fb;
+        border-radius: var(--radius-md);
+        padding: 0.85rem 1rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 0.92rem;
+        line-height: 1.4;
+        opacity: 0;
+        transform: translateY(-8px);
+        animation: toast-enter 180ms ease-out forwards;
+      }
+
+      .toast-message.success {
+        background: #1f604f;
+      }
+
+      .toast-message.warning {
+        background: #7f521e;
+      }
+
+      .toast-message.error {
+        background: #7f3034;
+      }
+
+      @keyframes toast-enter {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 32, 40, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease-out;
+        z-index: 1400;
+      }
+
+      .sidebar-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .app-shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .app-sidebar {
+        width: var(--sidebar-width);
+        flex-shrink: 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        background: linear-gradient(180deg, var(--brand-900) 0%, #173f50 100%);
+        color: #e5f2f7;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 0.65rem;
+        z-index: 1200;
+        overflow: hidden;
+        transition: width 200ms ease-out;
+      }
+
+      .app-sidebar.expanded {
+        width: 210px;
+      }
+
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.2rem;
+        gap: 0.5rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .sidebar-brand-inner {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .brand-mark {
+        display: inline-flex;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: var(--radius-md);
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        color: #f5fbfe;
+        background: none;
+      }
+
+      .brand-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #e5f2f7;
+        white-space: nowrap;
+        overflow: hidden;
+        opacity: 0;
+        max-width: 0;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
+      }
+
+      .app-sidebar.expanded .brand-name {
+        opacity: 1;
+        max-width: 140px;
+      }
+
+      .sidebar-expand-btn {
+        background: none;
+        border: none;
+        color: rgba(230, 246, 253, 0.7);
+        padding: 0.25rem;
+        border-radius: var(--radius-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition:
+          color 150ms ease-out,
+          background-color 150ms ease-out;
+      }
+
+      .sidebar-expand-btn:hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .sidebar-expand-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .sidebar-link {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        color: #d6eaf2;
+        text-decoration: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 44px;
+        gap: 0;
+        overflow: hidden;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          gap 200ms ease-out,
+          justify-content 200ms ease-out;
+      }
+
+      .app-sidebar.expanded .sidebar-link {
+        justify-content: flex-start;
+        gap: 0.65rem;
+        padding: 0 0.7rem;
+      }
+
+      .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+      }
+
+      .sidebar-link.active {
+        background: rgba(105, 185, 214, 0.27);
+        color: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(182, 228, 243, 0.35);
+      }
+
+      .sidebar-link svg {
+        width: 22px;
+        height: 22px;
+        stroke-width: 1.7;
+        flex-shrink: 0;
+      }
+
+      .sidebar-link span {
+        font-size: 0.89rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        opacity: 0;
+        max-width: 0;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
+      }
+
+      .app-sidebar.expanded .sidebar-link span {
+        opacity: 1;
+        max-width: 140px;
+      }
+
+      .sidebar-footer {
+        border-top: 1px solid rgba(230, 246, 253, 0.2);
+        padding-top: 0.8rem;
+        margin-top: auto;
+        overflow: hidden;
+      }
+
+      .sidebar-user-label {
+        margin: 0;
+        color: rgba(230, 246, 253, 0.74);
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        display: none;
+      }
+
+      .app-sidebar.expanded .sidebar-user-label {
+        display: block;
+      }
+
+      .sidebar-user-name {
+        margin: 0.25rem 0 0.65rem;
+        font-size: 0.78rem;
+        color: #f0f9fc;
+        word-break: break-word;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        display: none;
+      }
+
+      .app-sidebar.expanded .sidebar-user-name {
+        display: block;
+      }
+
+      .sidebar-logout {
+        border: 1px solid rgba(220, 243, 250, 0.35);
+        color: rgba(230, 246, 253, 0.8);
+        background: transparent;
+        border-radius: var(--radius-sm);
+        padding: 0;
+        width: 36px;
+        height: 36px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        overflow: hidden;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          width 200ms ease-out,
+          padding 200ms ease-out;
+        white-space: nowrap;
+      }
+
+      .app-sidebar.expanded .sidebar-logout {
+        width: 100%;
+        padding: 0.32rem 0.7rem;
+        gap: 0.5rem;
+      }
+
+      .sidebar-logout svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      .sidebar-logout-label {
+        overflow: hidden;
+        max-width: 0;
+        opacity: 0;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
+      }
+
+      .app-sidebar.expanded .sidebar-logout-label {
+        max-width: 140px;
+        opacity: 1;
+      }
+
+      .sidebar-logout:hover {
+        background: rgba(240, 249, 252, 0.14);
+        color: #ffffff;
+      }
+
+      .app-main {
+        flex: 1;
+        min-width: 0;
+        max-height: 100vh;
+        overflow: auto;
+      }
+
+      .page-header {
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        background: rgba(238, 243, 245, 0.92);
+        border-bottom: 1px solid #dbe3e8;
+      }
+
+      .page-header-inner {
+        max-width: calc(var(--content-width) + 3rem);
+        margin: 0 auto;
+        padding: 1.05rem 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .page-title-group {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+      }
+
+      .menu-toggle {
+        border: 1px solid var(--border-soft);
+        background: #fff;
+        border-radius: var(--radius-sm);
+        width: 40px;
+        height: 40px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-800);
+        flex-shrink: 0;
+      }
+
+      .page-title-group h1 {
+        margin: 0;
+        font-size: 1.42rem;
+        font-weight: 700;
+        color: var(--text-900);
+      }
+
+      .page-title-group p {
+        margin: 0.35rem 0 0;
+        color: var(--text-700);
+        font-size: 0.94rem;
+        max-width: 760px;
+      }
+
+      .page-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-shrink: 0;
+      }
+
+      .btn-primary-app,
+      .btn-secondary-app {
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 0 1rem;
+        height: 36px;
+        font-size: 0.91rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        transition: background-color 170ms ease-out;
+      }
+
+      .btn-primary-app {
+        background: var(--brand-600);
+        color: #f6fbfd;
+      }
+
+      .btn-primary-app:hover:not(:disabled) {
+        background: var(--brand-700);
+      }
+
+      .btn-secondary-app {
+        background: #f9fcfd;
+        color: var(--brand-700);
+        border: 1px solid var(--border-soft);
+      }
+
+      .btn-secondary-app:hover:not(:disabled) {
+        background: #f0f6f9;
+      }
+
+      .btn-primary-app:disabled,
+      .btn-secondary-app:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .page-body {
+        max-width: var(--content-width);
+        margin: 0 auto;
+        padding: 1.5rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .section-shell {
+        background: var(--surface-card);
+        border: 1px solid var(--border-card);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-card);
+      }
+
+      .summary-metrics {
+        padding: 0.25rem 1rem 1rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+      }
+
+      .metric-card {
+        border: 1px solid #dbe6ec;
+        border-radius: var(--radius-sm);
+        background: #f8fbfd;
+        padding: 0.75rem 0.8rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.22rem;
+      }
+
+      .metric-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-500);
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .metric-value {
+        font-size: 1.25rem;
+        color: var(--text-900);
+        font-weight: 700;
+        line-height: 1.1;
+        font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+        margin-top: 0.1rem;
+      }
+
+      .metric-copy {
+        font-size: 0.78rem;
+        color: var(--text-700);
+        line-height: 1.4;
+        margin-top: 0.08rem;
+      }
+
+      .section-head {
+        padding: 1rem 1rem 0.5rem;
+        display: grid;
+        gap: 0.3rem;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: 1.02rem;
+        color: var(--text-900);
+      }
+
+      .section-head p {
+        margin: 0;
+        font-size: 0.86rem;
+        color: var(--text-700);
+        line-height: 1.45;
+      }
+
+      .toolbar-row {
+        padding: 0.65rem 1rem 0.9rem;
+        display: grid;
+        grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(130px, 1fr)) auto;
+        gap: 0.6rem;
+        align-items: end;
+        border-bottom: 1px solid #e6edf1;
+      }
+
+      .field-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.28rem;
+      }
+
+      .field-wrap label {
+        margin: 0;
+        font-size: 0.79rem;
+        font-weight: 600;
+        color: var(--text-700);
+        line-height: 1.2;
+      }
+
+      .field-wrap input,
+      .field-wrap select {
+        border: 1px solid #cddae2;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.52rem 0.62rem;
+        font-size: 0.86rem;
+        color: var(--text-900);
+        height: 36px;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        padding-bottom: 1px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .subject-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 820px;
+      }
+
+      .subject-table thead {
+        background: #f4f8fa;
+      }
+
+      .subject-table th,
+      .subject-table td {
+        border-bottom: 1px solid #e6edf1;
+        padding: 0.65rem 0.8rem;
+        text-align: left;
+        vertical-align: middle;
+        font-size: 0.84rem;
+        color: var(--text-700);
+        white-space: nowrap;
+      }
+
+      .subject-table th {
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-500);
+        font-weight: 700;
+      }
+
+      .subject-table th:first-child,
+      .subject-table td:first-child {
+        min-width: 140px;
+      }
+
+      .subject-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .subject-row {
+        cursor: pointer;
+        transition: background-color 150ms ease-out;
+      }
+
+      .subject-row:hover {
+        background: #f7fbfd;
+      }
+
+      .subject-row:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(43, 113, 140, 0.3);
+      }
+
+      .subject-code {
+        color: var(--text-900);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+      }
+
+      .classification-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill);
+        border: 1px solid transparent;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
+      .classification-pill.adhd {
+        background: #fff2e9;
+        border-color: #efcfb7;
+        color: #9f5d24;
+      }
+
+      .classification-pill.non-adhd {
+        background: #eaf5f0;
+        border-color: #c5e3d7;
+        color: #2e7d66;
+      }
+
+      .classification-pill.pending {
+        background: #f1f6f9;
+        border-color: #d2e0e8;
+        color: #5c7384;
+      }
+
+      .table-feedback {
+        padding: 1.3rem 1rem 1.4rem;
+        text-align: center;
+        color: var(--text-700);
+        font-size: 0.86rem;
+      }
+
+      .table-feedback strong {
+        display: block;
+        color: var(--text-900);
+        margin-bottom: 0.25rem;
+        font-size: 0.94rem;
+      }
+
+      .detail-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 32, 40, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease-out;
+        z-index: 1500;
+      }
+
+      .detail-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .subject-detail-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(560px, 100vw);
+        height: 100vh;
+        background: #f8fbfc;
+        border-left: 1px solid #d8e5ec;
+        box-shadow: none;
+        transform: translateX(100%);
+        transition: transform 190ms ease-out;
+        z-index: 1800;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .subject-detail-drawer.open {
+        transform: translateX(0);
+        box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
+      }
+
+      .detail-header {
+        padding: 1rem 1rem 0.9rem;
+        border-bottom: 1px solid #dbe6ec;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+        background: #f5fafc;
+        flex-shrink: 0;
+      }
+
+      .detail-header h2 {
+        margin: 0;
+        font-size: 1.06rem;
+        color: var(--text-900);
+        line-height: 1.3;
+      }
+
+      .detail-header p {
+        margin: 0.26rem 0 0;
+        color: var(--text-700);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .icon-button {
+        border: 1px solid #d2dfe7;
+        background: #ffffff;
+        border-radius: var(--radius-sm);
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-700);
+        flex-shrink: 0;
+      }
+
+      .detail-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.9rem 1rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .detail-section {
+        border: 1px solid #dbe6ec;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .detail-section h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-900);
+      }
+
+      .detail-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .detail-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        font-size: 0.84rem;
+        color: var(--text-700);
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid #eef3f6;
+      }
+
+      .detail-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .detail-label {
+        color: var(--text-500);
+      }
+
+      .detail-value {
+        color: var(--text-900);
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+      }
+
+      .timeline-list {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .timeline-card {
+        border: 1px solid #dbe6ec;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.65rem 0.7rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .timeline-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        align-items: center;
+      }
+
+      .timeline-date {
+        font-size: 0.75rem;
+        color: var(--text-500);
+        text-align: right;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .timeline-meta {
+        font-size: 0.78rem;
+        color: var(--text-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.55rem;
+      }
+
+      .timeline-meta strong {
+        color: var(--text-900);
+        font-weight: 600;
+        text-align: right;
+      }
+
+      .confidence-mini-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.55rem;
+        font-size: 0.77rem;
+        color: var(--text-700);
+      }
+
+      .confidence-mini-head strong {
+        font-size: 0.77rem;
+        font-weight: 600;
+        color: var(--text-900);
+      }
+
+      .confidence-mini-track {
+        width: 100%;
+        height: 9px;
+        border-radius: var(--radius-pill);
+        background: #e2e9ee;
+        overflow: hidden;
+      }
+
+      .confidence-mini-fill {
+        height: 100%;
+      }
+
+      .confidence-mini-fill.high {
+        background: linear-gradient(90deg, #3f8f70, #56af87);
+      }
+
+      .confidence-mini-fill.mid {
+        background: linear-gradient(90deg, #bf7f35, #d39a4b);
+      }
+
+      .confidence-mini-fill.low {
+        background: linear-gradient(90deg, #b34b53, #ca6469);
+      }
+
+      .detail-empty {
+        margin: 0;
+        border: 1px dashed #ccdbe3;
+        border-radius: var(--radius-sm);
+        background: #f7fbfd;
+        padding: 0.65rem;
+        font-size: 0.82rem;
+        color: var(--text-700);
+      }
+
+      .detail-footer {
+        border-top: 1px solid #dbe6ec;
+        background: #f8fbfc;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+
+      .loading-state {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.6rem 0;
+      }
+
+      .skeleton-row {
+        border-radius: var(--radius-xs);
+        height: 14px;
+        background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
+        background-size: 240% 100%;
+        animation: shimmer 1.2s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
         }
 
-        * {
-            box-sizing: border-box;
+        100% {
+          background-position: -200% 0;
         }
+      }
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
-            color: var(--text-900);
-            background: radial-gradient(circle at 15% -10%, #f7fbfd 0%, var(--surface-bg) 45%, #e8eef2 100%);
-        }
+      .hidden {
+        display: none !important;
+      }
 
-        button,
-        input,
-        select,
-        textarea {
-            font-family: inherit;
-        }
-
-        button:focus-visible,
-        input:focus-visible,
-        select:focus-visible,
-        textarea:focus-visible,
-        a:focus-visible {
-            outline: none;
-            box-shadow: var(--focus-ring);
-        }
-
-        .toast-container {
-            position: fixed;
-            top: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2300;
-            width: min(90vw, 560px);
-            display: grid;
-            gap: 0.6rem;
-            pointer-events: none;
-        }
-
-        .toast-message {
-            background: #183945;
-            color: #f4f9fb;
-            border-radius: var(--radius-md);
-            padding: 0.85rem 1rem;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.92rem;
-            line-height: 1.4;
-            opacity: 0;
-            transform: translateY(-8px);
-            animation: toast-enter 180ms ease-out forwards;
-        }
-
-        .toast-message.success {
-            background: #1f604f;
-        }
-
-        .toast-message.warning {
-            background: #7f521e;
-        }
-
-        .toast-message.error {
-            background: #7f3034;
-        }
-
-        @keyframes toast-enter {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .sidebar-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 32, 40, 0.45);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 180ms ease-out;
-            z-index: 1400;
-        }
-
-        .sidebar-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .app-shell {
-            display: flex;
-            min-height: 100vh;
-        }
-
+      @media (max-width: 992px) {
         .app-sidebar {
-            width: var(--sidebar-width);
-            flex-shrink: 0;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-            background: linear-gradient(180deg, var(--brand-900) 0%, #173f50 100%);
-            color: #e5f2f7;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            padding: 1rem 0.65rem;
-            z-index: 1200;
-            overflow: hidden;
-            transition: width 200ms ease-out;
+          width: 220px !important;
+          position: fixed;
+          transform: translateX(-100%);
+          transition: transform 190ms ease-out;
+          padding: 1rem;
         }
 
-        .app-sidebar.expanded {
-            width: 210px;
-        }
-
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.2rem;
-            gap: 0.5rem;
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .sidebar-brand-inner {
-            display: flex;
-            align-items: center;
-            gap: 0.55rem;
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .brand-mark {
-            display: inline-flex;
-            width: 32px;
-            height: 32px;
-            flex-shrink: 0;
-            border-radius: var(--radius-md);
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 0.04em;
-            color: #f5fbfe;
-            background: none;
-        }
-
-        .brand-name {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #e5f2f7;
-            white-space: nowrap;
-            overflow: hidden;
-            opacity: 0;
-            max-width: 0;
-            transition: opacity 150ms ease-out, max-width 200ms ease-out;
-        }
-
-        .app-sidebar.expanded .brand-name {
-            opacity: 1;
-            max-width: 140px;
-        }
-
-        .sidebar-expand-btn {
-            background: none;
-            border: none;
-            color: rgba(230, 246, 253, 0.7);
-            padding: 0.25rem;
-            border-radius: var(--radius-xs);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: color 150ms ease-out, background-color 150ms ease-out;
-        }
-
-        .sidebar-expand-btn:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .sidebar-expand-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
+        .app-sidebar.mobile-open {
+          transform: translateX(0);
         }
 
         .sidebar-link {
-            width: 100%;
-            border-radius: var(--radius-sm);
-            color: #d6eaf2;
-            text-decoration: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 44px;
-            gap: 0;
-            overflow: hidden;
-            transition: background-color 170ms ease-out, color 170ms ease-out, gap 200ms ease-out, justify-content 200ms ease-out;
-        }
-
-        .app-sidebar.expanded .sidebar-link {
-            justify-content: flex-start;
-            gap: 0.65rem;
-            padding: 0 0.7rem;
-        }
-
-        .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-        }
-
-        .sidebar-link.active {
-            background: rgba(105, 185, 214, 0.27);
-            color: #ffffff;
-            box-shadow: inset 0 0 0 1px rgba(182, 228, 243, 0.35);
-        }
-
-        .sidebar-link svg {
-            width: 22px;
-            height: 22px;
-            stroke-width: 1.7;
-            flex-shrink: 0;
+          justify-content: flex-start !important;
+          gap: 0.65rem !important;
+          padding: 0 0.7rem;
         }
 
         .sidebar-link span {
-            font-size: 0.89rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            opacity: 0;
-            max-width: 0;
-            transition: opacity 150ms ease-out, max-width 200ms ease-out;
+          max-width: 160px !important;
+          opacity: 1 !important;
         }
 
-        .app-sidebar.expanded .sidebar-link span {
-            opacity: 1;
-            max-width: 140px;
+        .brand-name {
+          max-width: 160px !important;
+          opacity: 1 !important;
         }
 
-        .sidebar-footer {
-            border-top: 1px solid rgba(230, 246, 253, 0.2);
-            padding-top: 0.8rem;
-            margin-top: auto;
-            overflow: hidden;
-        }
-
-        .sidebar-user-label {
-            margin: 0;
-            color: rgba(230, 246, 253, 0.74);
-            font-size: 0.68rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            display: none;
-        }
-
-        .app-sidebar.expanded .sidebar-user-label {
-            display: block;
-        }
-
+        .sidebar-user-label,
         .sidebar-user-name {
-            margin: 0.25rem 0 0.65rem;
-            font-size: 0.78rem;
-            color: #f0f9fc;
-            word-break: break-word;
-            line-height: 1.3;
-            white-space: nowrap;
-            overflow: hidden;
-            display: none;
-        }
-
-        .app-sidebar.expanded .sidebar-user-name {
-            display: block;
+          display: block !important;
         }
 
         .sidebar-logout {
-            border: 1px solid rgba(220, 243, 250, 0.35);
-            color: rgba(230, 246, 253, 0.8);
-            background: transparent;
-            border-radius: var(--radius-sm);
-            padding: 0;
-            width: 36px;
-            height: 36px;
-            font-size: 0.76rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            overflow: hidden;
-            transition: background-color 170ms ease-out, color 170ms ease-out, width 200ms ease-out, padding 200ms ease-out;
-            white-space: nowrap;
-        }
-
-        .app-sidebar.expanded .sidebar-logout {
-            width: 100%;
-            padding: 0.32rem 0.7rem;
-            gap: 0.5rem;
-        }
-
-        .sidebar-logout svg {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
+          width: 100% !important;
+          padding: 0.32rem 0.7rem !important;
+          gap: 0.5rem !important;
         }
 
         .sidebar-logout-label {
-            overflow: hidden;
-            max-width: 0;
-            opacity: 0;
-            transition: opacity 150ms ease-out, max-width 200ms ease-out;
-        }
-
-        .app-sidebar.expanded .sidebar-logout-label {
-            max-width: 140px;
-            opacity: 1;
-        }
-
-        .sidebar-logout:hover {
-            background: rgba(240, 249, 252, 0.14);
-            color: #ffffff;
-        }
-
-        .app-main {
-            flex: 1;
-            min-width: 0;
-            max-height: 100vh;
-            overflow: auto;
-        }
-
-        .page-header {
-            position: sticky;
-            top: 0;
-            z-index: 900;
-            backdrop-filter: blur(8px);
-            background: rgba(238, 243, 245, 0.92);
-            border-bottom: 1px solid #dbe3e8;
-        }
-
-        .page-header-inner {
-            max-width: calc(var(--content-width) + 3rem);
-            margin: 0 auto;
-            padding: 1.05rem 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .page-title-group {
-            display: flex;
-            gap: 0.85rem;
-            align-items: flex-start;
+          max-width: 160px !important;
+          opacity: 1 !important;
         }
 
         .menu-toggle {
-            border: 1px solid var(--border-soft);
-            background: #fff;
-            border-radius: var(--radius-sm);
-            width: 40px;
-            height: 40px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: var(--brand-800);
-            flex-shrink: 0;
-        }
-
-        .page-title-group h1 {
-            margin: 0;
-            font-size: 1.42rem;
-            font-weight: 700;
-            color: var(--text-900);
-        }
-
-        .page-title-group p {
-            margin: 0.35rem 0 0;
-            color: var(--text-700);
-            font-size: 0.94rem;
-            max-width: 760px;
-        }
-
-        .page-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.55rem;
-            flex-shrink: 0;
-        }
-
-         .btn-primary-app,
-         .btn-secondary-app {
-             border: none;
-             border-radius: var(--radius-sm);
-             padding: 0 1rem;
-             height: 36px;
-             font-size: 0.91rem;
-             font-weight: 600;
-             display: inline-flex;
-             align-items: center;
-             white-space: nowrap;
-             transition: background-color 170ms ease-out;
-         }
-
-         .btn-primary-app {
-             background: var(--brand-600);
-             color: #f6fbfd;
-         }
-
-         .btn-primary-app:hover:not(:disabled) {
-             background: var(--brand-700);
-         }
-
-         .btn-secondary-app {
-             background: #f9fcfd;
-             color: var(--brand-700);
-             border: 1px solid var(--border-soft);
-         }
-
-         .btn-secondary-app:hover:not(:disabled) {
-             background: #f0f6f9;
-         }
-
-         .btn-primary-app:disabled,
-         .btn-secondary-app:disabled {
-             opacity: 0.55;
-             cursor: not-allowed;
-             box-shadow: none;
-         }
-
-        .page-body {
-            max-width: var(--content-width);
-            margin: 0 auto;
-            padding: 1.5rem;
-            display: grid;
-            gap: 1rem;
-        }
-
-        .section-shell {
-            background: var(--surface-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-card);
+          display: inline-flex;
         }
 
         .summary-metrics {
-            padding: 0.25rem 1rem 1rem;
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.6rem;
-        }
-
-        .metric-card {
-            border: 1px solid #dbe6ec;
-            border-radius: var(--radius-sm);
-            background: #f8fbfd;
-            padding: 0.75rem 0.8rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.22rem;
-        }
-
-        .metric-label {
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--text-500);
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .metric-value {
-            font-size: 1.25rem;
-            color: var(--text-900);
-            font-weight: 700;
-            line-height: 1.1;
-            font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
-            margin-top: 0.1rem;
-        }
-
-        .metric-copy {
-            font-size: 0.78rem;
-            color: var(--text-700);
-            line-height: 1.4;
-            margin-top: 0.08rem;
-        }
-
-        .section-head {
-            padding: 1rem 1rem 0.5rem;
-            display: grid;
-            gap: 0.3rem;
-        }
-
-        .section-head h2 {
-            margin: 0;
-            font-size: 1.02rem;
-            color: var(--text-900);
-        }
-
-        .section-head p {
-            margin: 0;
-            font-size: 0.86rem;
-            color: var(--text-700);
-            line-height: 1.45;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .toolbar-row {
-            padding: 0.65rem 1rem 0.9rem;
-            display: grid;
-            grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(130px, 1fr)) auto;
-            gap: 0.6rem;
-            align-items: end;
-            border-bottom: 1px solid #e6edf1;
-        }
-
-        .field-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 0.28rem;
-        }
-
-        .field-wrap label {
-            margin: 0;
-            font-size: 0.79rem;
-            font-weight: 600;
-            color: var(--text-700);
-            line-height: 1.2;
-        }
-
-        .field-wrap input,
-        .field-wrap select {
-            border: 1px solid #cddae2;
-            border-radius: var(--radius-sm);
-            background: #ffffff;
-            padding: 0.52rem 0.62rem;
-            font-size: 0.86rem;
-            color: var(--text-900);
-            height: 36px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .toolbar-actions {
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-end;
-            gap: 0.4rem;
-            padding-bottom: 1px;
+          grid-column: span 2;
+          justify-content: flex-end;
+          align-items: center;
+          padding-bottom: 0;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .page-header-inner,
+        .page-body {
+          padding-left: 1rem;
+          padding-right: 1rem;
         }
 
-        .table-wrap {
-            overflow-x: auto;
+        .page-header-inner {
+          flex-direction: column;
+          align-items: stretch;
         }
 
-        .subject-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 820px;
+        .page-actions {
+          justify-content: flex-end;
+          flex-wrap: wrap;
         }
 
-        .subject-table thead {
-            background: #f4f8fa;
+        .summary-metrics,
+        .toolbar-row {
+          grid-template-columns: 1fr;
         }
 
-        .subject-table th,
-        .subject-table td {
-            border-bottom: 1px solid #e6edf1;
-            padding: 0.65rem 0.8rem;
-            text-align: left;
-            vertical-align: middle;
-            font-size: 0.84rem;
-            color: var(--text-700);
-            white-space: nowrap;
-        }
-
-        .subject-table th {
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--text-500);
-            font-weight: 700;
-        }
-
-        .subject-table th:first-child,
-        .subject-table td:first-child {
-            min-width: 140px;
-        }
-
-        .subject-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .subject-row {
-            cursor: pointer;
-            transition: background-color 150ms ease-out;
-        }
-
-        .subject-row:hover {
-            background: #f7fbfd;
-        }
-
-        .subject-row:focus-visible {
-            outline: none;
-            box-shadow: inset 0 0 0 2px rgba(43, 113, 140, 0.3);
-        }
-
-        .subject-code {
-            color: var(--text-900);
-            font-weight: 700;
-            letter-spacing: 0.02em;
-        }
-
-        .mono {
-            font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
-        }
-
-        .classification-pill {
-            display: inline-flex;
-            align-items: center;
-            border-radius: var(--radius-pill);
-            border: 1px solid transparent;
-            padding: 0.2rem 0.6rem;
-            font-size: 0.74rem;
-            font-weight: 600;
-            line-height: 1.2;
-            white-space: nowrap;
-        }
-
-        .classification-pill.adhd {
-            background: #fff2e9;
-            border-color: #efcfb7;
-            color: #9f5d24;
-        }
-
-        .classification-pill.non-adhd {
-            background: #eaf5f0;
-            border-color: #c5e3d7;
-            color: #2e7d66;
-        }
-
-        .classification-pill.pending {
-            background: #f1f6f9;
-            border-color: #d2e0e8;
-            color: #5c7384;
-        }
-
-        .table-feedback {
-            padding: 1.3rem 1rem 1.4rem;
-            text-align: center;
-            color: var(--text-700);
-            font-size: 0.86rem;
-        }
-
-        .table-feedback strong {
-            display: block;
-            color: var(--text-900);
-            margin-bottom: 0.25rem;
-            font-size: 0.94rem;
-        }
-
-        .detail-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 32, 40, 0.45);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 180ms ease-out;
-            z-index: 1500;
-        }
-
-        .detail-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-         .subject-detail-drawer {
-             position: fixed;
-             top: 0;
-             right: 0;
-             width: min(560px, 100vw);
-             height: 100vh;
-             background: #f8fbfc;
-             border-left: 1px solid #d8e5ec;
-             box-shadow: none;
-             transform: translateX(100%);
-             transition: transform 190ms ease-out;
-             z-index: 1800;
-             display: flex;
-             flex-direction: column;
-         }
-
-         .subject-detail-drawer.open {
-             transform: translateX(0);
-             box-shadow: -18px 0 40px rgba(18, 45, 56, 0.18);
-         }
-
-        .detail-header {
-            padding: 1rem 1rem 0.9rem;
-            border-bottom: 1px solid #dbe6ec;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.8rem;
-            background: #f5fafc;
-            flex-shrink: 0;
-        }
-
-        .detail-header h2 {
-            margin: 0;
-            font-size: 1.06rem;
-            color: var(--text-900);
-            line-height: 1.3;
-        }
-
-        .detail-header p {
-            margin: 0.26rem 0 0;
-            color: var(--text-700);
-            font-size: 0.82rem;
-            line-height: 1.4;
-        }
-
-        .icon-button {
-            border: 1px solid #d2dfe7;
-            background: #ffffff;
-            border-radius: var(--radius-sm);
-            width: 36px;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--brand-700);
-            flex-shrink: 0;
-        }
-
-        .detail-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.9rem 1rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .detail-section {
-            border: 1px solid #dbe6ec;
-            border-radius: var(--radius-sm);
-            background: #ffffff;
-            padding: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .detail-section h3 {
-            margin: 0;
-            font-size: 0.9rem;
-            color: var(--text-900);
-        }
-
-        .detail-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 0.4rem;
-        }
-
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.6rem;
-            font-size: 0.84rem;
-            color: var(--text-700);
-            padding-bottom: 0.35rem;
-            border-bottom: 1px solid #eef3f6;
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .detail-label {
-            color: var(--text-500);
-        }
-
-        .detail-value {
-            color: var(--text-900);
-            font-weight: 600;
-            text-align: right;
-            word-break: break-word;
-        }
-
-        .timeline-list {
-            display: grid;
-            gap: 0.5rem;
-        }
-
-        .timeline-card {
-            border: 1px solid #dbe6ec;
-            border-radius: var(--radius-sm);
-            background: #ffffff;
-            padding: 0.65rem 0.7rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .timeline-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.6rem;
-            align-items: center;
-        }
-
-        .timeline-date {
-            font-size: 0.75rem;
-            color: var(--text-500);
-            text-align: right;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .timeline-meta {
-            font-size: 0.78rem;
-            color: var(--text-700);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.55rem;
-        }
-
-        .timeline-meta strong {
-            color: var(--text-900);
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .confidence-mini-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 0.55rem;
-            font-size: 0.77rem;
-            color: var(--text-700);
-        }
-
-        .confidence-mini-head strong {
-            font-size: 0.77rem;
-            font-weight: 600;
-            color: var(--text-900);
-        }
-
-        .confidence-mini-track {
-            width: 100%;
-            height: 9px;
-            border-radius: var(--radius-pill);
-            background: #e2e9ee;
-            overflow: hidden;
-        }
-
-        .confidence-mini-fill {
-            height: 100%;
-        }
-
-        .confidence-mini-fill.high {
-            background: linear-gradient(90deg, #3f8f70, #56af87);
-        }
-
-        .confidence-mini-fill.mid {
-            background: linear-gradient(90deg, #bf7f35, #d39a4b);
-        }
-
-        .confidence-mini-fill.low {
-            background: linear-gradient(90deg, #b34b53, #ca6469);
-        }
-
-        .detail-empty {
-            margin: 0;
-            border: 1px dashed #ccdbe3;
-            border-radius: var(--radius-sm);
-            background: #f7fbfd;
-            padding: 0.65rem;
-            font-size: 0.82rem;
-            color: var(--text-700);
+        .toolbar-actions {
+          grid-column: auto;
+          justify-content: flex-end;
         }
 
         .detail-footer {
-            border-top: 1px solid #dbe6ec;
-            background: #f8fbfc;
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-            flex-shrink: 0;
+          justify-content: stretch;
         }
 
-        .loading-state {
-            display: grid;
-            gap: 0.35rem;
-            padding: 0.6rem 0;
+        .detail-footer .btn-primary-app,
+        .detail-footer .btn-secondary-app {
+          flex: 1 1 auto;
         }
-
-        .skeleton-row {
-            border-radius: var(--radius-xs);
-            height: 14px;
-            background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
-            background-size: 240% 100%;
-            animation: shimmer 1.2s ease-in-out infinite;
-        }
-
-        @keyframes shimmer {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        @media (max-width: 992px) {
-            .app-sidebar {
-                width: 220px !important;
-                position: fixed;
-                transform: translateX(-100%);
-                transition: transform 190ms ease-out;
-                padding: 1rem;
-            }
-
-            .app-sidebar.mobile-open {
-                transform: translateX(0);
-            }
-
-            .sidebar-link {
-                justify-content: flex-start !important;
-                gap: 0.65rem !important;
-                padding: 0 0.7rem;
-            }
-
-            .sidebar-link span {
-                max-width: 160px !important;
-                opacity: 1 !important;
-            }
-
-            .brand-name {
-                max-width: 160px !important;
-                opacity: 1 !important;
-            }
-
-            .sidebar-user-label,
-            .sidebar-user-name {
-                display: block !important;
-            }
-
-            .sidebar-logout {
-                width: 100% !important;
-                padding: 0.32rem 0.7rem !important;
-                gap: 0.5rem !important;
-            }
-
-            .sidebar-logout-label {
-                max-width: 160px !important;
-                opacity: 1 !important;
-            }
-
-            .menu-toggle {
-                display: inline-flex;
-            }
-
-            .summary-metrics {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .toolbar-row {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .toolbar-actions {
-                grid-column: span 2;
-                justify-content: flex-end;
-                align-items: center;
-                padding-bottom: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .page-header-inner,
-            .page-body {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-
-            .page-header-inner {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .page-actions {
-                justify-content: flex-end;
-                flex-wrap: wrap;
-            }
-
-            .summary-metrics,
-            .toolbar-row {
-                grid-template-columns: 1fr;
-            }
-
-            .toolbar-actions {
-                grid-column: auto;
-                justify-content: flex-end;
-            }
-
-            .detail-footer {
-                justify-content: stretch;
-            }
-
-            .detail-footer .btn-primary-app,
-            .detail-footer .btn-secondary-app {
-                flex: 1 1 auto;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+  <body>
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
     <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
-        <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
-            <div class="sidebar-brand">
-                <div class="sidebar-brand-inner">
-                    <span class="brand-mark">B</span>
-                    <span class="brand-name">BayesianADHD</span>
-                </div>
-                <button class="sidebar-expand-btn" id="sidebar-expand-btn" type="button" aria-label="Toggle sidebar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <nav class="sidebar-nav">
-                <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/subjects.html" class="sidebar-link active" title="Subjects" aria-label="Subjects">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    <span>Subjects</span>
-                </a>
-                <a href="/results.html" class="sidebar-link" title="Assessments" aria-label="Assessments">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                    <span>Assessments</span>
-                </a>
-                <a href="/clinicians.html" class="sidebar-link" title="Clinicians" aria-label="Clinicians">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span>Clinicians</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <p class="sidebar-user-label">Signed in as</p>
-                <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
-                <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    <span class="sidebar-logout-label" id="sidebar-logout-name">Logout</span>
-                </button>
-            </div>
-        </aside>
-
-        <div class="app-main">
-            <header class="page-header">
-                <div class="page-header-inner">
-                    <div class="page-title-group">
-                        <button id="sidebar-toggle" class="menu-toggle" type="button" aria-label="Toggle navigation menu">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <line x1="3" y1="12" x2="21" y2="12"></line>
-                                <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                        </button>
-                        <div>
-                            <h1>Subject Management</h1>
-                            <p>Browse enrolled subjects, review latest EEG classifications, and open detailed history for follow-up context.</p>
-                        </div>
-                    </div>
-                    <div class="page-actions">
-                        <button id="refresh-subjects-btn" type="button" class="btn-secondary-app">Refresh List</button>
-                        <button id="open-assessment-btn" type="button" class="btn-primary-app">New Assessment</button>
-                    </div>
-                </div>
-            </header>
-
-            <main class="page-body">
-                <section class="section-shell">
-                    <div class="section-head">
-                        <h2>List of all subjects</h2>
-                        <p>Select a subject to inspect demographics and previous EEG classifications from this clinical session history.</p>
-                    </div>
-
-                    <div class="toolbar-row">
-                        <div class="field-wrap">
-                            <label for="search-subjects">Search Subjects</label>
-                            <input type="text" id="search-subjects" placeholder="Search by subject code, gender, or classification" />
-                        </div>
-                        <div class="field-wrap">
-                            <label for="gender-filter">Gender</label>
-                            <select id="gender-filter">
-                                <option value="all">All genders</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                                <option value="unknown">Not recorded</option>
-                            </select>
-                        </div>
-                        <div class="field-wrap">
-                            <label for="outcome-filter">Latest Outcome</label>
-                            <select id="outcome-filter">
-                                <option value="all">All outcomes</option>
-                                <option value="adhd">ADHD-related</option>
-                                <option value="non-adhd">Non-ADHD</option>
-                                <option value="pending">No result yet</option>
-                            </select>
-                        </div>
-                        <div class="field-wrap">
-                            <label for="sort-subjects">Sort By</label>
-                            <select id="sort-subjects">
-                                <option value="recent">Most recent activity</option>
-                                <option value="assessments">Most assessments</option>
-                                <option value="code">Subject code</option>
-                            </select>
-                        </div>
-                        <div class="toolbar-actions">
-                            <button id="clear-search-btn" type="button" class="btn-secondary-app">Reset Filters</button>
-                        </div>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table class="subject-table">
-                            <thead>
-                                <tr>
-                                    <th>Subject Code</th>
-                                    <th>Age</th>
-                                    <th>Gender</th>
-                                    <th>Recordings</th>
-                                    <th>Latest Classification</th>
-                                    <th>Last Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subjects-table-body">
-                                <tr>
-                                    <td colspan="6" class="table-feedback">
-                                        <div class="loading-state">
-                                            <div class="skeleton-row"></div>
-                                            <div class="skeleton-row"></div>
-                                            <div class="skeleton-row"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </main>
+      <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-inner">
+            <span class="brand-mark">B</span>
+            <span class="brand-name">BayesianADHD</span>
+          </div>
+          <button
+            class="sidebar-expand-btn"
+            id="sidebar-expand-btn"
+            type="button"
+            aria-label="Toggle sidebar"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
         </div>
+
+        <nav class="sidebar-nav">
+          <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="/subjects.html"
+            class="sidebar-link active"
+            title="Subjects"
+            aria-label="Subjects"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Subjects</span>
+          </a>
+          <a href="/results.html" class="sidebar-link" title="Assessments" aria-label="Assessments">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a
+            href="/clinicians.html"
+            class="sidebar-link"
+            title="Clinicians"
+            aria-label="Clinicians"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Clinicians</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <p class="sidebar-user-label">Signed in as</p>
+          <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
+          <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span class="sidebar-logout-label" id="sidebar-logout-name">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="page-header">
+          <div class="page-header-inner">
+            <div class="page-title-group">
+              <button
+                id="sidebar-toggle"
+                class="menu-toggle"
+                type="button"
+                aria-label="Toggle navigation menu"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+              <div>
+                <h1>Subject Management</h1>
+                <p>
+                  Browse enrolled subjects, review latest EEG classifications, and open detailed
+                  history for follow-up context.
+                </p>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button id="refresh-subjects-btn" type="button" class="btn-secondary-app">
+                Refresh List
+              </button>
+              <button id="open-assessment-btn" type="button" class="btn-primary-app">
+                New Assessment
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main class="page-body">
+          <section class="section-shell">
+            <div class="section-head">
+              <h2>List of all subjects</h2>
+              <p>
+                Select a subject to inspect demographics and previous EEG classifications from this
+                clinical session history.
+              </p>
+            </div>
+
+            <div class="toolbar-row">
+              <div class="field-wrap">
+                <label for="search-subjects">Search Subjects</label>
+                <input
+                  type="text"
+                  id="search-subjects"
+                  placeholder="Search by subject code, gender, or classification"
+                />
+              </div>
+              <div class="field-wrap">
+                <label for="gender-filter">Gender</label>
+                <select id="gender-filter">
+                  <option value="all">All genders</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="unknown">Not recorded</option>
+                </select>
+              </div>
+              <div class="field-wrap">
+                <label for="outcome-filter">Latest Outcome</label>
+                <select id="outcome-filter">
+                  <option value="all">All outcomes</option>
+                  <option value="adhd">ADHD-related</option>
+                  <option value="non-adhd">Non-ADHD</option>
+                  <option value="pending">No result yet</option>
+                </select>
+              </div>
+              <div class="field-wrap">
+                <label for="sort-subjects">Sort By</label>
+                <select id="sort-subjects">
+                  <option value="recent">Most recent activity</option>
+                  <option value="assessments">Most assessments</option>
+                  <option value="code">Subject code</option>
+                </select>
+              </div>
+              <div class="toolbar-actions">
+                <button id="clear-search-btn" type="button" class="btn-secondary-app">
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="subject-table">
+                <thead>
+                  <tr>
+                    <th>Subject Code</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Recordings</th>
+                    <th>Latest Classification</th>
+                    <th>Last Activity</th>
+                  </tr>
+                </thead>
+                <tbody id="subjects-table-body">
+                  <tr>
+                    <td colspan="6" class="table-feedback">
+                      <div class="loading-state">
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
 
-    <aside class="subject-detail-drawer" id="subject-detail-drawer" aria-hidden="true" aria-labelledby="subject-detail-title">
-        <div class="detail-header">
-            <div>
-                <h2 id="subject-detail-title">Subject Details</h2>
-                <p id="subject-detail-subtitle">Review demographics and assessment timeline.</p>
-            </div>
-            <button id="close-detail-btn" class="icon-button" type="button" aria-label="Close subject details">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+    <aside
+      class="subject-detail-drawer"
+      id="subject-detail-drawer"
+      aria-hidden="true"
+      aria-labelledby="subject-detail-title"
+    >
+      <div class="detail-header">
+        <div>
+          <h2 id="subject-detail-title">Subject Details</h2>
+          <p id="subject-detail-subtitle">Review demographics and assessment timeline.</p>
         </div>
-        <div class="detail-body" id="subject-detail-body">
-            <section class="detail-section">
-                <h3>Subject Information</h3>
-                <ul class="detail-list" id="subject-detail-list"></ul>
-            </section>
-            <section class="detail-section">
-                <h3>Assessment Timeline</h3>
-                <div id="subject-assessment-timeline" class="timeline-list"></div>
-            </section>
-        </div>
-        <div class="detail-footer">
-            <button id="detail-view-results-btn" type="button" class="btn-secondary-app">View Assessments</button>
-            <button id="detail-new-assessment-btn" type="button" class="btn-primary-app">New Assessment</button>
-        </div>
+        <button
+          id="close-detail-btn"
+          class="icon-button"
+          type="button"
+          aria-label="Close subject details"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="detail-body" id="subject-detail-body">
+        <section class="detail-section">
+          <h3>Subject Information</h3>
+          <ul class="detail-list" id="subject-detail-list"></ul>
+        </section>
+        <section class="detail-section">
+          <h3>Assessment Timeline</h3>
+          <div id="subject-assessment-timeline" class="timeline-list"></div>
+        </section>
+      </div>
+      <div class="detail-footer">
+        <button id="detail-view-results-btn" type="button" class="btn-secondary-app">
+          View Assessments
+        </button>
+        <button id="detail-new-assessment-btn" type="button" class="btn-primary-app">
+          New Assessment
+        </button>
+      </div>
     </aside>
 
     <script>
-        const appState = {
-            allSubjects: [],
-            filteredSubjects: [],
-            selectedSubjectCode: "",
-            isDetailDrawerOpen: false,
-            filters: {
-                search: "",
-                gender: "all",
-                outcome: "all",
-                sort: "recent",
-            },
-        };
+      const appState = {
+        allSubjects: [],
+        filteredSubjects: [],
+        selectedSubjectCode: "",
+        isDetailDrawerOpen: false,
+        filters: {
+          search: "",
+          gender: "all",
+          outcome: "all",
+          sort: "recent",
+        },
+      };
 
-        function byId(id) {
-            return document.getElementById(id);
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function showToast(message, variant = "error") {
+        const container = byId("toast-container");
+        if (!container) {
+          return;
         }
 
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
+        const toast = document.createElement("div");
+        toast.className = `toast-message ${variant}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        window.setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-8px)";
+          window.setTimeout(() => toast.remove(), 180);
+        }, 6000);
+      }
+
+      function toggleMobileSidebar(open) {
+        const sidebar = byId("sidebar");
+        const backdrop = byId("sidebar-backdrop");
+        if (!sidebar || !backdrop) {
+          return;
         }
 
-        function showToast(message, variant = "error") {
-            const container = byId("toast-container");
-            if (!container) {
-                return;
+        const shouldOpen =
+          typeof open === "boolean" ? open : !sidebar.classList.contains("mobile-open");
+        sidebar.classList.toggle("mobile-open", shouldOpen);
+        backdrop.classList.toggle("open", shouldOpen);
+      }
+
+      function openDetailDrawer() {
+        const drawer = byId("subject-detail-drawer");
+        const backdrop = byId("detail-backdrop");
+        if (!drawer || !backdrop) {
+          return;
+        }
+
+        appState.isDetailDrawerOpen = true;
+        drawer.classList.add("open");
+        drawer.setAttribute("aria-hidden", "false");
+        backdrop.classList.add("open");
+      }
+
+      function closeDetailDrawer() {
+        const drawer = byId("subject-detail-drawer");
+        const backdrop = byId("detail-backdrop");
+        if (!drawer || !backdrop) {
+          return;
+        }
+
+        appState.isDetailDrawerOpen = false;
+        drawer.classList.remove("open");
+        drawer.setAttribute("aria-hidden", "true");
+        backdrop.classList.remove("open");
+      }
+
+      function formatDateTime(value) {
+        if (!value) {
+          return "Not available";
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return "Not available";
+        }
+
+        return date.toLocaleString();
+      }
+
+      function getClassificationClass(label) {
+        const normalized = String(label || "")
+          .trim()
+          .toLowerCase();
+        if (!normalized) {
+          return "pending";
+        }
+        if (normalized.includes("non-adhd") || normalized.includes("non adhd")) {
+          return "non-adhd";
+        }
+        if (normalized.includes("adhd")) {
+          return "adhd";
+        }
+        return "pending";
+      }
+
+      function renderClassificationPill(label) {
+        const classification = label ? String(label) : "No result";
+        const className = getClassificationClass(classification);
+        return `<span class="classification-pill ${className}">${escapeHtml(classification)}</span>`;
+      }
+
+      function getOutcomeGroup(label) {
+        const className = getClassificationClass(label);
+        if (className === "adhd" || className === "non-adhd") {
+          return className;
+        }
+        return "pending";
+      }
+
+      function getConfidenceState(confidence) {
+        if (confidence >= 0.8) {
+          return { label: "High", className: "high" };
+        }
+        if (confidence >= 0.6) {
+          return { label: "Moderate", className: "mid" };
+        }
+        return { label: "Low", className: "low" };
+      }
+
+      function normalizeGender(value) {
+        const normalized = String(value || "")
+          .trim()
+          .toLowerCase();
+        return normalized || "unknown";
+      }
+
+      function toTimestamp(value) {
+        if (!value) {
+          return 0;
+        }
+        const date = new Date(value);
+        const timestamp = date.getTime();
+        return Number.isFinite(timestamp) ? timestamp : 0;
+      }
+
+      function updateSummaryMetrics(subjects) {
+        const total = subjects.length;
+        const assessed = subjects.filter(
+          (subject) => Number(subject.recording_count || 0) > 0,
+        ).length;
+        const adhdRelated = subjects.filter(
+          (subject) => getOutcomeGroup(subject.last_result) === "adhd",
+        ).length;
+        const recentThreshold = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const recentActivity = subjects.filter(
+          (subject) => toTimestamp(subject.last_update) >= recentThreshold,
+        ).length;
+
+        byId("metric-total-subjects") &&
+          (byId("metric-total-subjects").textContent = String(total));
+        byId("metric-assessed-subjects") &&
+          (byId("metric-assessed-subjects").textContent = String(assessed));
+        byId("metric-adhd-related") &&
+          (byId("metric-adhd-related").textContent = String(adhdRelated));
+        byId("metric-recent-activity") &&
+          (byId("metric-recent-activity").textContent = String(recentActivity));
+      }
+
+      function attachSubjectRowHandlers() {
+        const rows = document.querySelectorAll("[data-subject-id]");
+        rows.forEach((row) => {
+          const openDetails = () => {
+            const subjectId = Number(row.getAttribute("data-subject-id"));
+            if (!Number.isFinite(subjectId)) {
+              return;
             }
+            viewSubject(subjectId);
+          };
 
-            const toast = document.createElement("div");
-            toast.className = `toast-message ${variant}`;
-            toast.textContent = message;
-            container.appendChild(toast);
+          row.addEventListener("click", openDetails);
+          row.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openDetails();
+            }
+          });
+        });
+      }
 
-            window.setTimeout(() => {
-                toast.style.opacity = "0";
-                toast.style.transform = "translateY(-8px)";
-                window.setTimeout(() => toast.remove(), 180);
-            }, 6000);
+      function renderSubjectsTable(subjects) {
+        const tbody = byId("subjects-table-body");
+        if (!tbody) {
+          return;
         }
 
-        function toggleMobileSidebar(open) {
-            const sidebar = byId("sidebar");
-            const backdrop = byId("sidebar-backdrop");
-            if (!sidebar || !backdrop) {
-                return;
-            }
-
-            const shouldOpen = typeof open === "boolean" ? open : !sidebar.classList.contains("mobile-open");
-            sidebar.classList.toggle("mobile-open", shouldOpen);
-            backdrop.classList.toggle("open", shouldOpen);
-        }
-
-        function openDetailDrawer() {
-            const drawer = byId("subject-detail-drawer");
-            const backdrop = byId("detail-backdrop");
-            if (!drawer || !backdrop) {
-                return;
-            }
-
-            appState.isDetailDrawerOpen = true;
-            drawer.classList.add("open");
-            drawer.setAttribute("aria-hidden", "false");
-            backdrop.classList.add("open");
-        }
-
-        function closeDetailDrawer() {
-            const drawer = byId("subject-detail-drawer");
-            const backdrop = byId("detail-backdrop");
-            if (!drawer || !backdrop) {
-                return;
-            }
-
-            appState.isDetailDrawerOpen = false;
-            drawer.classList.remove("open");
-            drawer.setAttribute("aria-hidden", "true");
-            backdrop.classList.remove("open");
-        }
-
-        function formatDateTime(value) {
-            if (!value) {
-                return "Not available";
-            }
-
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return "Not available";
-            }
-
-            return date.toLocaleString();
-        }
-
-        function getClassificationClass(label) {
-            const normalized = String(label || "").trim().toLowerCase();
-            if (!normalized) {
-                return "pending";
-            }
-            if (normalized.includes("non-adhd") || normalized.includes("non adhd")) {
-                return "non-adhd";
-            }
-            if (normalized.includes("adhd")) {
-                return "adhd";
-            }
-            return "pending";
-        }
-
-        function renderClassificationPill(label) {
-            const classification = label ? String(label) : "No result";
-            const className = getClassificationClass(classification);
-            return `<span class="classification-pill ${className}">${escapeHtml(classification)}</span>`;
-        }
-
-        function getOutcomeGroup(label) {
-            const className = getClassificationClass(label);
-            if (className === "adhd" || className === "non-adhd") {
-                return className;
-            }
-            return "pending";
-        }
-
-        function getConfidenceState(confidence) {
-            if (confidence >= 0.8) {
-                return { label: "High", className: "high" };
-            }
-            if (confidence >= 0.6) {
-                return { label: "Moderate", className: "mid" };
-            }
-            return { label: "Low", className: "low" };
-        }
-
-        function normalizeGender(value) {
-            const normalized = String(value || "").trim().toLowerCase();
-            return normalized || "unknown";
-        }
-
-        function toTimestamp(value) {
-            if (!value) {
-                return 0;
-            }
-            const date = new Date(value);
-            const timestamp = date.getTime();
-            return Number.isFinite(timestamp) ? timestamp : 0;
-        }
-
-        function updateSummaryMetrics(subjects) {
-            const total = subjects.length;
-            const assessed = subjects.filter((subject) => Number(subject.recording_count || 0) > 0).length;
-            const adhdRelated = subjects.filter((subject) => getOutcomeGroup(subject.last_result) === "adhd").length;
-            const recentThreshold = Date.now() - (30 * 24 * 60 * 60 * 1000);
-            const recentActivity = subjects.filter((subject) => toTimestamp(subject.last_update) >= recentThreshold).length;
-
-            byId("metric-total-subjects") && (byId("metric-total-subjects").textContent = String(total));
-            byId("metric-assessed-subjects") && (byId("metric-assessed-subjects").textContent = String(assessed));
-            byId("metric-adhd-related") && (byId("metric-adhd-related").textContent = String(adhdRelated));
-            byId("metric-recent-activity") && (byId("metric-recent-activity").textContent = String(recentActivity));
-        }
-
-        function attachSubjectRowHandlers() {
-            const rows = document.querySelectorAll("[data-subject-id]");
-            rows.forEach((row) => {
-                const openDetails = () => {
-                    const subjectId = Number(row.getAttribute("data-subject-id"));
-                    if (!Number.isFinite(subjectId)) {
-                        return;
-                    }
-                    viewSubject(subjectId);
-                };
-
-                row.addEventListener("click", openDetails);
-                row.addEventListener("keydown", (event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openDetails();
-                    }
-                });
-            });
-        }
-
-        function renderSubjectsTable(subjects) {
-            const tbody = byId("subjects-table-body");
-            if (!tbody) {
-                return;
-            }
-
-            if (!subjects || subjects.length === 0) {
-                const hasActiveFilters = Boolean(appState.filters.search)
-                    || appState.filters.gender !== "all"
-                    || appState.filters.outcome !== "all";
-                tbody.innerHTML = `
+        if (!subjects || subjects.length === 0) {
+          const hasActiveFilters =
+            Boolean(appState.filters.search) ||
+            appState.filters.gender !== "all" ||
+            appState.filters.outcome !== "all";
+          tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="table-feedback">
                             <strong>${hasActiveFilters ? "No matching subjects" : "No subjects found"}</strong>
-                            ${hasActiveFilters
-                        ? "Try resetting filters or broadening the search criteria."
-                        : "Run a new assessment to add subject records to the registry."}
+                            ${
+                              hasActiveFilters
+                                ? "Try resetting filters or broadening the search criteria."
+                                : "Run a new assessment to add subject records to the registry."
+                            }
                         </td>
                     </tr>
                 `;
-                return;
-            }
+          return;
+        }
 
-            tbody.innerHTML = subjects
-                .map((subject) => {
-                    const subjectCode = subject.subject_code || "-";
-                    const age = subject.age ?? "N/A";
-                    const gender = subject.gender || "N/A";
-                    const recordings = Number(subject.recording_count || 0);
-                    const latestClass = subject.last_result || "No result";
-                    const updatedAt = formatDateTime(subject.last_update);
+        tbody.innerHTML = subjects
+          .map((subject) => {
+            const subjectCode = subject.subject_code || "-";
+            const age = subject.age ?? "N/A";
+            const gender = subject.gender || "N/A";
+            const recordings = Number(subject.recording_count || 0);
+            const latestClass = subject.last_result || "No result";
+            const updatedAt = formatDateTime(subject.last_update);
 
-                    return `
+            return `
                         <tr class="subject-row" data-subject-id="${subject.id}" tabindex="0" role="button" aria-label="Open details for ${escapeHtml(subjectCode)}">
                             <td class="subject-code">${escapeHtml(subjectCode)}</td>
                             <td>${escapeHtml(String(age))}</td>
@@ -1497,96 +1649,101 @@
                             <td>${escapeHtml(updatedAt)}</td>
                         </tr>
                     `;
-                })
-                .join("");
+          })
+          .join("");
 
-            attachSubjectRowHandlers();
-        }
+        attachSubjectRowHandlers();
+      }
 
-        function syncFilterStateFromInputs() {
-            appState.filters.search = byId("search-subjects")?.value.trim().toLowerCase() || "";
-            appState.filters.gender = byId("gender-filter")?.value || "all";
-            appState.filters.outcome = byId("outcome-filter")?.value || "all";
-            appState.filters.sort = byId("sort-subjects")?.value || "recent";
-        }
+      function syncFilterStateFromInputs() {
+        appState.filters.search = byId("search-subjects")?.value.trim().toLowerCase() || "";
+        appState.filters.gender = byId("gender-filter")?.value || "all";
+        appState.filters.outcome = byId("outcome-filter")?.value || "all";
+        appState.filters.sort = byId("sort-subjects")?.value || "recent";
+      }
 
-        function applyFilters() {
-            syncFilterStateFromInputs();
+      function applyFilters() {
+        syncFilterStateFromInputs();
 
-            const searchTerm = appState.filters.search;
-            const genderFilter = appState.filters.gender;
-            const outcomeFilter = appState.filters.outcome;
-            const sortFilter = appState.filters.sort;
+        const searchTerm = appState.filters.search;
+        const genderFilter = appState.filters.gender;
+        const outcomeFilter = appState.filters.outcome;
+        const sortFilter = appState.filters.sort;
 
-            const filtered = appState.allSubjects
-                .filter((subject) => {
-                    if (searchTerm) {
-                        const subjectCode = String(subject.subject_code || "").toLowerCase();
-                        const gender = String(subject.gender || "").toLowerCase();
-                        const classification = String(subject.last_result || "").toLowerCase();
-                        const searchableText = `${subjectCode} ${gender} ${classification}`;
-                        if (!searchableText.includes(searchTerm)) {
-                            return false;
-                        }
-                    }
-
-                    if (genderFilter !== "all") {
-                        const normalizedGender = normalizeGender(subject.gender);
-                        if (genderFilter === "unknown") {
-                            if (normalizedGender !== "unknown") {
-                                return false;
-                            }
-                        } else if (normalizedGender !== genderFilter) {
-                            return false;
-                        }
-                    }
-
-                    if (outcomeFilter !== "all") {
-                        if (getOutcomeGroup(subject.last_result) !== outcomeFilter) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                })
-                .sort((left, right) => {
-                    if (sortFilter === "code") {
-                        return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
-                    }
-
-                    if (sortFilter === "assessments") {
-                        const recordingDelta = Number(right.recording_count || 0) - Number(left.recording_count || 0);
-                        if (recordingDelta !== 0) {
-                            return recordingDelta;
-                        }
-                        return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
-                    }
-
-                    const recencyDelta = toTimestamp(right.last_update) - toTimestamp(left.last_update);
-                    if (recencyDelta !== 0) {
-                        return recencyDelta;
-                    }
-                    return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
-                });
-
-            appState.filteredSubjects = filtered;
-            renderSubjectsTable(appState.filteredSubjects);
-        }
-
-        function renderDetailLoading() {
-            const title = byId("subject-detail-title");
-            const subtitle = byId("subject-detail-subtitle");
-            const subjectList = byId("subject-detail-list");
-            const timeline = byId("subject-assessment-timeline");
-            if (!title || !subtitle || !subjectList || !timeline) {
-                return;
+        const filtered = appState.allSubjects
+          .filter((subject) => {
+            if (searchTerm) {
+              const subjectCode = String(subject.subject_code || "").toLowerCase();
+              const gender = String(subject.gender || "").toLowerCase();
+              const classification = String(subject.last_result || "").toLowerCase();
+              const searchableText = `${subjectCode} ${gender} ${classification}`;
+              if (!searchableText.includes(searchTerm)) {
+                return false;
+              }
             }
 
-            title.textContent = "Subject Details";
-            subtitle.textContent = "Loading subject profile and assessment timeline...";
-            appState.selectedSubjectCode = "";
-            subjectList.innerHTML = "";
-            timeline.innerHTML = `
+            if (genderFilter !== "all") {
+              const normalizedGender = normalizeGender(subject.gender);
+              if (genderFilter === "unknown") {
+                if (normalizedGender !== "unknown") {
+                  return false;
+                }
+              } else if (normalizedGender !== genderFilter) {
+                return false;
+              }
+            }
+
+            if (outcomeFilter !== "all") {
+              if (getOutcomeGroup(subject.last_result) !== outcomeFilter) {
+                return false;
+              }
+            }
+
+            return true;
+          })
+          .sort((left, right) => {
+            if (sortFilter === "code") {
+              return String(left.subject_code || "").localeCompare(
+                String(right.subject_code || ""),
+              );
+            }
+
+            if (sortFilter === "assessments") {
+              const recordingDelta =
+                Number(right.recording_count || 0) - Number(left.recording_count || 0);
+              if (recordingDelta !== 0) {
+                return recordingDelta;
+              }
+              return String(left.subject_code || "").localeCompare(
+                String(right.subject_code || ""),
+              );
+            }
+
+            const recencyDelta = toTimestamp(right.last_update) - toTimestamp(left.last_update);
+            if (recencyDelta !== 0) {
+              return recencyDelta;
+            }
+            return String(left.subject_code || "").localeCompare(String(right.subject_code || ""));
+          });
+
+        appState.filteredSubjects = filtered;
+        renderSubjectsTable(appState.filteredSubjects);
+      }
+
+      function renderDetailLoading() {
+        const title = byId("subject-detail-title");
+        const subtitle = byId("subject-detail-subtitle");
+        const subjectList = byId("subject-detail-list");
+        const timeline = byId("subject-assessment-timeline");
+        if (!title || !subtitle || !subjectList || !timeline) {
+          return;
+        }
+
+        title.textContent = "Subject Details";
+        subtitle.textContent = "Loading subject profile and assessment timeline...";
+        appState.selectedSubjectCode = "";
+        subjectList.innerHTML = "";
+        timeline.innerHTML = `
                 <div class="loading-state">
                     <div class="skeleton-row"></div>
                     <div class="skeleton-row"></div>
@@ -1594,53 +1751,65 @@
                     <div class="skeleton-row"></div>
                 </div>
             `;
+      }
+
+      function renderSubjectDetails(subject) {
+        const title = byId("subject-detail-title");
+        const subtitle = byId("subject-detail-subtitle");
+        const subjectList = byId("subject-detail-list");
+        const timeline = byId("subject-assessment-timeline");
+        if (!title || !subtitle || !subjectList || !timeline) {
+          return;
         }
 
-        function renderSubjectDetails(subject) {
-            const title = byId("subject-detail-title");
-            const subtitle = byId("subject-detail-subtitle");
-            const subjectList = byId("subject-detail-list");
-            const timeline = byId("subject-assessment-timeline");
-            if (!title || !subtitle || !subjectList || !timeline) {
-                return;
-            }
+        appState.selectedSubjectCode = String(subject.subject_code || "");
 
-            appState.selectedSubjectCode = String(subject.subject_code || "");
+        const assessments = Array.isArray(subject.assessments) ? subject.assessments : [];
+        const demographics = [
+          ["Subject Code", subject.subject_code || "N/A"],
+          ["Age", subject.age ?? "N/A"],
+          ["Gender", subject.gender || "N/A"],
+          ["Total Assessments", assessments.length],
+        ];
 
-            const assessments = Array.isArray(subject.assessments) ? subject.assessments : [];
-            const demographics = [
-                ["Subject Code", subject.subject_code || "N/A"],
-                ["Age", subject.age ?? "N/A"],
-                ["Gender", subject.gender || "N/A"],
-                ["Total Assessments", assessments.length],
-            ];
+        title.textContent = subject.subject_code
+          ? `Subject ${subject.subject_code}`
+          : "Subject Details";
+        subtitle.textContent = `${assessments.length} assessment${assessments.length === 1 ? "" : "s"} on record`;
 
-            title.textContent = subject.subject_code ? `Subject ${subject.subject_code}` : "Subject Details";
-            subtitle.textContent = `${assessments.length} assessment${assessments.length === 1 ? "" : "s"} on record`;
-
-            subjectList.innerHTML = demographics
-                .map(([label, value]) => `
+        subjectList.innerHTML = demographics
+          .map(
+            ([label, value]) => `
                     <li class="detail-item">
                         <span class="detail-label">${escapeHtml(String(label))}</span>
                         <span class="detail-value">${escapeHtml(String(value))}</span>
                     </li>
-                `)
-                .join("");
+                `,
+          )
+          .join("");
 
-            if (assessments.length === 0) {
-                timeline.innerHTML = "<p class='detail-empty'>No assessments found for this subject yet.</p>";
-                return;
-            }
+        if (assessments.length === 0) {
+          timeline.innerHTML =
+            "<p class='detail-empty'>No assessments found for this subject yet.</p>";
+          return;
+        }
 
-            timeline.innerHTML = assessments.map((assessment) => {
-                const confidence = Number(assessment.confidence_score);
-                const confidenceRatio = Number.isFinite(confidence) ? Math.max(0, Math.min(100, confidence * 100)) : 0;
-                const confidenceState = getConfidenceState(Number.isFinite(confidence) ? confidence : 0);
-                const confidenceText = Number.isFinite(confidence) ? `${confidenceRatio.toFixed(1)}% (${confidenceState.label})` : "Not available";
-                const inferencedAt = formatDateTime(assessment.inferenced_at);
-                const clinician = assessment.clinician_name || "Not recorded";
+        timeline.innerHTML = assessments
+          .map((assessment) => {
+            const confidence = Number(assessment.confidence_score);
+            const confidenceRatio = Number.isFinite(confidence)
+              ? Math.max(0, Math.min(100, confidence * 100))
+              : 0;
+            const confidenceState = getConfidenceState(
+              Number.isFinite(confidence) ? confidence : 0,
+            );
+            const confidenceText = Number.isFinite(confidence)
+              ? `${confidenceRatio.toFixed(1)}% (${confidenceState.label})`
+              : "Not available";
+            const inferencedAt = formatDateTime(assessment.inferenced_at);
+            const clinician = assessment.clinician_name || "Not recorded";
 
-                return `
+            return `
                     <article class="timeline-card">
                         <div class="timeline-head">
                             ${renderClassificationPill(assessment.predicted_class || "No result")}
@@ -1661,38 +1830,39 @@
                         </div>
                     </article>
                 `;
-            }).join("");
+          })
+          .join("");
+      }
+
+      async function viewSubject(subjectId) {
+        renderDetailLoading();
+        openDetailDrawer();
+
+        try {
+          const response = await fetch(`/api/subjects/${subjectId}/assessments`);
+          const subject = await response.json().catch(() => ({}));
+
+          if (!response.ok || subject.error) {
+            throw new Error(subject.error || "Failed to load subject details.");
+          }
+
+          renderSubjectDetails(subject);
+        } catch (error) {
+          const subtitle = byId("subject-detail-subtitle");
+          const timeline = byId("subject-assessment-timeline");
+          if (subtitle) {
+            subtitle.textContent = "Subject details could not be loaded.";
+          }
+          if (timeline) {
+            timeline.innerHTML = `<p class="detail-empty">${escapeHtml(error.message || "Unable to load subject details.")}</p>`;
+          }
         }
+      }
 
-        async function viewSubject(subjectId) {
-            renderDetailLoading();
-            openDetailDrawer();
-
-            try {
-                const response = await fetch(`/api/subjects/${subjectId}/assessments`);
-                const subject = await response.json().catch(() => ({}));
-
-                if (!response.ok || subject.error) {
-                    throw new Error(subject.error || "Failed to load subject details.");
-                }
-
-                renderSubjectDetails(subject);
-            } catch (error) {
-                const subtitle = byId("subject-detail-subtitle");
-                const timeline = byId("subject-assessment-timeline");
-                if (subtitle) {
-                    subtitle.textContent = "Subject details could not be loaded.";
-                }
-                if (timeline) {
-                    timeline.innerHTML = `<p class="detail-empty">${escapeHtml(error.message || "Unable to load subject details.")}</p>`;
-                }
-            }
-        }
-
-        async function loadSubjects() {
-            const tbody = byId("subjects-table-body");
-            if (tbody) {
-                tbody.innerHTML = `
+      async function loadSubjects() {
+        const tbody = byId("subjects-table-body");
+        if (tbody) {
+          tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="table-feedback">
                             <div class="loading-state">
@@ -1703,23 +1873,23 @@
                         </td>
                     </tr>
                 `;
-            }
+        }
 
-            try {
-                const response = await fetch("/api/subjects");
-                const subjects = await response.json().catch(() => []);
+        try {
+          const response = await fetch("/api/subjects");
+          const subjects = await response.json().catch(() => []);
 
-                if (!response.ok) {
-                    throw new Error("Failed to load subjects");
-                }
+          if (!response.ok) {
+            throw new Error("Failed to load subjects");
+          }
 
-                appState.allSubjects = Array.isArray(subjects) ? subjects : [];
-                updateSummaryMetrics(appState.allSubjects);
-                applyFilters();
-            } catch (error) {
-                updateSummaryMetrics([]);
-                if (tbody) {
-                    tbody.innerHTML = `
+          appState.allSubjects = Array.isArray(subjects) ? subjects : [];
+          updateSummaryMetrics(appState.allSubjects);
+          applyFilters();
+        } catch (error) {
+          updateSummaryMetrics([]);
+          if (tbody) {
+            tbody.innerHTML = `
                         <tr>
                             <td colspan="6" class="table-feedback">
                                 <strong>Unable to load subjects</strong>
@@ -1727,118 +1897,116 @@
                             </td>
                         </tr>
                     `;
-                }
-                showToast("Failed to load subjects.", "error");
+          }
+          showToast("Failed to load subjects.", "error");
+        }
+      }
+
+      async function loadCurrentClinician() {
+        try {
+          const response = await fetch("/api/me");
+          if (!response.ok) {
+            window.location.href = "/login.html";
+            return;
+          }
+
+          const me = await response.json();
+          byId("sidebar-clinician-name").textContent = me.clinician_name || "Clinician";
+          const logoutLabel = byId("sidebar-logout-name");
+          if (logoutLabel) logoutLabel.textContent = me.clinician_name || "Logout";
+          sessionStorage.setItem("clinician_name", me.clinician_name || "Clinician");
+          sessionStorage.setItem("clinician_occupation", me.clinician_occupation || "");
+        } catch (error) {
+          window.location.href = "/login.html";
+        }
+      }
+
+      async function handleLogout() {
+        try {
+          await fetch("/api/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+        } finally {
+          sessionStorage.clear();
+          window.location.href = "/login.html";
+        }
+      }
+
+      function setupEventHandlers() {
+        byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar(true));
+        byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+
+        byId("sidebar-expand-btn")?.addEventListener("click", () => {
+          const sidebar = byId("sidebar");
+          if (sidebar) sidebar.classList.toggle("expanded");
+        });
+        byId("close-detail-btn")?.addEventListener("click", closeDetailDrawer);
+        byId("detail-backdrop")?.addEventListener("click", closeDetailDrawer);
+
+        byId("logout-btn")?.addEventListener("click", handleLogout);
+        byId("open-assessment-btn")?.addEventListener("click", () => {
+          window.location.href = "/index.html";
+        });
+
+        byId("detail-new-assessment-btn")?.addEventListener("click", () => {
+          if (appState.selectedSubjectCode) {
+            sessionStorage.setItem("draft_subject_code", appState.selectedSubjectCode);
+          }
+          window.location.href = "/index.html";
+        });
+
+        byId("detail-view-results-btn")?.addEventListener("click", () => {
+          window.location.href = `/results.html?search=${encodeURIComponent(appState.selectedSubjectCode)}`;
+        });
+
+        byId("refresh-subjects-btn")?.addEventListener("click", async () => {
+          await loadSubjects();
+          showToast("Subject list refreshed.", "success");
+        });
+
+        byId("search-subjects")?.addEventListener("input", applyFilters);
+        byId("gender-filter")?.addEventListener("change", applyFilters);
+        byId("outcome-filter")?.addEventListener("change", applyFilters);
+        byId("sort-subjects")?.addEventListener("change", applyFilters);
+
+        byId("clear-search-btn")?.addEventListener("click", () => {
+          const searchInput = byId("search-subjects");
+          const genderFilter = byId("gender-filter");
+          const outcomeFilter = byId("outcome-filter");
+          const sortSubjects = byId("sort-subjects");
+
+          if (!searchInput || !genderFilter || !outcomeFilter || !sortSubjects) {
+            return;
+          }
+
+          searchInput.value = "";
+          genderFilter.value = "all";
+          outcomeFilter.value = "all";
+          sortSubjects.value = "recent";
+          applyFilters();
+          searchInput.focus();
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            if (byId("sidebar")?.classList.contains("mobile-open")) {
+              toggleMobileSidebar(false);
             }
-        }
-
-        async function loadCurrentClinician() {
-            try {
-                const response = await fetch("/api/me");
-                if (!response.ok) {
-                    window.location.href = "/login.html";
-                    return;
-                }
-
-                const me = await response.json();
-                byId("sidebar-clinician-name").textContent = me.clinician_name || "Clinician";
-                const logoutLabel = byId("sidebar-logout-name");
-                if (logoutLabel) logoutLabel.textContent = me.clinician_name || "Logout";
-                sessionStorage.setItem("clinician_name", me.clinician_name || "Clinician");
-                sessionStorage.setItem("clinician_occupation", me.clinician_occupation || "");
-            } catch (error) {
-                window.location.href = "/login.html";
+            if (appState.isDetailDrawerOpen) {
+              closeDetailDrawer();
             }
-        }
+          }
+        });
+      }
 
-        async function handleLogout() {
-            try {
-                await fetch("/api/logout", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                });
-            } finally {
-                sessionStorage.clear();
-                window.location.href = "/login.html";
-            }
-        }
+      async function initializePage() {
+        setupEventHandlers();
+        await loadCurrentClinician();
+        await loadSubjects();
+      }
 
-        function setupEventHandlers() {
-            byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar(true));
-            byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
-
-            byId("sidebar-expand-btn")?.addEventListener("click", () => {
-                const sidebar = byId("sidebar");
-                if (sidebar) sidebar.classList.toggle("expanded");
-            });
-            byId("close-detail-btn")?.addEventListener("click", closeDetailDrawer);
-            byId("detail-backdrop")?.addEventListener("click", closeDetailDrawer);
-
-            byId("logout-btn")?.addEventListener("click", handleLogout);
-            byId("open-assessment-btn")?.addEventListener("click", () => {
-                window.location.href = "/index.html";
-            });
-
-            byId("detail-new-assessment-btn")?.addEventListener("click", () => {
-                if (appState.selectedSubjectCode) {
-                    sessionStorage.setItem("draft_subject_code", appState.selectedSubjectCode);
-                }
-                window.location.href = "/index.html";
-            });
-
-            byId("detail-view-results-btn")?.addEventListener("click", () => {
-                window.location.href = "/results.html";
-            });
-
-            byId("refresh-subjects-btn")?.addEventListener("click", async () => {
-                await loadSubjects();
-                showToast("Subject list refreshed.", "success");
-            });
-
-            byId("search-subjects")?.addEventListener("input", applyFilters);
-            byId("gender-filter")?.addEventListener("change", applyFilters);
-            byId("outcome-filter")?.addEventListener("change", applyFilters);
-            byId("sort-subjects")?.addEventListener("change", applyFilters);
-
-            byId("clear-search-btn")?.addEventListener("click", () => {
-                const searchInput = byId("search-subjects");
-                const genderFilter = byId("gender-filter");
-                const outcomeFilter = byId("outcome-filter");
-                const sortSubjects = byId("sort-subjects");
-
-                if (!searchInput || !genderFilter || !outcomeFilter || !sortSubjects) {
-                    return;
-                }
-
-                searchInput.value = "";
-                genderFilter.value = "all";
-                outcomeFilter.value = "all";
-                sortSubjects.value = "recent";
-                applyFilters();
-                searchInput.focus();
-            });
-
-            document.addEventListener("keydown", (event) => {
-                if (event.key === "Escape") {
-                    if (byId("sidebar")?.classList.contains("mobile-open")) {
-                        toggleMobileSidebar(false);
-                    }
-                    if (appState.isDetailDrawerOpen) {
-                        closeDetailDrawer();
-                    }
-                }
-            });
-        }
-
-        async function initializePage() {
-            setupEventHandlers();
-            await loadCurrentClinician();
-            await loadSubjects();
-        }
-
-        document.addEventListener("DOMContentLoaded", initializePage);
+      document.addEventListener("DOMContentLoaded", initializePage);
     </script>
-
-</body>
-
+  </body>
 </html>

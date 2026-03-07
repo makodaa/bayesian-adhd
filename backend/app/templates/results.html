@@ -2140,6 +2140,14 @@
       async function initializePage() {
         await loadCurrentClinician();
         await loadResults();
+        const q = new URLSearchParams(location.search).get("search");
+        if (q) {
+          const s = byId("search-results");
+          if (s) {
+            s.value = q;
+            applyFilters();
+          }
+        }
       }
 
       document.addEventListener("DOMContentLoaded", initializePage);
