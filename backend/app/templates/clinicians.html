@@ -30,9 +30,9 @@
         --success-600: #2e7d66;
         --warning-600: #b56f2a;
         --error-600: #b4494f;
-         --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
-         --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
-         --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
+        --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
+        --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
+        --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
         --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
         --radius-xs: 4px;
         --radius-sm: 6px;
@@ -51,7 +51,12 @@
         min-height: 100vh;
         font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
         color: var(--text-900);
-        background: radial-gradient(circle at 15% -10%, #f7fbfd 0%, var(--surface-bg) 45%, #e8eef2 100%);
+        background: radial-gradient(
+          circle at 15% -10%,
+          #f7fbfd 0%,
+          var(--surface-bg) 45%,
+          #e8eef2 100%
+        );
       }
 
       button,
@@ -197,7 +202,9 @@
         overflow: hidden;
         opacity: 0;
         max-width: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .brand-name {
@@ -216,7 +223,9 @@
         justify-content: center;
         flex-shrink: 0;
         cursor: pointer;
-        transition: color 150ms ease-out, background-color 150ms ease-out;
+        transition:
+          color 150ms ease-out,
+          background-color 150ms ease-out;
       }
 
       .sidebar-expand-btn:hover {
@@ -246,7 +255,10 @@
         height: 44px;
         gap: 0;
         overflow: hidden;
-        transition: background-color 170ms ease-out, color 170ms ease-out, gap 200ms ease-out;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          gap 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-link {
@@ -280,7 +292,9 @@
         overflow: hidden;
         opacity: 0;
         max-width: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-link span {
@@ -340,7 +354,11 @@
         justify-content: center;
         gap: 0;
         overflow: hidden;
-        transition: background-color 170ms ease-out, color 170ms ease-out, width 200ms ease-out, padding 200ms ease-out;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          width 200ms ease-out,
+          padding 200ms ease-out;
         white-space: nowrap;
       }
 
@@ -360,7 +378,9 @@
         overflow: hidden;
         max-width: 0;
         opacity: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-logout-label {
@@ -384,6 +404,7 @@
         position: sticky;
         top: 0;
         z-index: 900;
+        -webkit-backdrop-filter: blur(8px);
         backdrop-filter: blur(8px);
         background: rgba(238, 243, 245, 0.92);
         border-bottom: 1px solid #dbe3e8;
@@ -786,7 +807,7 @@
 
       .timeline-card-meta {
         color: var(--text-700);
-        font-size: 0.80rem;
+        font-size: 0.8rem;
       }
 
       /* Add clinician form */
@@ -827,6 +848,42 @@
         border-color: var(--error-600);
       }
 
+      input[type="password"]::-ms-reveal,
+      input[type="password"]::-ms-clear {
+        display: none;
+      }
+
+      /* Password input wrapper with show/hide toggle */
+      .password-input-wrapper {
+        position: relative;
+        display: flex;
+      }
+
+      .password-input-wrapper input {
+        flex: 1;
+        padding-right: 2.2rem;
+      }
+
+      .pw-toggle-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--text-500, #6b7a8d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0;
+      }
+
+      .pw-toggle-btn:hover {
+        color: var(--text-900);
+      }
+
       .field-error {
         font-size: 0.76rem;
         color: var(--error-600);
@@ -835,6 +892,33 @@
 
       .field-error.visible {
         display: block;
+      }
+
+      /* Password criteria list */
+      .password-criteria {
+        list-style: none;
+        padding: 0;
+        margin: 0.35rem 0 0 0;
+        font-size: 0.76rem;
+      }
+
+      .password-criteria li {
+        padding: 0.1rem 0;
+        color: var(--error-600);
+        transition: color 0.2s ease;
+      }
+
+      .password-criteria li::before {
+        content: "\2717 ";
+        font-weight: 600;
+      }
+
+      .password-criteria li.met {
+        color: var(--success-600);
+      }
+
+      .password-criteria li.met::before {
+        content: "\2713 ";
       }
 
       /* Loading / skeleton */
@@ -853,8 +937,12 @@
       }
 
       @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
       }
 
       .hidden {
@@ -941,7 +1029,12 @@
   </head>
 
   <body>
-    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
     <div id="detail-backdrop" class="detail-backdrop"></div>
 
@@ -952,8 +1045,20 @@
             <span class="brand-mark">B</span>
             <span class="brand-name">BayesianADHD</span>
           </div>
-          <button class="sidebar-expand-btn" id="sidebar-expand-btn" type="button" aria-label="Toggle sidebar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button
+            class="sidebar-expand-btn"
+            id="sidebar-expand-btn"
+            type="button"
+            aria-label="Toggle sidebar"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -963,14 +1068,26 @@
 
         <nav class="sidebar-nav">
           <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
             <span>Dashboard</span>
           </a>
           <a href="/subjects.html" class="sidebar-link" title="Subjects" aria-label="Subjects">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -979,7 +1096,13 @@
             <span>Subjects</span>
           </a>
           <a href="/results.html" class="sidebar-link" title="Assessments" aria-label="Assessments">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -987,8 +1110,19 @@
             </svg>
             <span>Assessments</span>
           </a>
-          <a href="/clinicians.html" class="sidebar-link active" title="Clinicians" aria-label="Clinicians">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <a
+            href="/clinicians.html"
+            class="sidebar-link active"
+            title="Clinicians"
+            aria-label="Clinicians"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
@@ -1000,7 +1134,14 @@
           <p class="sidebar-user-label">Signed in as</p>
           <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
           <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -1014,9 +1155,22 @@
         <header class="page-header">
           <div class="page-header-inner">
             <div class="page-title-group">
-              <button id="sidebar-toggle" class="menu-toggle" type="button" aria-label="Toggle navigation menu">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+              <button
+                id="sidebar-toggle"
+                class="menu-toggle"
+                type="button"
+                aria-label="Toggle navigation menu"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <line x1="3" y1="6" x2="21" y2="6"></line>
                   <line x1="3" y1="12" x2="21" y2="12"></line>
                   <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -1028,7 +1182,9 @@
               </div>
             </div>
             <div class="page-actions">
-              <button id="open-add-clinician-btn" type="button" class="btn-primary-app">Add Clinician</button>
+              <button id="open-add-clinician-btn" type="button" class="btn-primary-app">
+                Add Clinician
+              </button>
             </div>
           </div>
         </header>
@@ -1037,7 +1193,10 @@
           <section class="section-shell">
             <div class="section-head">
               <h2>List of All Clinicians</h2>
-              <p>All accounts with access to the BayesianADHD platform. Click a row to view profile and assessment history.</p>
+              <p>
+                All accounts with access to the BayesianADHD platform. Click a row to view profile
+                and assessment history.
+              </p>
             </div>
 
             <div class="table-wrap">
@@ -1070,15 +1229,33 @@
     </div>
 
     <!-- Clinician Detail Drawer -->
-    <aside class="app-drawer" id="clinician-detail-drawer" aria-hidden="true" aria-labelledby="clinician-detail-title">
+    <aside
+      class="app-drawer"
+      id="clinician-detail-drawer"
+      aria-hidden="true"
+      aria-labelledby="clinician-detail-title"
+    >
       <div class="detail-header">
         <div>
           <h2 id="clinician-detail-title">Clinician Profile</h2>
           <p id="clinician-detail-subtitle">Loading...</p>
         </div>
-        <button id="close-clinician-detail-btn" class="icon-button" type="button" aria-label="Close clinician details">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
+        <button
+          id="close-clinician-detail-btn"
+          class="icon-button"
+          type="button"
+          aria-label="Close clinician details"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -1088,20 +1265,40 @@
         <!-- populated by JS -->
       </div>
       <div class="detail-footer">
-        <button id="close-clinician-detail-footer-btn" type="button" class="btn-secondary-app">Close</button>
+        <button id="close-clinician-detail-footer-btn" type="button" class="btn-secondary-app">
+          Close
+        </button>
       </div>
     </aside>
 
     <!-- Add Clinician Drawer -->
-    <aside class="app-drawer" id="add-clinician-drawer" aria-hidden="true" aria-labelledby="add-clinician-title">
+    <aside
+      class="app-drawer"
+      id="add-clinician-drawer"
+      aria-hidden="true"
+      aria-labelledby="add-clinician-title"
+    >
       <div class="detail-header">
         <div>
           <h2 id="add-clinician-title">Add Clinician</h2>
           <p>Create a new clinician account.</p>
         </div>
-        <button id="close-add-clinician-btn" class="icon-button" type="button" aria-label="Close add clinician">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
+        <button
+          id="close-add-clinician-btn"
+          class="icon-button"
+          type="button"
+          aria-label="Close add clinician"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -1127,20 +1324,121 @@
             </div>
             <div class="form-field">
               <label for="ac-password">Password</label>
-              <input type="password" id="ac-password" autocomplete="new-password" />
-              <span class="field-error" id="ac-password-error">Password must be at least 8 characters.</span>
+              <div class="password-input-wrapper">
+                <input type="password" id="ac-password" autocomplete="new-password" />
+                <button
+                  type="button"
+                  class="pw-toggle-btn"
+                  id="ac-password-toggle"
+                  aria-label="Show password"
+                >
+                  <svg
+                    id="ac-password-eye"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg
+                    id="ac-password-eye-off"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    style="display: none"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                    ></path>
+                    <path
+                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                    ></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <ul class="password-criteria" id="ac-password-criteria">
+                <li id="pw-length">At least 8 characters</li>
+                <li id="pw-uppercase">At least one uppercase letter</li>
+                <li id="pw-lowercase">At least one lowercase letter</li>
+                <li id="pw-number">At least one number</li>
+                <li id="pw-special">At least one special character (!@#$%^&* etc.)</li>
+              </ul>
+              <span class="field-error" id="ac-password-error"
+                >Password does not meet all requirements.</span
+              >
             </div>
             <div class="form-field">
               <label for="ac-confirm-password">Confirm Password</label>
-              <input type="password" id="ac-confirm-password" autocomplete="new-password" />
-              <span class="field-error" id="ac-confirm-password-error">Passwords do not match.</span>
+              <div class="password-input-wrapper">
+                <input type="password" id="ac-confirm-password" autocomplete="new-password" />
+                <button
+                  type="button"
+                  class="pw-toggle-btn"
+                  id="ac-confirm-password-toggle"
+                  aria-label="Show password"
+                >
+                  <svg
+                    id="ac-confirm-password-eye"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg
+                    id="ac-confirm-password-eye-off"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    style="display: none"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                    ></path>
+                    <path
+                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                    ></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <span class="field-error" id="ac-confirm-password-error"
+                >Passwords do not match.</span
+              >
             </div>
           </div>
         </form>
       </div>
       <div class="detail-footer">
-        <button id="submit-add-clinician-btn" type="button" class="btn-primary-app">Create Account</button>
-        <button id="cancel-add-clinician-btn" type="button" class="btn-secondary-app">Cancel</button>
+        <button id="submit-add-clinician-btn" type="button" class="btn-primary-app">
+          Create Account
+        </button>
+        <button id="cancel-add-clinician-btn" type="button" class="btn-secondary-app">
+          Cancel
+        </button>
       </div>
     </aside>
 
@@ -1153,23 +1451,23 @@
 
       function escapeHtml(value) {
         return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
-      function showToast(message, variant = 'error') {
-        const container = byId('toast-container');
+      function showToast(message, variant = "error") {
+        const container = byId("toast-container");
         if (!container) return;
-        const toast = document.createElement('div');
+        const toast = document.createElement("div");
         toast.className = `toast-message ${variant}`;
         toast.textContent = message;
         container.appendChild(toast);
         window.setTimeout(() => {
-          toast.style.opacity = '0';
-          toast.style.transform = 'translateY(-8px)';
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-8px)";
           window.setTimeout(() => toast.remove(), 180);
         }, 6000);
       }
@@ -1178,40 +1476,46 @@
 
       async function loadCurrentClinician() {
         try {
-          const res = await fetch('/api/me');
-          if (res.status === 401 || !res.ok) { window.location.href = '/login.html'; return; }
+          const res = await fetch("/api/me");
+          if (res.status === 401 || !res.ok) {
+            window.location.href = "/login.html";
+            return;
+          }
           const data = await res.json();
-          const el = byId('sidebar-clinician-name');
+          const el = byId("sidebar-clinician-name");
           if (el && data.clinician_name) el.textContent = data.clinician_name;
-          const logoutLabel = byId('sidebar-logout-name');
+          const logoutLabel = byId("sidebar-logout-name");
           if (logoutLabel && data.clinician_name) logoutLabel.textContent = data.clinician_name;
-        } catch { window.location.href = '/login.html'; }
+        } catch {
+          window.location.href = "/login.html";
+        }
       }
 
       function toggleMobileSidebar(open) {
-        const sidebar = byId('sidebar');
-        const backdrop = byId('sidebar-backdrop');
+        const sidebar = byId("sidebar");
+        const backdrop = byId("sidebar-backdrop");
         if (!sidebar || !backdrop) return;
-        const shouldOpen = typeof open === 'boolean' ? open : !sidebar.classList.contains('mobile-open');
-        sidebar.classList.toggle('mobile-open', shouldOpen);
-        backdrop.classList.toggle('open', shouldOpen);
+        const shouldOpen =
+          typeof open === "boolean" ? open : !sidebar.classList.contains("mobile-open");
+        sidebar.classList.toggle("mobile-open", shouldOpen);
+        backdrop.classList.toggle("open", shouldOpen);
       }
 
       async function handleLogout() {
         try {
-          await fetch('/api/logout', { method: 'POST' });
+          await fetch("/api/logout", { method: "POST" });
         } finally {
-          window.location.href = '/login.html';
+          window.location.href = "/login.html";
         }
       }
 
-      byId('sidebar-toggle')?.addEventListener('click', () => toggleMobileSidebar());
-      byId('sidebar-backdrop')?.addEventListener('click', () => toggleMobileSidebar(false));
-      byId('logout-btn')?.addEventListener('click', handleLogout);
+      byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar());
+      byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+      byId("logout-btn")?.addEventListener("click", handleLogout);
 
-      byId('sidebar-expand-btn')?.addEventListener('click', () => {
-        const sidebar = byId('sidebar');
-        if (sidebar) sidebar.classList.toggle('expanded');
+      byId("sidebar-expand-btn")?.addEventListener("click", () => {
+        const sidebar = byId("sidebar");
+        if (sidebar) sidebar.classList.toggle("expanded");
       });
 
       // ── Drawer lifecycle ──
@@ -1221,32 +1525,38 @@
       function openDrawer(drawerId) {
         closeActiveDrawer();
         const drawer = byId(drawerId);
-        const backdrop = byId('detail-backdrop');
+        const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
-        drawer.classList.add('open');
-        drawer.setAttribute('aria-hidden', 'false');
-        backdrop.classList.add('open');
+        drawer.classList.add("open");
+        drawer.setAttribute("aria-hidden", "false");
+        backdrop.classList.add("open");
         activeDrawer = drawerId;
       }
 
       function closeActiveDrawer() {
         if (!activeDrawer) return;
         const drawer = byId(activeDrawer);
-        const backdrop = byId('detail-backdrop');
-        if (drawer) { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); }
-        if (backdrop) backdrop.classList.remove('open');
+        const backdrop = byId("detail-backdrop");
+        if (drawer) {
+          drawer.classList.remove("open");
+          drawer.setAttribute("aria-hidden", "true");
+        }
+        if (backdrop) backdrop.classList.remove("open");
         activeDrawer = null;
       }
 
-      byId('close-clinician-detail-btn')?.addEventListener('click', closeActiveDrawer);
-      byId('close-clinician-detail-footer-btn')?.addEventListener('click', closeActiveDrawer);
-      byId('close-add-clinician-btn')?.addEventListener('click', closeActiveDrawer);
-      byId('cancel-add-clinician-btn')?.addEventListener('click', closeActiveDrawer);
-      byId('detail-backdrop')?.addEventListener('click', closeActiveDrawer);
+      byId("close-clinician-detail-btn")?.addEventListener("click", closeActiveDrawer);
+      byId("close-clinician-detail-footer-btn")?.addEventListener("click", closeActiveDrawer);
+      byId("close-add-clinician-btn")?.addEventListener("click", closeActiveDrawer);
+      byId("cancel-add-clinician-btn")?.addEventListener("click", closeActiveDrawer);
+      byId("detail-backdrop")?.addEventListener("click", closeActiveDrawer);
 
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-          if (byId('sidebar')?.classList.contains('mobile-open')) { toggleMobileSidebar(false); return; }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (byId("sidebar")?.classList.contains("mobile-open")) {
+            toggleMobileSidebar(false);
+            return;
+          }
           closeActiveDrawer();
         }
       });
@@ -1254,7 +1564,7 @@
       // ── Table rendering ──
 
       function renderCliniciansTable(clinicians) {
-        const tbody = byId('clinicians-table-body');
+        const tbody = byId("clinicians-table-body");
         if (!tbody) return;
 
         if (!clinicians || clinicians.length === 0) {
@@ -1265,47 +1575,52 @@
           return;
         }
 
-        tbody.innerHTML = clinicians.map(c => {
-          const name = c.name || 'Unknown';
-          const occupation = escapeHtml(c.occupation || '—');
-          const assessments = c.assessments_count != null ? c.assessments_count : '—';
-          const lastActivity = c.last_activity
-            ? new Date(c.last_activity).toLocaleDateString()
-            : '—';
-          const statusClass = c.is_active ? 'active' : 'inactive';
-          const statusLabel = c.is_active ? 'Active' : 'Inactive';
-          return `<tr class="clinician-row" data-clinician-id="${c.id}" tabindex="0" role="button" aria-label="View profile for ${escapeHtml(name)}">
+        tbody.innerHTML = clinicians
+          .map((c) => {
+            const name = c.name || "Unknown";
+            const occupation = escapeHtml(c.occupation || "—");
+            const assessments = c.assessments_count != null ? c.assessments_count : "—";
+            const lastActivity = c.last_activity
+              ? new Date(c.last_activity).toLocaleDateString()
+              : "—";
+            const statusClass = c.is_active ? "active" : "inactive";
+            const statusLabel = c.is_active ? "Active" : "Inactive";
+            return `<tr class="clinician-row" data-clinician-id="${c.id}" tabindex="0" role="button" aria-label="View profile for ${escapeHtml(name)}">
             <td class="clinician-name-cell">${escapeHtml(name)}</td>
             <td>${occupation}</td>
             <td>${assessments}</td>
             <td>${escapeHtml(lastActivity)}</td>
             <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
           </tr>`;
-        }).join('');
+          })
+          .join("");
 
-        document.querySelectorAll('[data-clinician-id]').forEach(row => {
-          const open = () => viewClinician(Number(row.getAttribute('data-clinician-id')));
-          row.addEventListener('click', open);
-          row.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+        document.querySelectorAll("[data-clinician-id]").forEach((row) => {
+          const open = () => viewClinician(Number(row.getAttribute("data-clinician-id")));
+          row.addEventListener("click", open);
+          row.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              open();
+            }
           });
         });
       }
 
       async function loadClinicians() {
-        const tbody = byId('clinicians-table-body');
+        const tbody = byId("clinicians-table-body");
         if (tbody) {
           tbody.innerHTML = `<tr><td colspan="5" class="table-feedback"><div class="loading-state">
             <div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>
           </div></td></tr>`;
         }
         try {
-          const res = await fetch('/api/clinicians');
-          if (!res.ok) throw new Error('Failed to load');
+          const res = await fetch("/api/clinicians");
+          if (!res.ok) throw new Error("Failed to load");
           const data = await res.json();
           renderCliniciansTable(data);
         } catch {
-          showToast('Failed to load clinicians', 'error');
+          showToast("Failed to load clinicians", "error");
           if (tbody) {
             tbody.innerHTML = `<tr><td colspan="5" class="table-feedback">
               <strong>Could not load clinicians</strong>Please refresh the page.
@@ -1317,71 +1632,83 @@
       // ── Clinician detail ──
 
       async function viewClinician(clinicianId) {
-        byId('clinician-detail-title').textContent = 'Clinician Profile';
-        byId('clinician-detail-subtitle').textContent = 'Loading...';
-        byId('clinician-detail-body').innerHTML = `<div class="loading-state">
+        byId("clinician-detail-title").textContent = "Clinician Profile";
+        byId("clinician-detail-subtitle").textContent = "Loading...";
+        byId("clinician-detail-body").innerHTML = `<div class="loading-state">
           <div class="skeleton-row"></div><div class="skeleton-row"></div>
           <div class="skeleton-row"></div><div class="skeleton-row"></div>
         </div>`;
-        openDrawer('clinician-detail-drawer');
+        openDrawer("clinician-detail-drawer");
 
         try {
           const res = await fetch(`/api/clinicians/${clinicianId}`);
-          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          if (!res.ok) throw new Error((await res.json()).error || "Failed");
           const data = await res.json();
           renderClinicianDetail(data);
         } catch (err) {
-          showToast(err.message || 'Failed to load clinician details', 'error');
+          showToast(err.message || "Failed to load clinician details", "error");
           closeActiveDrawer();
         }
       }
 
       function renderClinicianDetail(data) {
-        const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || 'Unknown';
-        byId('clinician-detail-title').textContent = name;
-        byId('clinician-detail-subtitle').textContent = data.occupation || 'Clinician';
+        const name = [data.first_name, data.last_name].filter(Boolean).join(" ") || "Unknown";
+        byId("clinician-detail-title").textContent = name;
+        byId("clinician-detail-subtitle").textContent = data.occupation || "Clinician";
 
         const profileItems = [
-          ['First Name', data.first_name],
-          ['Last Name', data.last_name],
-          ['Occupation', data.occupation],
-          ['Status', data.is_active === false ? 'Inactive' : 'Active'],
-        ].filter(([, v]) => v != null && v !== '');
+          ["First Name", data.first_name],
+          ["Last Name", data.last_name],
+          ["Occupation", data.occupation],
+          ["Status", data.is_active === false ? "Inactive" : "Active"],
+        ].filter(([, v]) => v != null && v !== "");
 
         const profileSection = `
           <section class="detail-section">
             <h3>Profile</h3>
             <ul class="detail-list">
-              ${profileItems.map(([label, value]) => `
+              ${profileItems
+                .map(
+                  ([label, value]) => `
                 <li class="detail-item">
                   <span class="detail-label">${escapeHtml(label)}</span>
                   <span class="detail-value">${escapeHtml(String(value))}</span>
-                </li>`).join('')}
+                </li>`,
+                )
+                .join("")}
             </ul>
           </section>`;
 
         const assessments = Array.isArray(data.assessments) ? data.assessments : [];
-        let timelineHtml = '';
+        let timelineHtml = "";
         if (assessments.length === 0) {
-          timelineHtml = '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No assessments recorded yet.</p>';
+          timelineHtml =
+            '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No assessments recorded yet.</p>';
         } else {
-          timelineHtml = assessments.map(a => {
-            const clsLower = String(a.predicted_class || '').toLowerCase();
-            const pillClass = clsLower.includes('non') ? 'non-adhd' : clsLower.includes('adhd') ? 'adhd' : 'pending';
-            const conf = a.confidence_score != null
-              ? (Number(a.confidence_score) * 100).toFixed(1) + '%'
-              : null;
-            return `<div class="timeline-card">
+          timelineHtml = assessments
+            .map((a) => {
+              const clsLower = String(a.predicted_class || "").toLowerCase();
+              const pillClass = clsLower.includes("non")
+                ? "non-adhd"
+                : clsLower.includes("adhd")
+                  ? "adhd"
+                  : "pending";
+              const conf =
+                a.confidence_score != null
+                  ? (Number(a.confidence_score) * 100).toFixed(1) + "%"
+                  : null;
+              return `<div class="timeline-card">
               <div class="timeline-card-head">
-                <span class="timeline-card-subject">${escapeHtml(a.subject_code || '—')}</span>
-                <span class="timeline-card-date">${a.inferenced_at ? new Date(a.inferenced_at).toLocaleDateString() : '—'}</span>
+                <span class="timeline-card-subject">${escapeHtml(a.subject_code || "—")}</span>
+                <span class="timeline-card-date">${a.inferenced_at ? new Date(a.inferenced_at).toLocaleDateString() : "—"}</span>
               </div>
               <div class="timeline-card-meta">
-                <span class="status-pill ${pillClass}" style="font-size:0.72rem">${escapeHtml(a.predicted_class || 'No result')}</span>
-                ${conf ? `<span style="margin-left:0.5rem;font-size:0.78rem;color:var(--text-500)">${conf} confidence</span>` : ''}
+                <span class="status-pill ${pillClass}" style="font-size:0.72rem">${escapeHtml(a.predicted_class || "No result")}</span>
+                ${conf ? `<span style="margin-left:0.5rem;font-size:0.78rem;color:var(--text-500)">${conf} confidence</span>` : ""}
               </div>
             </div>`;
-          }).join('');
+            })
+            .join("");
         }
 
         const timelineSection = `
@@ -1390,98 +1717,211 @@
             <div style="display:flex;flex-direction:column;gap:0.45rem">${timelineHtml}</div>
           </section>`;
 
-        byId('clinician-detail-body').innerHTML = profileSection + timelineSection;
+        byId("clinician-detail-body").innerHTML = profileSection + timelineSection;
       }
 
       // ── Add clinician form ──
 
       function clearAddClinicianForm() {
-        ['ac-first-name', 'ac-last-name', 'ac-occupation', 'ac-password', 'ac-confirm-password'].forEach(id => {
+        [
+          "ac-first-name",
+          "ac-last-name",
+          "ac-occupation",
+          "ac-password",
+          "ac-confirm-password",
+        ].forEach((id) => {
           const el = byId(id);
-          if (el) { el.value = ''; el.classList.remove('field-invalid'); }
+          if (el) {
+            el.value = "";
+            el.classList.remove("field-invalid");
+          }
         });
-        ['ac-first-name-error', 'ac-last-name-error', 'ac-occupation-error', 'ac-password-error', 'ac-confirm-password-error'].forEach(id => {
+        [
+          "ac-first-name-error",
+          "ac-last-name-error",
+          "ac-occupation-error",
+          "ac-password-error",
+          "ac-confirm-password-error",
+        ].forEach((id) => {
           const el = byId(id);
-          if (el) el.classList.remove('visible');
+          if (el) el.classList.remove("visible");
+        });
+        // Reset password criteria indicators
+        document
+          .querySelectorAll("#ac-password-criteria li")
+          .forEach((li) => li.classList.remove("met"));
+        // Reset password visibility toggles
+        ["ac-password", "ac-confirm-password"].forEach((inputId) => {
+          const input = byId(inputId);
+          if (input) input.type = "password";
+        });
+        [
+          ["ac-password-eye", true],
+          ["ac-password-eye-off", false],
+          ["ac-confirm-password-eye", true],
+          ["ac-confirm-password-eye-off", false],
+        ].forEach(([id, visible]) => {
+          const el = byId(id);
+          if (el) el.style.display = visible ? "" : "none";
         });
       }
+
+      // ── Password show/hide toggles ──
+      function setupPasswordToggle(inputId, toggleId, eyeId, eyeOffId) {
+        const btn = byId(toggleId);
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          const input = byId(inputId);
+          const eye = byId(eyeId);
+          const eyeOff = byId(eyeOffId);
+          if (!input) return;
+          const showing = input.type === "text";
+          input.type = showing ? "password" : "text";
+          if (eye) eye.style.display = showing ? "" : "none";
+          if (eyeOff) eyeOff.style.display = showing ? "none" : "";
+          btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+        });
+      }
+
+      setupPasswordToggle(
+        "ac-password",
+        "ac-password-toggle",
+        "ac-password-eye",
+        "ac-password-eye-off",
+      );
+      setupPasswordToggle(
+        "ac-confirm-password",
+        "ac-confirm-password-toggle",
+        "ac-confirm-password-eye",
+        "ac-confirm-password-eye-off",
+      );
+
+      // ── Password criteria live validation ──
+      const pwCriteria = [
+        { id: "pw-length", test: (pw) => pw.length >= 8 },
+        { id: "pw-uppercase", test: (pw) => /[A-Z]/.test(pw) },
+        { id: "pw-lowercase", test: (pw) => /[a-z]/.test(pw) },
+        { id: "pw-number", test: (pw) => /[0-9]/.test(pw) },
+        { id: "pw-special", test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+      ];
+
+      function checkPasswordCriteria(password) {
+        let allMet = true;
+        pwCriteria.forEach(({ id, test }) => {
+          const el = byId(id);
+          if (!el) return;
+          if (test(password)) {
+            el.classList.add("met");
+          } else {
+            el.classList.remove("met");
+            allMet = false;
+          }
+        });
+        return allMet;
+      }
+
+      byId("ac-password")?.addEventListener("input", function () {
+        const allMet = checkPasswordCriteria(this.value);
+        if (allMet) clearFieldError("ac-password", "ac-password-error");
+      });
 
       function showFieldError(inputId, errorId, message) {
         const input = byId(inputId);
         const error = byId(errorId);
-        if (input) input.classList.add('field-invalid');
-        if (error) { if (message) error.textContent = message; error.classList.add('visible'); }
+        if (input) input.classList.add("field-invalid");
+        if (error) {
+          if (message) error.textContent = message;
+          error.classList.add("visible");
+        }
       }
 
       function clearFieldError(inputId, errorId) {
         const input = byId(inputId);
         const error = byId(errorId);
-        if (input) input.classList.remove('field-invalid');
-        if (error) error.classList.remove('visible');
+        if (input) input.classList.remove("field-invalid");
+        if (error) error.classList.remove("visible");
       }
 
       function validateAddClinicianForm() {
         let valid = true;
-        const firstName = byId('ac-first-name')?.value.trim() || '';
-        const lastName = byId('ac-last-name')?.value.trim() || '';
-        const occupation = byId('ac-occupation')?.value.trim() || '';
-        const password = byId('ac-password')?.value || '';
-        const confirmPassword = byId('ac-confirm-password')?.value || '';
+        const firstName = byId("ac-first-name")?.value.trim() || "";
+        const lastName = byId("ac-last-name")?.value.trim() || "";
+        const occupation = byId("ac-occupation")?.value.trim() || "";
+        const password = byId("ac-password")?.value || "";
+        const confirmPassword = byId("ac-confirm-password")?.value || "";
 
-        if (!firstName) { showFieldError('ac-first-name', 'ac-first-name-error', 'First name is required.'); valid = false; }
-        else clearFieldError('ac-first-name', 'ac-first-name-error');
+        if (!firstName) {
+          showFieldError("ac-first-name", "ac-first-name-error", "First name is required.");
+          valid = false;
+        } else clearFieldError("ac-first-name", "ac-first-name-error");
 
-        if (!lastName) { showFieldError('ac-last-name', 'ac-last-name-error', 'Last name is required.'); valid = false; }
-        else clearFieldError('ac-last-name', 'ac-last-name-error');
+        if (!lastName) {
+          showFieldError("ac-last-name", "ac-last-name-error", "Last name is required.");
+          valid = false;
+        } else clearFieldError("ac-last-name", "ac-last-name-error");
 
-        if (!occupation) { showFieldError('ac-occupation', 'ac-occupation-error', 'Occupation is required.'); valid = false; }
-        else clearFieldError('ac-occupation', 'ac-occupation-error');
+        if (!occupation) {
+          showFieldError("ac-occupation", "ac-occupation-error", "Occupation is required.");
+          valid = false;
+        } else clearFieldError("ac-occupation", "ac-occupation-error");
 
-        if (password.length < 8) { showFieldError('ac-password', 'ac-password-error', 'Password must be at least 8 characters.'); valid = false; }
-        else clearFieldError('ac-password', 'ac-password-error');
+        if (!checkPasswordCriteria(password)) {
+          showFieldError(
+            "ac-password",
+            "ac-password-error",
+            "Password does not meet all requirements.",
+          );
+          valid = false;
+        } else clearFieldError("ac-password", "ac-password-error");
 
-        if (password !== confirmPassword) { showFieldError('ac-confirm-password', 'ac-confirm-password-error', 'Passwords do not match.'); valid = false; }
-        else clearFieldError('ac-confirm-password', 'ac-confirm-password-error');
+        if (password !== confirmPassword) {
+          showFieldError(
+            "ac-confirm-password",
+            "ac-confirm-password-error",
+            "Passwords do not match.",
+          );
+          valid = false;
+        } else clearFieldError("ac-confirm-password", "ac-confirm-password-error");
 
         return valid;
       }
 
-      byId('open-add-clinician-btn')?.addEventListener('click', () => {
+      byId("open-add-clinician-btn")?.addEventListener("click", () => {
         clearAddClinicianForm();
-        openDrawer('add-clinician-drawer');
+        openDrawer("add-clinician-drawer");
       });
 
-      byId('submit-add-clinician-btn')?.addEventListener('click', async () => {
+      byId("submit-add-clinician-btn")?.addEventListener("click", async () => {
         if (!validateAddClinicianForm()) return;
 
-        const btn = byId('submit-add-clinician-btn');
+        const btn = byId("submit-add-clinician-btn");
         btn.disabled = true;
-        btn.textContent = 'Creating...';
+        btn.textContent = "Creating...";
 
         try {
-          const res = await fetch('/api/clinicians', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const res = await fetch("/api/clinicians", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              first_name: byId('ac-first-name').value.trim(),
-              last_name: byId('ac-last-name').value.trim(),
-              occupation: byId('ac-occupation').value.trim(),
-              password: byId('ac-password').value,
+              first_name: byId("ac-first-name").value.trim(),
+              last_name: byId("ac-last-name").value.trim(),
+              occupation: byId("ac-occupation").value.trim(),
+              password: byId("ac-password").value,
             }),
           });
           const data = await res.json();
           if (!res.ok) {
-            showToast(data.error || 'Failed to create clinician account', 'error');
+            showToast(data.error || "Failed to create clinician account", "error");
             return;
           }
-          showToast('Clinician account created successfully.', 'success');
+          showToast("Clinician account created successfully.", "success");
           closeActiveDrawer();
           await loadClinicians();
         } catch {
-          showToast('An unexpected error occurred. Please try again.', 'error');
+          showToast("An unexpected error occurred. Please try again.", "error");
         } finally {
           btn.disabled = false;
-          btn.textContent = 'Create Account';
+          btn.textContent = "Create Account";
         }
       });
 
@@ -1492,7 +1932,7 @@
         await loadClinicians();
       }
 
-      document.addEventListener('DOMContentLoaded', initializePage);
+      document.addEventListener("DOMContentLoaded", initializePage);
     </script>
   </body>
 </html>
