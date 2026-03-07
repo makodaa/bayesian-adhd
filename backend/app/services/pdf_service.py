@@ -12,6 +12,7 @@ from reportlab.platypus import (
 )
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.graphics.charts.barcharts import HorizontalBarChart
+from reportlab.lib.utils import ImageReader
 from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
@@ -161,6 +162,7 @@ class PDFReportService:
         story.extend(self._build_classification_section(result_data))
         story.extend(self._build_band_powers_section(result_data))
         story.extend(self._build_ratios_section(result_data))
+        story.extend(self._build_eeg_visualizations_section(result_data))
         story.extend(self._build_data_quality_notes(result_data))
         story.extend(self._build_signatory_section(clinician_data))
         
@@ -671,4 +673,82 @@ class PDFReportService:
         
         elements.append(sig_table)
         
+        return elements
+
+    def _build_eeg_visualizations_section(self, result_data: dict) -> list:
+        """Build EEG visualization images section with stored band/segment plots."""
+        import base64
+
+        elements = []
+        eeg_viz = result_data.get('eeg_visualizations', {})
+        if not eeg_viz:
+            return elements
+
+        elements.append(PageBreak())
+        elements.append(Paragraph("EEG Signal Visualizations", self.styles['SectionHeader']))
+        elements.append(
+            Paragraph(
+                "Generated EEG signal plots across frequency bands and classification "
+                "segment overlay. These images are rendered from the uploaded EEG data "
+                "at the time of analysis.",
+                self.styles['ReportBody'],
+            )
+        )
+        elements.append(Spacer(1, 6))
+
+        # Preferred display order
+        band_order = [
+            ('raw', 'Raw EEG Signal'),
+            ('filtered', 'Filtered EEG (0.5\u201340 Hz)'),
+            ('delta', 'Delta Band (0.5\u20134 Hz)'),
+            ('theta', 'Theta Band (4\u20138 Hz)'),
+            ('alpha', 'Alpha Band (8\u201313 Hz)'),
+            ('beta', 'Beta Band (13\u201330 Hz)'),
+            ('gamma', 'Gamma Band (30\u201360 Hz)'),
+            ('segments', 'Classification Segments'),
+        ]
+
+        for band_key, band_label in band_order:
+            data_uri = eeg_viz.get(band_key)
+            if not data_uri:
+                continue
+
+            try:
+                # Strip data URI prefix
+                if ',' in data_uri:
+                    img_b64 = data_uri.split(',', 1)[1]
+                else:
+                    img_b64 = data_uri
+
+                img_bytes = base64.b64decode(img_b64)
+                img_buf = BytesIO(img_bytes)
+
+                elements.append(Paragraph(band_label, self.styles['Subsection']))
+
+                # Fit image to page width (170mm) while preserving aspect ratio
+                reader = ImageReader(img_buf)
+                iw, ih = reader.getSize()
+                max_width = 170 * mm
+                max_height = 110 * mm
+                scale = min(max_width / iw, max_height / ih)
+                display_w = iw * scale
+                display_h = ih * scale
+
+                img_buf.seek(0)
+                img_flowable = Image(img_buf, width=display_w, height=display_h)
+                elements.append(img_flowable)
+                elements.append(Spacer(1, 8))
+
+            except Exception as exc:
+                logger.warning(
+                    f"Failed to embed EEG visualization '{band_key}' in PDF: {exc}",
+                    exc_info=True,
+                )
+                elements.append(
+                    Paragraph(
+                        f"<i>Could not render {band_label} image.</i>",
+                        self.styles['ReportBody'],
+                    )
+                )
+
         return elements

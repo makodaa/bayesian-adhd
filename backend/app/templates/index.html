@@ -2506,6 +2506,19 @@
                               Gamma
                             </button>
                           </li>
+                          <li class="nav-item" role="presentation">
+                            <button
+                              class="nav-link"
+                              id="segments-tab"
+                              data-bs-toggle="tab"
+                              data-bs-target="#segments-pane"
+                              type="button"
+                              role="tab"
+                              disabled
+                            >
+                              Classifications
+                            </button>
+                          </li>
                         </ul>
                         <button
                           id="eeg-expand-btn"
@@ -2567,6 +2580,11 @@
                         <div class="tab-pane fade" id="gamma-pane" role="tabpanel">
                           <div class="visualization-container" id="viz-gamma">
                             Run an assessment to load waveform previews.
+                          </div>
+                        </div>
+                        <div class="tab-pane fade" id="segments-pane" role="tabpanel">
+                          <div class="visualization-container" id="viz-segments">
+                            Run an assessment to view classification segments.
                           </div>
                         </div>
                       </div>
@@ -2667,6 +2685,9 @@
             <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">Alpha</button>
             <button class="eeg-modal-band-btn" data-modal-band="beta" type="button">Beta</button>
             <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">Gamma</button>
+            <button class="eeg-modal-band-btn" data-modal-band="segments" type="button">
+              Classifications
+            </button>
           </div>
           <button
             id="eeg-modal-close-btn"
@@ -2961,7 +2982,7 @@
     </aside>
 
     <script>
-      const EEG_BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
+      const EEG_BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma", "segments"];
       const ELECTRODE_CHANNELS = [
         "Fp1",
         "Fp2",
@@ -3024,6 +3045,7 @@
         visualizations: {},
         loadedVisualizationBands: new Set(),
         inFlightVisualizationBands: new Set(),
+        windowPredictions: null,
       };
 
       const biomarkerLabels = {
@@ -3908,7 +3930,13 @@
         EEG_BANDS.forEach((band) => {
           const tab = byId(`${band}-tab`);
           if (tab) {
-            tab.disabled = !enabled;
+            // Segments tab is only enabled when window predictions exist
+            if (band === "segments") {
+              tab.disabled =
+                !enabled || !appState.windowPredictions || appState.windowPredictions.length === 0;
+            } else {
+              tab.disabled = !enabled;
+            }
           }
         });
         const expandBtn = byId("eeg-expand-btn");
@@ -3929,11 +3957,15 @@
         appState.inFlightVisualizationBands.clear();
         clearVisualizationObjectUrls();
         appState.visualizations = {};
+        appState.windowPredictions = null;
 
         EEG_BANDS.forEach((band) => {
           const container = byId(`viz-${band}`);
           if (container) {
-            container.textContent = "Run an assessment to load waveform previews.";
+            container.textContent =
+              band === "segments"
+                ? "Run an assessment to view classification segments."
+                : "Run an assessment to load waveform previews.";
           }
         });
 
@@ -3998,6 +4030,12 @@
           return;
         }
 
+        // Segments band requires window predictions and uses a POST endpoint
+        if (band === "segments") {
+          await loadSegmentVisualization();
+          return;
+        }
+
         const containerId = `viz-${band}`;
         setLoadingState(containerId, true);
         appState.inFlightVisualizationBands.add(band);
@@ -4047,6 +4085,78 @@
             }
           });
         });
+      }
+
+      async function loadSegmentVisualization(quality) {
+        const contextId = appState.visualizationContextId;
+        const wp = appState.windowPredictions;
+        if (!contextId || !wp || wp.length === 0) {
+          const container = byId("viz-segments");
+          if (container) {
+            container.innerHTML =
+              "<p class='helper-copy'>No classification window data available. Run an assessment first.</p>";
+          }
+          return;
+        }
+
+        const band = "segments";
+        const cacheKey = quality === "detail" ? "hq_segments" : band;
+
+        if (
+          appState.loadedVisualizationBands.has(cacheKey) ||
+          appState.inFlightVisualizationBands.has(cacheKey)
+        ) {
+          return;
+        }
+
+        const containerId = `viz-${band}`;
+        if (!quality || quality === "preview") setLoadingState(containerId, true);
+        appState.inFlightVisualizationBands.add(cacheKey);
+
+        try {
+          const response = await fetch(
+            `/api/eeg_segment_visualization/${encodeURIComponent(contextId)}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                window_predictions: wp,
+                quality: quality || "preview",
+              }),
+            },
+          );
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || "Failed to load segment visualization");
+          }
+
+          const imageBlob = await response.blob();
+          if (!imageBlob.type.includes("image")) {
+            throw new Error("Unexpected response type for segments");
+          }
+
+          const objectUrl = URL.createObjectURL(imageBlob);
+          const prevUrl = appState.visualizations[cacheKey];
+          if (prevUrl && prevUrl.startsWith("blob:")) URL.revokeObjectURL(prevUrl);
+
+          if (!quality || quality === "preview") {
+            displayVisualization(containerId, objectUrl, band);
+          }
+          appState.loadedVisualizationBands.add(cacheKey);
+          appState.visualizations[cacheKey] = objectUrl;
+        } catch (error) {
+          if (!quality || quality === "preview") {
+            const container = byId(containerId);
+            if (container) {
+              container.innerHTML =
+                "<p class='helper-copy'>Failed to load segment visualization.</p>";
+            }
+          }
+          showToast("Unable to load classification segments.", "warning");
+        } finally {
+          appState.inFlightVisualizationBands.delete(cacheKey);
+        }
       }
 
       function switchTopoType(type) {
@@ -4321,6 +4431,9 @@
           const result = predictionData.result || predictionData;
           appState.latestResult = result;
           appState.latestResultId = result.result_id || null;
+
+          // Store per-window classification predictions for segment visualization
+          appState.windowPredictions = result.window_predictions || null;
 
           updateProcessingStage(1, "Running classification pipeline...");
           displayPrediction(result.classification, result.confidence_score);
@@ -4665,7 +4778,7 @@
       // ── EEG Full-Screen Modal Controller ──
 
       const eegModal = (() => {
-        const BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
+        const BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma", "segments"];
         const BAND_LABELS = {
           raw: "Raw",
           filtered: "Filtered",
@@ -4674,6 +4787,7 @@
           alpha: "Alpha",
           beta: "Beta",
           gamma: "Gamma",
+          segments: "Segments",
         };
 
         let currentBand = "raw";
@@ -4817,8 +4931,24 @@
           const signal = hqAbortController.signal;
 
           try {
-            const url = `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${thisBand}.png?quality=detail`;
-            const response = await fetch(url, { signal, cache: "no-store" });
+            let response;
+            if (thisBand === "segments") {
+              // Segments uses a POST endpoint with window predictions
+              const wp = appState.windowPredictions;
+              if (!wp || wp.length === 0) return;
+              response = await fetch(
+                `/api/eeg_segment_visualization/${encodeURIComponent(contextId)}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ window_predictions: wp, quality: "detail" }),
+                  signal,
+                },
+              );
+            } else {
+              const url = `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${thisBand}.png?quality=detail`;
+              response = await fetch(url, { signal, cache: "no-store" });
+            }
             if (!response.ok || signal.aborted) return;
 
             const blob = await response.blob();

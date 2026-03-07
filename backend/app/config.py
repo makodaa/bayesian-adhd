@@ -69,3 +69,4 @@ ELECTRODE_CHANNELS = [
 
 # Model paths
 MODEL_PATH = "app/ml/optimized_model.pth"
+PARAMETERS_PATH = "app/ml/best_parameters.json"

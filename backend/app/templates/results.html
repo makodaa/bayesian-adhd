@@ -30,9 +30,9 @@
         --success-600: #2e7d66;
         --warning-600: #b56f2a;
         --error-600: #b4494f;
-         --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
-         --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
-         --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
+        --shadow-card: 0 2px 6px rgba(20, 50, 63, 0.06);
+        --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
+        --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
         --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
         --radius-xs: 4px;
         --radius-sm: 6px;
@@ -51,7 +51,12 @@
         min-height: 100vh;
         font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
         color: var(--text-900);
-        background: radial-gradient(circle at 15% -10%, #f7fbfd 0%, var(--surface-bg) 45%, #e8eef2 100%);
+        background: radial-gradient(
+          circle at 15% -10%,
+          #f7fbfd 0%,
+          var(--surface-bg) 45%,
+          #e8eef2 100%
+        );
       }
 
       button,
@@ -197,7 +202,9 @@
         overflow: hidden;
         opacity: 0;
         max-width: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .brand-name {
@@ -216,7 +223,9 @@
         justify-content: center;
         flex-shrink: 0;
         cursor: pointer;
-        transition: color 150ms ease-out, background-color 150ms ease-out;
+        transition:
+          color 150ms ease-out,
+          background-color 150ms ease-out;
       }
 
       .sidebar-expand-btn:hover {
@@ -246,7 +255,10 @@
         height: 44px;
         gap: 0;
         overflow: hidden;
-        transition: background-color 170ms ease-out, color 170ms ease-out, gap 200ms ease-out;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          gap 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-link {
@@ -280,7 +292,9 @@
         overflow: hidden;
         opacity: 0;
         max-width: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-link span {
@@ -340,7 +354,11 @@
         justify-content: center;
         gap: 0;
         overflow: hidden;
-        transition: background-color 170ms ease-out, color 170ms ease-out, width 200ms ease-out, padding 200ms ease-out;
+        transition:
+          background-color 170ms ease-out,
+          color 170ms ease-out,
+          width 200ms ease-out,
+          padding 200ms ease-out;
         white-space: nowrap;
       }
 
@@ -360,7 +378,9 @@
         overflow: hidden;
         max-width: 0;
         opacity: 0;
-        transition: opacity 150ms ease-out, max-width 200ms ease-out;
+        transition:
+          opacity 150ms ease-out,
+          max-width 200ms ease-out;
       }
 
       .app-sidebar.expanded .sidebar-logout-label {
@@ -384,6 +404,7 @@
         position: sticky;
         top: 0;
         z-index: 900;
+        -webkit-backdrop-filter: blur(8px);
         backdrop-filter: blur(8px);
         background: rgba(238, 243, 245, 0.92);
         border-bottom: 1px solid #dbe3e8;
@@ -903,7 +924,9 @@
         color: var(--brand-700);
         font-size: 0.76rem;
         font-weight: 600;
-        transition: background-color 150ms, color 150ms;
+        transition:
+          background-color 150ms,
+          color 150ms;
         cursor: pointer;
       }
 
@@ -986,8 +1009,12 @@
       }
 
       @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
       }
 
       .hidden {
@@ -1094,7 +1121,12 @@
   </head>
 
   <body>
-    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
     <div id="detail-backdrop" class="detail-backdrop"></div>
 
@@ -1105,8 +1137,20 @@
             <span class="brand-mark">B</span>
             <span class="brand-name">BayesianADHD</span>
           </div>
-          <button class="sidebar-expand-btn" id="sidebar-expand-btn" type="button" aria-label="Toggle sidebar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button
+            class="sidebar-expand-btn"
+            id="sidebar-expand-btn"
+            type="button"
+            aria-label="Toggle sidebar"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -1116,14 +1160,26 @@
 
         <nav class="sidebar-nav">
           <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
             <span>Dashboard</span>
           </a>
           <a href="/subjects.html" class="sidebar-link" title="Subjects" aria-label="Subjects">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -1131,8 +1187,19 @@
             </svg>
             <span>Subjects</span>
           </a>
-          <a href="/results.html" class="sidebar-link active" title="Assessments" aria-label="Assessments">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <a
+            href="/results.html"
+            class="sidebar-link active"
+            title="Assessments"
+            aria-label="Assessments"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -1140,8 +1207,19 @@
             </svg>
             <span>Assessments</span>
           </a>
-          <a href="/clinicians.html" class="sidebar-link" title="Clinicians" aria-label="Clinicians">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <a
+            href="/clinicians.html"
+            class="sidebar-link"
+            title="Clinicians"
+            aria-label="Clinicians"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
@@ -1153,7 +1231,14 @@
           <p class="sidebar-user-label">Signed in as</p>
           <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
           <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -1167,9 +1252,22 @@
         <header class="page-header">
           <div class="page-header-inner">
             <div class="page-title-group">
-              <button id="sidebar-toggle" class="menu-toggle" type="button" aria-label="Toggle navigation menu">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+              <button
+                id="sidebar-toggle"
+                class="menu-toggle"
+                type="button"
+                aria-label="Toggle navigation menu"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <line x1="3" y1="6" x2="21" y2="6"></line>
                   <line x1="3" y1="12" x2="21" y2="12"></line>
                   <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -1181,7 +1279,9 @@
               </div>
             </div>
             <div class="page-actions">
-              <button id="export-results-btn" type="button" class="btn-secondary-app">Export Results</button>
+              <button id="export-results-btn" type="button" class="btn-secondary-app">
+                Export Results
+              </button>
             </div>
           </div>
         </header>
@@ -1215,7 +1315,9 @@
                 </select>
               </div>
               <div class="toolbar-actions">
-                <button id="reset-filters-btn" type="button" class="btn-secondary-app">Reset Filters</button>
+                <button id="reset-filters-btn" type="button" class="btn-secondary-app">
+                  Reset Filters
+                </button>
               </div>
             </div>
 
@@ -1249,15 +1351,33 @@
     </div>
 
     <!-- Result Detail Drawer -->
-    <aside class="result-detail-drawer" id="result-detail-drawer" aria-hidden="true" aria-labelledby="result-detail-title">
+    <aside
+      class="result-detail-drawer"
+      id="result-detail-drawer"
+      aria-hidden="true"
+      aria-labelledby="result-detail-title"
+    >
       <div class="detail-header">
         <div>
           <h2 id="result-detail-title">Result Details</h2>
           <p id="result-detail-subtitle">Loading assessment record...</p>
         </div>
-        <button id="close-result-detail-btn" class="icon-button" type="button" aria-label="Close result details">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
+        <button
+          id="close-result-detail-btn"
+          class="icon-button"
+          type="button"
+          aria-label="Close result details"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -1267,8 +1387,12 @@
         <!-- populated by JS -->
       </div>
       <div class="detail-footer">
-        <button id="result-download-pdf-btn" type="button" class="btn-primary-app" disabled>Download PDF Report</button>
-        <button id="close-result-detail-footer-btn" type="button" class="btn-secondary-app">Close</button>
+        <button id="result-download-pdf-btn" type="button" class="btn-primary-app" disabled>
+          Download PDF Report
+        </button>
+        <button id="close-result-detail-footer-btn" type="button" class="btn-secondary-app">
+          Close
+        </button>
       </div>
     </aside>
 
@@ -1281,23 +1405,23 @@
 
       function escapeHtml(value) {
         return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
-      function showToast(message, variant = 'error') {
-        const container = byId('toast-container');
+      function showToast(message, variant = "error") {
+        const container = byId("toast-container");
         if (!container) return;
-        const toast = document.createElement('div');
+        const toast = document.createElement("div");
         toast.className = `toast-message ${variant}`;
         toast.textContent = message;
         container.appendChild(toast);
         window.setTimeout(() => {
-          toast.style.opacity = '0';
-          toast.style.transform = 'translateY(-8px)';
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-8px)";
           window.setTimeout(() => toast.remove(), 180);
         }, 6000);
       }
@@ -1306,40 +1430,46 @@
 
       async function loadCurrentClinician() {
         try {
-          const res = await fetch('/api/me');
-          if (res.status === 401 || !res.ok) { window.location.href = '/login.html'; return; }
+          const res = await fetch("/api/me");
+          if (res.status === 401 || !res.ok) {
+            window.location.href = "/login.html";
+            return;
+          }
           const data = await res.json();
-          const el = byId('sidebar-clinician-name');
+          const el = byId("sidebar-clinician-name");
           if (el && data.clinician_name) el.textContent = data.clinician_name;
-          const logoutLabel = byId('sidebar-logout-name');
+          const logoutLabel = byId("sidebar-logout-name");
           if (logoutLabel && data.clinician_name) logoutLabel.textContent = data.clinician_name;
-        } catch { window.location.href = '/login.html'; }
+        } catch {
+          window.location.href = "/login.html";
+        }
       }
 
       function toggleMobileSidebar(open) {
-        const sidebar = byId('sidebar');
-        const backdrop = byId('sidebar-backdrop');
+        const sidebar = byId("sidebar");
+        const backdrop = byId("sidebar-backdrop");
         if (!sidebar || !backdrop) return;
-        const shouldOpen = typeof open === 'boolean' ? open : !sidebar.classList.contains('mobile-open');
-        sidebar.classList.toggle('mobile-open', shouldOpen);
-        backdrop.classList.toggle('open', shouldOpen);
+        const shouldOpen =
+          typeof open === "boolean" ? open : !sidebar.classList.contains("mobile-open");
+        sidebar.classList.toggle("mobile-open", shouldOpen);
+        backdrop.classList.toggle("open", shouldOpen);
       }
 
       async function handleLogout() {
         try {
-          await fetch('/api/logout', { method: 'POST' });
+          await fetch("/api/logout", { method: "POST" });
         } finally {
-          window.location.href = '/login.html';
+          window.location.href = "/login.html";
         }
       }
 
-      byId('sidebar-toggle')?.addEventListener('click', () => toggleMobileSidebar());
-      byId('sidebar-backdrop')?.addEventListener('click', () => toggleMobileSidebar(false));
-      byId('logout-btn')?.addEventListener('click', handleLogout);
+      byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar());
+      byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+      byId("logout-btn")?.addEventListener("click", handleLogout);
 
-      byId('sidebar-expand-btn')?.addEventListener('click', () => {
-        const sidebar = byId('sidebar');
-        if (sidebar) sidebar.classList.toggle('expanded');
+      byId("sidebar-expand-btn")?.addEventListener("click", () => {
+        const sidebar = byId("sidebar");
+        if (sidebar) sidebar.classList.toggle("expanded");
       });
 
       // ── App state ──
@@ -1347,36 +1477,38 @@
       const appState = {
         allResults: [],
         filteredResults: [],
-        filters: { search: '', classification: 'all', sort: 'recent' }
+        filters: { search: "", classification: "all", sort: "recent" },
       };
 
       // ── Classification helpers ──
 
       function getClassificationClass(label) {
-        const n = String(label || '').trim().toLowerCase();
-        if (!n) return 'pending';
-        if (n.includes('non-adhd') || n.includes('non adhd')) return 'non-adhd';
-        if (n.includes('adhd')) return 'adhd';
-        return 'pending';
+        const n = String(label || "")
+          .trim()
+          .toLowerCase();
+        if (!n) return "pending";
+        if (n.includes("non-adhd") || n.includes("non adhd")) return "non-adhd";
+        if (n.includes("adhd")) return "adhd";
+        return "pending";
       }
 
       function renderClassificationPill(label) {
         const cls = getClassificationClass(label);
-        return `<span class="classification-pill ${cls}">${escapeHtml(label || 'No result')}</span>`;
+        return `<span class="classification-pill ${cls}">${escapeHtml(label || "No result")}</span>`;
       }
 
       function getConfidenceState(confidence) {
-        if (confidence >= 0.8) return { label: 'High', className: 'high' };
-        if (confidence >= 0.6) return { label: 'Moderate', className: 'mid' };
-        return { label: 'Low', className: 'low' };
+        if (confidence >= 0.8) return { label: "High", className: "high" };
+        if (confidence >= 0.6) return { label: "Moderate", className: "mid" };
+        return { label: "Low", className: "low" };
       }
 
       // ── Filters ──
 
       function syncFilterState() {
-        appState.filters.search = byId('search-results')?.value.trim().toLowerCase() || '';
-        appState.filters.classification = byId('filter-classification')?.value || 'all';
-        appState.filters.sort = byId('sort-results')?.value || 'recent';
+        appState.filters.search = byId("search-results")?.value.trim().toLowerCase() || "";
+        appState.filters.classification = byId("filter-classification")?.value || "all";
+        appState.filters.sort = byId("sort-results")?.value || "recent";
       }
 
       function applyFilters() {
@@ -1384,16 +1516,23 @@
         const { search, classification, sort } = appState.filters;
 
         const filtered = appState.allResults
-          .filter(r => {
-            if (search && !String(r.subject_code || '').toLowerCase().includes(search)) return false;
-            if (classification !== 'all') {
+          .filter((r) => {
+            if (
+              search &&
+              !String(r.subject_code || "")
+                .toLowerCase()
+                .includes(search)
+            )
+              return false;
+            if (classification !== "all") {
               if (getClassificationClass(r.predicted_class) !== classification) return false;
             }
             return true;
           })
           .sort((a, b) => {
-            if (sort === 'subject') return String(a.subject_code || '').localeCompare(String(b.subject_code || ''));
-            if (sort === 'confidence') return (b.confidence_score || 0) - (a.confidence_score || 0);
+            if (sort === "subject")
+              return String(a.subject_code || "").localeCompare(String(b.subject_code || ""));
+            if (sort === "confidence") return (b.confidence_score || 0) - (a.confidence_score || 0);
             return new Date(b.inferenced_at || 0) - new Date(a.inferenced_at || 0);
           });
 
@@ -1404,95 +1543,103 @@
       // ── Table rendering ──
 
       function renderResultsTable(results) {
-        const tbody = byId('results-table-body');
+        const tbody = byId("results-table-body");
         if (!tbody) return;
 
         if (!results || results.length === 0) {
-          const hasFilters = appState.filters.search || appState.filters.classification !== 'all';
+          const hasFilters = appState.filters.search || appState.filters.classification !== "all";
           tbody.innerHTML = `<tr><td colspan="5" class="table-feedback">
-            <strong>${hasFilters ? 'No matching results' : 'No results yet'}</strong>
-            ${hasFilters ? 'Try resetting filters.' : 'Complete an assessment to see records here.'}
+            <strong>${hasFilters ? "No matching results" : "No results yet"}</strong>
+            ${hasFilters ? "Try resetting filters." : "Complete an assessment to see records here."}
           </td></tr>`;
           return;
         }
 
-        tbody.innerHTML = results.map(r => {
-          const confidence = Number.isFinite(r.confidence_score)
-            ? (r.confidence_score * 100).toFixed(2) + '%'
-            : 'N/A';
-          const clinician = [r.first_name, r.last_name].filter(Boolean).join(' ') || 'N/A';
-          const date = r.inferenced_at ? new Date(r.inferenced_at).toLocaleString() : 'N/A';
-          return `<tr class="result-row" data-result-id="${r.result_id}" tabindex="0" role="button" aria-label="Open result for ${escapeHtml(r.subject_code || '')}">
-            <td class="subject-code">${escapeHtml(r.subject_code || '-')}</td>
+        tbody.innerHTML = results
+          .map((r) => {
+            const confidence = Number.isFinite(r.confidence_score)
+              ? (r.confidence_score * 100).toFixed(2) + "%"
+              : "N/A";
+            const clinician = [r.first_name, r.last_name].filter(Boolean).join(" ") || "N/A";
+            const date = r.inferenced_at ? new Date(r.inferenced_at).toLocaleString() : "N/A";
+            return `<tr class="result-row" data-result-id="${r.result_id}" tabindex="0" role="button" aria-label="Open result for ${escapeHtml(r.subject_code || "")}">
+            <td class="subject-code">${escapeHtml(r.subject_code || "-")}</td>
             <td>${renderClassificationPill(r.predicted_class)}</td>
             <td class="mono">${escapeHtml(confidence)}</td>
             <td>${escapeHtml(clinician)}</td>
             <td>${escapeHtml(date)}</td>
           </tr>`;
-        }).join('');
+          })
+          .join("");
         attachResultRowHandlers();
       }
 
       function attachResultRowHandlers() {
-        document.querySelectorAll('[data-result-id]').forEach(row => {
-          const open = () => viewResult(Number(row.getAttribute('data-result-id')));
-          row.addEventListener('click', open);
-          row.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+        document.querySelectorAll("[data-result-id]").forEach((row) => {
+          const open = () => viewResult(Number(row.getAttribute("data-result-id")));
+          row.addEventListener("click", open);
+          row.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              open();
+            }
           });
         });
       }
 
       async function loadResults() {
-        const tbody = byId('results-table-body');
+        const tbody = byId("results-table-body");
         if (tbody) {
           tbody.innerHTML = `<tr><td colspan="5" class="table-feedback"><div class="loading-state">
             <div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>
           </div></td></tr>`;
         }
         try {
-          const res = await fetch('/api/results');
+          const res = await fetch("/api/results");
           appState.allResults = await res.json();
           applyFilters();
         } catch {
-          showToast('Failed to load results', 'error');
+          showToast("Failed to load results", "error");
         }
       }
 
       // ── Filter controls ──
 
-      byId('search-results')?.addEventListener('input', applyFilters);
-      byId('filter-classification')?.addEventListener('change', applyFilters);
-      byId('sort-results')?.addEventListener('change', applyFilters);
-      byId('reset-filters-btn')?.addEventListener('click', () => {
-        const s = byId('search-results');
-        const c = byId('filter-classification');
-        const o = byId('sort-results');
-        if (s) s.value = '';
-        if (c) c.value = 'all';
-        if (o) o.value = 'recent';
+      byId("search-results")?.addEventListener("input", applyFilters);
+      byId("filter-classification")?.addEventListener("change", applyFilters);
+      byId("sort-results")?.addEventListener("change", applyFilters);
+      byId("reset-filters-btn")?.addEventListener("click", () => {
+        const s = byId("search-results");
+        const c = byId("filter-classification");
+        const o = byId("sort-results");
+        if (s) s.value = "";
+        if (c) c.value = "all";
+        if (o) o.value = "recent";
         applyFilters();
       });
 
       // ── Export CSV ──
 
-      byId('export-results-btn')?.addEventListener('click', () => {
-        if (!appState.allResults.length) { showToast('No results to export', 'warning'); return; }
+      byId("export-results-btn")?.addEventListener("click", () => {
+        if (!appState.allResults.length) {
+          showToast("No results to export", "warning");
+          return;
+        }
         const rows = [
-          ['Subject Code', 'Classification', 'Confidence', 'Date'],
-          ...appState.allResults.map(r => [
+          ["Subject Code", "Classification", "Confidence", "Date"],
+          ...appState.allResults.map((r) => [
             r.subject_code,
             r.predicted_class,
-            (r.confidence_score * 100).toFixed(2) + '%',
-            new Date(r.inferenced_at).toLocaleString()
-          ])
+            (r.confidence_score * 100).toFixed(2) + "%",
+            new Date(r.inferenced_at).toLocaleString(),
+          ]),
         ];
-        const csv = rows.map(r => r.join(',')).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const csv = rows.map((r) => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `assessments_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `assessments_${new Date().toISOString().split("T")[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
       });
@@ -1502,29 +1649,29 @@
       let currentResultId = null;
 
       function openResultDrawer() {
-        const drawer = byId('result-detail-drawer');
-        const backdrop = byId('detail-backdrop');
+        const drawer = byId("result-detail-drawer");
+        const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
-        drawer.classList.add('open');
-        drawer.setAttribute('aria-hidden', 'false');
-        backdrop.classList.add('open');
+        drawer.classList.add("open");
+        drawer.setAttribute("aria-hidden", "false");
+        backdrop.classList.add("open");
       }
 
       function closeResultDrawer() {
-        const drawer = byId('result-detail-drawer');
-        const backdrop = byId('detail-backdrop');
+        const drawer = byId("result-detail-drawer");
+        const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
-        drawer.classList.remove('open');
-        drawer.setAttribute('aria-hidden', 'true');
-        backdrop.classList.remove('open');
+        drawer.classList.remove("open");
+        drawer.setAttribute("aria-hidden", "true");
+        backdrop.classList.remove("open");
       }
 
-      byId('close-result-detail-btn')?.addEventListener('click', closeResultDrawer);
-      byId('close-result-detail-footer-btn')?.addEventListener('click', closeResultDrawer);
-      byId('detail-backdrop')?.addEventListener('click', closeResultDrawer);
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-          if (byId('sidebar')?.classList.contains('mobile-open')) toggleMobileSidebar(false);
+      byId("close-result-detail-btn")?.addEventListener("click", closeResultDrawer);
+      byId("close-result-detail-footer-btn")?.addEventListener("click", closeResultDrawer);
+      byId("detail-backdrop")?.addEventListener("click", closeResultDrawer);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (byId("sidebar")?.classList.contains("mobile-open")) toggleMobileSidebar(false);
           closeResultDrawer();
         }
       });
@@ -1532,28 +1679,31 @@
       // ── Band colors ──
 
       const BAND_COLORS = {
-        delta: '#9C27B0',
-        theta: '#2196F3',
-        alpha: '#4CAF50',
-        beta:  '#FF9800',
-        gamma: '#F44336',
+        delta: "#9C27B0",
+        theta: "#2196F3",
+        alpha: "#4CAF50",
+        beta: "#FF9800",
+        gamma: "#F44336",
       };
 
       // ── Result detail rendering ──
 
       function renderResultDetail(data) {
-        const body = byId('result-detail-body');
+        const body = byId("result-detail-body");
         if (!body) return;
 
-        byId('result-detail-title').textContent = `Result: ${data.subject_code || 'Details'}`;
-        byId('result-detail-subtitle').textContent =
-          data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : 'Assessment record';
+        byId("result-detail-title").textContent = `Result: ${data.subject_code || "Details"}`;
+        byId("result-detail-subtitle").textContent = data.inferenced_at
+          ? new Date(data.inferenced_at).toLocaleString()
+          : "Assessment record";
 
         // Confidence bar
         const conf = Number(data.confidence_score);
         const confRatio = Number.isFinite(conf) ? Math.max(0, Math.min(100, conf * 100)) : 0;
         const confState = getConfidenceState(Number.isFinite(conf) ? conf : 0);
-        const confText = Number.isFinite(conf) ? `${confRatio.toFixed(1)}% (${confState.label})` : 'N/A';
+        const confText = Number.isFinite(conf)
+          ? `${confRatio.toFixed(1)}% (${confState.label})`
+          : "N/A";
 
         // Classification section
         const classificationSection = `
@@ -1572,58 +1722,61 @@
             <ul class="detail-list">
               <li class="detail-item">
                 <span class="detail-label">Clinician</span>
-                <span class="detail-value">${escapeHtml([data.clinician_first_name, data.clinician_middle_name, data.clinician_last_name].filter(Boolean).join(' ') || 'N/A')}</span>
+                <span class="detail-value">${escapeHtml([data.clinician_first_name, data.clinician_middle_name, data.clinician_last_name].filter(Boolean).join(" ") || "N/A")}</span>
               </li>
               <li class="detail-item">
                 <span class="detail-label">Date</span>
-                <span class="detail-value">${escapeHtml(data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : 'N/A')}</span>
+                <span class="detail-value">${escapeHtml(data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : "N/A")}</span>
               </li>
             </ul>
           </section>`;
 
         // Subject & Recording section
         const subjectItems = [
-          ['Subject Code', data.subject_code],
-          ['Age', data.age != null ? String(data.age) + ' years' : null],
-          ['Gender', data.gender],
-          ['File', data.file_name],
-          ['Sleep Hours', data.sleep_hours != null ? String(data.sleep_hours) + ' h' : null],
-          ['Caffeinated', data.caffeinated != null ? (data.caffeinated ? 'Yes' : 'No') : null],
-          ['Medicated', data.medicated != null ? (data.medicated ? 'Yes' : 'No') : null],
-          ['Medication Details', data.medication_intake],
-          ['Notes', data.notes],
-        ].filter(([, v]) => v != null && v !== '');
+          ["Subject Code", data.subject_code],
+          ["Age", data.age != null ? String(data.age) + " years" : null],
+          ["Gender", data.gender],
+          ["File", data.file_name],
+          ["Sleep Hours", data.sleep_hours != null ? String(data.sleep_hours) + " h" : null],
+          ["Caffeinated", data.caffeinated != null ? (data.caffeinated ? "Yes" : "No") : null],
+          ["Medicated", data.medicated != null ? (data.medicated ? "Yes" : "No") : null],
+          ["Medication Details", data.medication_intake],
+          ["Notes", data.notes],
+        ].filter(([, v]) => v != null && v !== "");
 
         const subjectSection = `
           <section class="detail-section">
             <h3>Subject &amp; Recording</h3>
             <ul class="detail-list">
-              ${subjectItems.map(([label, value]) => `
+              ${subjectItems
+                .map(
+                  ([label, value]) => `
                 <li class="detail-item">
                   <span class="detail-label">${escapeHtml(label)}</span>
                   <span class="detail-value">${escapeHtml(String(value))}</span>
-                </li>`).join('')}
+                </li>`,
+                )
+                .join("")}
             </ul>
           </section>`;
 
         // Band power section
         const averageBandPowers = {};
         if (data.band_powers && data.band_powers.length > 0) {
-          data.band_powers.forEach(bp => {
+          data.band_powers.forEach((bp) => {
             if (!averageBandPowers[bp.frequency_band]) averageBandPowers[bp.frequency_band] = [];
             averageBandPowers[bp.frequency_band].push(bp.relative_power);
           });
-          Object.keys(averageBandPowers).forEach(band => {
+          Object.keys(averageBandPowers).forEach((band) => {
             const vals = averageBandPowers[band];
             averageBandPowers[band] = vals.reduce((a, b) => a + b, 0) / vals.length;
           });
         }
-        const BAND_ORDER = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-        const bandBars = BAND_ORDER
-          .filter(band => averageBandPowers[band] !== undefined)
-          .map(band => {
+        const BAND_ORDER = ["delta", "theta", "alpha", "beta", "gamma"];
+        const bandBars = BAND_ORDER.filter((band) => averageBandPowers[band] !== undefined)
+          .map((band) => {
             const pct = (averageBandPowers[band] * 100).toFixed(1);
-            const color = BAND_COLORS[band] || '#607484';
+            const color = BAND_COLORS[band] || "#607484";
             return `<div class="band-bar-row">
               <span class="band-bar-label">${escapeHtml(band.charAt(0).toUpperCase() + band.slice(1))}</span>
               <div class="band-bar-track">
@@ -1631,7 +1784,8 @@
               </div>
               <span class="band-bar-value">${pct}%</span>
             </div>`;
-          }).join('');
+          })
+          .join("");
 
         const bandSection = `
           <section class="detail-section">
@@ -1640,48 +1794,64 @@
           </section>`;
 
         // Clinical ratios section
-        let ratioItems = '';
+        let ratioItems = "";
         if (data.ratios && data.ratios.length > 0) {
-          ratioItems = data.ratios.map(ratio => {
-            const displayName = ratio.ratio_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            return `<li class="detail-item">
+          ratioItems = data.ratios
+            .map((ratio) => {
+              const displayName = ratio.ratio_name
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase());
+              return `<li class="detail-item">
               <span class="detail-label">${escapeHtml(displayName)}</span>
               <span class="detail-value mono">${escapeHtml(ratio.ratio_value.toFixed(3))}</span>
             </li>`;
-          }).join('');
+            })
+            .join("");
         }
         const ratioSection = `
           <section class="detail-section">
             <h3>Clinical Ratios</h3>
-            ${ratioItems
-              ? `<ul class="detail-list">${ratioItems}</ul>`
-              : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No ratio data available.</p>'}
+            ${
+              ratioItems
+                ? `<ul class="detail-list">${ratioItems}</ul>`
+                : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No ratio data available.</p>'
+            }
           </section>`;
 
         // Notes & disclaimers section
         const disclaimers = [];
         const sleepNum = data.sleep_hours != null ? Number(data.sleep_hours) : null;
         if (sleepNum !== null && !isNaN(sleepNum) && sleepNum < 4) {
-          disclaimers.push('Subject has less than 4 hours of sleep, which may affect EEG recordings and results.');
+          disclaimers.push(
+            "Subject has less than 4 hours of sleep, which may affect EEG recordings and results.",
+          );
         }
         if (data.caffeinated === true) {
-          disclaimers.push('Subject had recent caffeine intake, which can alter EEG recordings and may affect analysis.');
+          disclaimers.push(
+            "Subject had recent caffeine intake, which can alter EEG recordings and may affect analysis.",
+          );
         }
         if (data.medicated === true) {
-          disclaimers.push('Subject is medicated, which can impact EEG recordings and may affect analysis.');
+          disclaimers.push(
+            "Subject is medicated, which can impact EEG recordings and may affect analysis.",
+          );
         }
 
         const notesSection = `
           <section class="detail-section">
             <h3>Notes &amp; Disclaimers</h3>
-            <div style="background:#fff3cd;border:1px solid #e9d87a;padding:0.65rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;margin-bottom:${disclaimers.length ? '0.5rem' : '0'}">
+            <div style="background:#fff3cd;border:1px solid #e9d87a;padding:0.65rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;margin-bottom:${disclaimers.length ? "0.5rem" : "0"}">
               <strong>Important:</strong> This system does not provide a definitive diagnosis. Results are for informational purposes only and must not be used as the sole basis for clinical decisions.
             </div>
-            ${disclaimers.length ? `<div style="background:#fff8e6;border:1px solid #f0d080;padding:0.55rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;">
+            ${
+              disclaimers.length
+                ? `<div style="background:#fff8e6;border:1px solid #f0d080;padding:0.55rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;">
               <ul style="margin:0;padding-left:1.2rem;">
-                ${disclaimers.map(d => `<li style="margin:0.2rem 0">${escapeHtml(d)}</li>`).join('')}
+                ${disclaimers.map((d) => `<li style="margin:0.2rem 0">${escapeHtml(d)}</li>`).join("")}
               </ul>
-            </div>` : ''}
+            </div>`
+                : ""
+            }
           </section>`;
 
         // Topo maps placeholder (populated async)
@@ -1711,17 +1881,36 @@
             </div>
           </section>`;
 
-        body.innerHTML = classificationSection + subjectSection + bandSection + ratioSection + notesSection + topoSection + temporalSection;
+        // EEG visualizations placeholder (populated async)
+        const eegVizSection = `
+          <section class="detail-section" id="drawer-eeg-viz-section">
+            <h3>EEG Signal Visualizations</h3>
+            <div class="topo-toggle-row" id="drawer-eeg-viz-toggle"></div>
+            <div id="drawer-eeg-viz-container"></div>
+            <div id="drawer-eeg-viz-loading" class="loading-state">
+              <div class="skeleton-row"></div><div class="skeleton-row"></div>
+            </div>
+          </section>`;
+
+        body.innerHTML =
+          classificationSection +
+          subjectSection +
+          bandSection +
+          ratioSection +
+          notesSection +
+          eegVizSection +
+          topoSection +
+          temporalSection;
 
         // Setup topo toggle
-        document.querySelectorAll('[data-topo]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const type = btn.getAttribute('data-topo');
-            document.querySelectorAll('[data-topo]').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            ['absolute', 'relative', 'tbr'].forEach(t => {
+        document.querySelectorAll("[data-topo]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const type = btn.getAttribute("data-topo");
+            document.querySelectorAll("[data-topo]").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            ["absolute", "relative", "tbr"].forEach((t) => {
               const el = byId(`drawer-topo-${t}`);
-              if (el) el.classList.toggle('hidden', t !== type);
+              if (el) el.classList.toggle("hidden", t !== type);
             });
           });
         });
@@ -1729,40 +1918,116 @@
 
       // ── Topo maps ──
 
+      async function loadDrawerEEGVisualizations(resultId) {
+        const loading = byId("drawer-eeg-viz-loading");
+        const toggle = byId("drawer-eeg-viz-toggle");
+        const container = byId("drawer-eeg-viz-container");
+        if (!container) return;
+
+        try {
+          const res = await fetch(`/api/eeg_visualizations/${resultId}`);
+          if (!res.ok) throw new Error((await res.json()).error || "Failed");
+          const data = await res.json();
+          const viz = data.visualizations || {};
+
+          const BANDS = [
+            ["raw", "Raw"],
+            ["filtered", "Filtered"],
+            ["delta", "Delta"],
+            ["theta", "Theta"],
+            ["alpha", "Alpha"],
+            ["beta", "Beta"],
+            ["gamma", "Gamma"],
+            ["segments", "Segments"],
+          ];
+
+          const available = BANDS.filter(([key]) => viz[key]);
+          if (available.length === 0) {
+            container.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No EEG visualizations available.</p>';
+            return;
+          }
+
+          // Build toggle buttons
+          toggle.innerHTML = available
+            .map(
+              ([key, label], i) =>
+                `<button class="topo-type-btn${i === 0 ? " active" : ""}" data-eeg-viz="${key}">${label}</button>`,
+            )
+            .join("");
+
+          // Build image containers
+          container.innerHTML = available
+            .map(
+              ([key], i) =>
+                `<div id="drawer-eeg-viz-${key}" class="${i > 0 ? "hidden" : ""}" style="text-align:center">
+                  <img src="${viz[key]}" alt="${key} EEG" style="width:100%;height:auto;border-radius:var(--radius-xs)" loading="lazy" />
+                </div>`,
+            )
+            .join("");
+
+          // Wire toggle behavior
+          document.querySelectorAll("[data-eeg-viz]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const band = btn.getAttribute("data-eeg-viz");
+              document
+                .querySelectorAll("[data-eeg-viz]")
+                .forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              available.forEach(([k]) => {
+                const el = byId(`drawer-eeg-viz-${k}`);
+                if (el) el.classList.toggle("hidden", k !== band);
+              });
+            });
+          });
+        } catch (err) {
+          if (container)
+            container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load EEG visualizations: ${escapeHtml(err.message)}</p>`;
+        } finally {
+          if (loading) loading.remove();
+        }
+      }
+
       async function loadDrawerTopoMaps(resultId) {
-        const loading = byId('drawer-topo-loading');
-        const absGrid = byId('drawer-topo-absolute');
-        const relGrid = byId('drawer-topo-relative');
-        const tbrDiv  = byId('drawer-topo-tbr');
+        const loading = byId("drawer-topo-loading");
+        const absGrid = byId("drawer-topo-absolute");
+        const relGrid = byId("drawer-topo-relative");
+        const tbrDiv = byId("drawer-topo-tbr");
         if (!absGrid) return;
 
         try {
           const res = await fetch(`/api/topographic_maps/${resultId}`);
-          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          if (!res.ok) throw new Error((await res.json()).error || "Failed");
           const data = await res.json();
-          const BAND_ORDER = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+          const BAND_ORDER = ["delta", "theta", "alpha", "beta", "gamma"];
 
-          let absHtml = '';
-          BAND_ORDER.forEach(band => {
+          let absHtml = "";
+          BAND_ORDER.forEach((band) => {
             const img = data.absolute_power_maps[band];
-            if (img) absHtml += `<div class="topo-card"><img src="${img}" alt="${band} absolute" loading="lazy" /></div>`;
+            if (img)
+              absHtml += `<div class="topo-card"><img src="${img}" alt="${band} absolute" loading="lazy" /></div>`;
           });
-          absGrid.innerHTML = absHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
+          absGrid.innerHTML =
+            absHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
 
-          let relHtml = '';
-          BAND_ORDER.forEach(band => {
+          let relHtml = "";
+          BAND_ORDER.forEach((band) => {
             const img = data.relative_power_maps[band];
-            if (img) relHtml += `<div class="topo-card"><img src="${img}" alt="${band} relative" loading="lazy" /></div>`;
+            if (img)
+              relHtml += `<div class="topo-card"><img src="${img}" alt="${band} relative" loading="lazy" /></div>`;
           });
-          relGrid.innerHTML = relHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
+          relGrid.innerHTML =
+            relHtml || '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No data</p>';
 
           if (data.tbr_map) {
             tbrDiv.innerHTML = `<div class="topo-grid" style="max-width:200px;"><div class="topo-card"><img src="${data.tbr_map}" alt="TBR" loading="lazy" /></div></div>`;
           } else {
-            tbrDiv.innerHTML = '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No TBR map</p>';
+            tbrDiv.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No TBR map</p>';
           }
         } catch (err) {
-          if (absGrid) absGrid.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load maps: ${escapeHtml(err.message)}</p>`;
+          if (absGrid)
+            absGrid.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load maps: ${escapeHtml(err.message)}</p>`;
         } finally {
           if (loading) loading.remove();
         }
@@ -1771,22 +2036,24 @@
       // ── Temporal biomarkers ──
 
       async function loadDrawerTemporalBiomarkers(resultId) {
-        const loading = byId('drawer-temporal-loading');
-        const container = byId('drawer-temporal-plots');
+        const loading = byId("drawer-temporal-loading");
+        const container = byId("drawer-temporal-plots");
         if (!container) return;
 
         try {
           const res = await fetch(`/api/temporal_biomarkers/${resultId}`);
-          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          if (!res.ok) throw new Error((await res.json()).error || "Failed");
           const data = await res.json();
 
           if (!data.plots || data.plots.length === 0) {
-            container.innerHTML = '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No temporal plots available.</p>';
+            container.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No temporal plots available.</p>';
           } else {
-            container.innerHTML = data.plots.map((plot, i) => {
-              const collapsed = i > 0 ? 'collapsed' : '';
-              const chevron = i > 0 ? '&#9654;' : '&#9660;';
-              return `<div class="temporal-plot-card">
+            container.innerHTML = data.plots
+              .map((plot, i) => {
+                const collapsed = i > 0 ? "collapsed" : "";
+                const chevron = i > 0 ? "&#9654;" : "&#9660;";
+                return `<div class="temporal-plot-card">
                 <div class="temporal-plot-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.chevron').innerHTML=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
                   <span>${escapeHtml(plot.group)}</span>
                   <span class="chevron">${chevron}</span>
@@ -1795,10 +2062,12 @@
                   <img src="${plot.image}" alt="${escapeHtml(plot.group)}" loading="lazy" />
                 </div>
               </div>`;
-            }).join('');
+              })
+              .join("");
           }
         } catch (err) {
-          if (container) container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load temporal biomarkers: ${escapeHtml(err.message)}</p>`;
+          if (container)
+            container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load temporal biomarkers: ${escapeHtml(err.message)}</p>`;
         } finally {
           if (loading) loading.remove();
         }
@@ -1808,10 +2077,10 @@
 
       async function viewResult(resultId) {
         currentResultId = null;
-        byId('result-download-pdf-btn').disabled = true;
-        byId('result-detail-title').textContent = 'Result Details';
-        byId('result-detail-subtitle').textContent = 'Loading...';
-        byId('result-detail-body').innerHTML = `
+        byId("result-download-pdf-btn").disabled = true;
+        byId("result-detail-title").textContent = "Result Details";
+        byId("result-detail-subtitle").textContent = "Loading...";
+        byId("result-detail-body").innerHTML = `
           <div class="loading-state">
             <div class="skeleton-row"></div><div class="skeleton-row"></div>
             <div class="skeleton-row"></div><div class="skeleton-row"></div>
@@ -1821,39 +2090,48 @@
         try {
           const res = await fetch(`/api/results/${resultId}`);
           const data = await res.json();
-          if (data.error) { showToast(data.error, 'error'); closeResultDrawer(); return; }
+          if (data.error) {
+            showToast(data.error, "error");
+            closeResultDrawer();
+            return;
+          }
           currentResultId = resultId;
-          byId('result-download-pdf-btn').disabled = false;
+          byId("result-download-pdf-btn").disabled = false;
           renderResultDetail(data);
+          loadDrawerEEGVisualizations(resultId);
           loadDrawerTopoMaps(resultId);
           loadDrawerTemporalBiomarkers(resultId);
         } catch {
-          showToast('Failed to load result details', 'error');
+          showToast("Failed to load result details", "error");
           closeResultDrawer();
         }
       }
 
       // ── PDF download ──
 
-      byId('result-download-pdf-btn')?.addEventListener('click', async () => {
+      byId("result-download-pdf-btn")?.addEventListener("click", async () => {
         if (!currentResultId) return;
-        const btn = byId('result-download-pdf-btn');
-        btn.disabled = true; btn.textContent = 'Generating...';
+        const btn = byId("result-download-pdf-btn");
+        btn.disabled = true;
+        btn.textContent = "Generating...";
         try {
           const res = await fetch(`/api/results/${currentResultId}/pdf`);
-          if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+          if (!res.ok) throw new Error((await res.json()).error || "Failed");
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = url;
-          const cd = res.headers.get('Content-Disposition');
+          const cd = res.headers.get("Content-Disposition");
           a.download = cd?.match(/filename="?([^"]+)"?/)?.[1] || `Report_${currentResultId}.pdf`;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } catch (err) {
-          showToast('Failed to download PDF: ' + err.message, 'error');
+          showToast("Failed to download PDF: " + err.message, "error");
         } finally {
-          btn.disabled = false; btn.textContent = 'Download PDF Report';
+          btn.disabled = false;
+          btn.textContent = "Download PDF Report";
         }
       });
 
@@ -1864,7 +2142,7 @@
         await loadResults();
       }
 
-      document.addEventListener('DOMContentLoaded', initializePage);
+      document.addEventListener("DOMContentLoaded", initializePage);
     </script>
   </body>
 </html>

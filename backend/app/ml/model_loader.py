@@ -1,12 +1,13 @@
+import json
 import pickle
 import sys
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import numpy as np
 import torch
 
-from ..config import MODEL_PATH
+from ..config import MODEL_PATH, PARAMETERS_PATH
 from ..core.logging_config import get_ml_logger
 from .model import EEGCNNLSTM
 
@@ -37,19 +38,19 @@ class ModelLoader:
     @staticmethod
     def _get_default_params() -> Hyperparameters:
         return {
-            "batch_size": 36,
-            "cnn_dense": 128,
-            "cnn_dropout": 0.2757289395728667,
-            "cnn_kernel_size_1": 3,
-            "cnn_kernel_size_2": 3,
-            "cnn_kernels_1": 16,
-            "cnn_kernels_2": 32,
-            "learning_rate": 0.0004965937593735347,
-            "lstm_dense": 32,
-            "lstm_hidden_size": 96,
-            "lstm_layers": 1,
-            "optimizer": "rmsprop",
-            "dropout": 0.2757289395728667,
+            "batch_size": 48,
+            "cnn_dense": 256,
+            "cnn_dropout": 0.24205666720642469,
+            "cnn_kernel_size_1": 5,
+            "cnn_kernel_size_2": 5,
+            "cnn_kernels_1": 32,
+            "cnn_kernels_2": 64,
+            "learning_rate": 0.00013975559179342043,
+            "lstm_dense": 64,
+            "lstm_hidden_size": 128,
+            "lstm_layers": 2,
+            "optimizer": "adam",
+            "dropout": 0.24205666720642469
         }
 
     def load_model(self, params: Hyperparameters | None = None):
@@ -99,7 +100,10 @@ class ModelLoader:
     def initialize(self):
         logger.info("Initializing ModelLoader: loading model")
         try:
-            self.load_model()
+            with open(PARAMETERS_PATH, "rt") as file:
+                content = file.read()
+                loaded_parameters = json.loads(content)
+                self.load_model(cast(Hyperparameters, loaded_parameters))
 
             if self.model:
                 total_params = sum(p.numel() for p in self.model.parameters())

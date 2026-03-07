@@ -102,6 +102,17 @@ CREATE TABLE topographic_maps (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE eeg_visualizations (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    band_name VARCHAR(50) NOT NULL,
+    image_data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_temporal_plots_result ON temporal_plots(result_id);
 CREATE INDEX IF NOT EXISTS idx_temporal_summaries_result ON temporal_summaries(result_id);
 CREATE INDEX IF NOT EXISTS idx_topographic_maps_result ON topographic_maps(result_id);
+CREATE INDEX IF NOT EXISTS idx_eeg_visualizations_result ON eeg_visualizations(result_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eeg_visualizations_result_band
+    ON eeg_visualizations(result_id, band_name);

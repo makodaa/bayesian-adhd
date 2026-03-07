@@ -25,6 +25,7 @@ from .db.repositories.subjects import SubjectsRepository
 from .db.repositories.temporal_plots import TemporalPlotsRepository
 from .db.repositories.temporal_summaries import TemporalSummariesRepository
 from .db.repositories.topographic_maps import TopographicMapsRepository
+from .db.repositories.eeg_visualizations import EEGVisualizationsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
 from .services.clinician_auth_service import ClinicianAuthService
@@ -106,6 +107,7 @@ clinicians_repo = CliniciansRepository()
 temporal_plots_repo = TemporalPlotsRepository()
 temporal_summaries_repo = TemporalSummariesRepository()
 topographic_maps_repo = TopographicMapsRepository()
+eeg_visualizations_repo = EEGVisualizationsRepository()
 
 # Initialize services
 file_service = FileService()
@@ -445,6 +447,76 @@ def get_eeg_visualization_image(context_id: str, band: str):
         return jsonify({"error": "Failed to generate visualization"}), 500
 
 
+@app.route("/api/eeg_segment_visualization/<context_id>", methods=["POST"])
+@login_required
+def get_eeg_segment_visualization(context_id: str):
+    """Render a segment classification overlay visualization.
+
+    Expects JSON body with ``window_predictions`` (list of per-window dicts)
+    and optional ``quality`` ("preview" | "detail").
+    """
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    body = request.get_json(silent=True) or {}
+    window_predictions = body.get("window_predictions")
+    if not window_predictions or not isinstance(window_predictions, list):
+        return jsonify({"error": "window_predictions array is required"}), 400
+
+    quality = body.get("quality", "preview")
+    if quality not in ("preview", "detail"):
+        quality = "preview"
+
+    try:
+        # Check cache for previously rendered segment image
+        band_key = "segments"
+        cached_path = visualization_cache_service.get_cached_image_path(
+            context_id=context_id,
+            clinician_id=clinician_id,
+            band=band_key,
+            quality=quality,
+        )
+        if cached_path is not None:
+            response = send_file(cached_path, mimetype="image/png", conditional=True)
+            response.headers["X-Visualization-Cache"] = "HIT"
+            response.headers["X-Visualization-Quality"] = quality
+            return response
+
+        csv_bytes = visualization_cache_service.read_context_csv(
+            context_id=context_id,
+            clinician_id=clinician_id,
+        )
+        df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
+        file_service.validate_eeg_data(df)
+
+        image_bytes = visualization_service.render_segment_png(
+            df, window_predictions, quality=quality,
+        )
+
+        image_path = visualization_cache_service.store_image(
+            context_id=context_id,
+            clinician_id=clinician_id,
+            band=band_key,
+            image_bytes=image_bytes,
+            quality=quality,
+        )
+
+        response = send_file(image_path, mimetype="image/png", conditional=True)
+        response.headers["X-Visualization-Cache"] = "MISS"
+        response.headers["X-Visualization-Quality"] = quality
+        return response
+    except ContextAccessError:
+        return jsonify({"error": "Not authorized for this visualization context"}), 403
+    except (ContextNotFoundError, ContextExpiredError) as exc:
+        return jsonify({"error": str(exc)}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error generating segment visualization: {e}", exc_info=True)
+        return jsonify({"error": "Failed to generate segment visualization"}), 500
+
+
 @app.route("/predict", methods=["POST"])
 @login_required
 def predict():
@@ -582,6 +654,34 @@ def predict():
         except Exception as e:
             logger.warning(f"Failed to generate/save temporal biomarkers: {e}", exc_info=True)
 
+        # Generate and persist EEG visualization images to database
+        logger.info(f"Generating EEG visualizations for result {result['result_id']}")
+        try:
+            import base64
+
+            viz_bands = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"]
+            for band_name in viz_bands:
+                img_bytes = visualization_service.render_detail_png(df, band_name)
+                b64 = "data:image/png;base64," + base64.b64encode(img_bytes).decode("ascii")
+                eeg_visualizations_repo.create_visualization(
+                    result["result_id"], band_name, b64
+                )
+            logger.info(f"Saved {len(viz_bands)} band visualizations for result {result['result_id']}")
+
+            # Segment visualization (requires window_predictions)
+            window_preds = result.get("window_predictions", [])
+            if window_preds:
+                seg_bytes = visualization_service.render_segment_png(
+                    df, window_preds, quality="detail"
+                )
+                seg_b64 = "data:image/png;base64," + base64.b64encode(seg_bytes).decode("ascii")
+                eeg_visualizations_repo.create_visualization(
+                    result["result_id"], "segments", seg_b64
+                )
+                logger.info(f"Saved segment visualization for result {result['result_id']}")
+        except Exception as e:
+            logger.warning(f"Failed to generate/save EEG visualizations: {e}", exc_info=True)
+
         # Add band power summary to result
         result["band_analysis"] = {
             "average_absolute_power": band_powers.get("average_absolute_power", {}),
@@ -606,6 +706,7 @@ def predict():
                     "clinician_id": result.get("clinician_id"),
                     "band_analysis": result.get("band_analysis", {}),
                     "visualization_context_id": visualization_context_id,
+                    "window_predictions": result.get("window_predictions", []),
                 },
             }
         ), 200
@@ -754,7 +855,13 @@ def generate_result_pdf(result_id):
             "occupation": result.get("clinician_occupation", ""),
         }
 
-        # Generate PDF
+        # Generate PDF with EEG visualizations
+        eeg_viz_rows = eeg_visualizations_repo.get_by_result(result_id)
+        eeg_visualizations = {}
+        for row in eeg_viz_rows:
+            eeg_visualizations[row["band_name"]] = row["image_data"]
+        result["eeg_visualizations"] = eeg_visualizations
+
         pdf_bytes = pdf_service.generate_report(result, clinician_data)
 
         # Create filename
@@ -779,6 +886,28 @@ def generate_result_pdf(result_id):
     except Exception as e:
         logger.error(f"Error generating PDF for result {result_id}: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate PDF: {str(e)}"}), 500
+
+
+@app.route("/api/eeg_visualizations/<int:result_id>", methods=["GET"])
+@login_required
+def get_eeg_visualizations_by_result(result_id):
+    """Retrieve stored EEG visualization images for a result."""
+    try:
+        rows = eeg_visualizations_repo.get_by_result(result_id)
+        if not rows:
+            return jsonify({"error": "No visualizations found for this result"}), 404
+
+        visualizations = {}
+        for row in rows:
+            visualizations[row["band_name"]] = row["image_data"]
+
+        return jsonify({"result_id": result_id, "visualizations": visualizations}), 200
+    except Exception as e:
+        logger.error(
+            f"Error fetching EEG visualizations for result {result_id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/topographic_maps", methods=["POST"])

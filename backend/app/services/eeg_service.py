@@ -190,8 +190,13 @@ class EEGService:
 
         return rel_powers
 
-    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict]:
-        """Classify EEG data for ADHD probability"""
+    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict, list[dict]]:
+        """Classify EEG data for ADHD probability.
+
+        Returns:
+            (classification, confidence, band_data, window_predictions)
+            where window_predictions is a list of dicts with per-window results.
+        """
         logger.info(f"Starting EEG classification on {len(df)} samples")
         logger.info(f"DataFrame columns: {df.columns.tolist()}")
 
@@ -287,8 +292,10 @@ class EEGService:
 
         # Sliding window with overlap
         # Takes WINDOW_STEP steps every iteration
+        window_sample_ranges: list[tuple[int, int]] = []
         for start in range(0, n_samples - SAMPLES_PER_WINDOW + 1, WINDOW_STEP):
             window = df.iloc[start : start + SAMPLES_PER_WINDOW]
+            window_sample_ranges.append((start, start + SAMPLES_PER_WINDOW))
             for frequency in self.process_window(window, window_count):
                 output.append(frequency)
             window_count += 1
@@ -330,10 +337,33 @@ class EEGService:
             print(f"Predictions: {predictions}")
             print("=" * 100)
 
-            adhd_1_name = "Combined / C (ADHD-C)"
-            adhd_2_name = "Hyperactive-Impulsive (ADHD-H)"
-            adhd_3_name = "Inattentive (ADHD-I)"
-            control_name = "Non-ADHD"
+            class_names = [
+                "Combined / C (ADHD-C)",
+                "Hyperactive-Impulsive (ADHD-H)",
+                "Inattentive (ADHD-I)",
+                "Non-ADHD",
+            ]
+
+            # Build per-window prediction list
+            window_predictions: list[dict] = []
+            for w_idx in range(predictions.shape[0]):
+                w_probs = predictions[w_idx]  # softmax probabilities
+                w_argmax = int(np.argmax(w_probs))
+                start_s, end_s = window_sample_ranges[w_idx]
+                window_predictions.append({
+                    "window": w_idx,
+                    "start_sample": start_s,
+                    "end_sample": end_s,
+                    "start_time": round(start_s / SAMPLE_RATE, 4),
+                    "end_time": round(end_s / SAMPLE_RATE, 4),
+                    "predicted_class": class_names[w_argmax],
+                    "confidence": float(w_probs[w_argmax]),
+                    "probabilities": {
+                        class_names[i]: float(w_probs[i]) for i in range(4)
+                    },
+                })
+
+            logger.info(f"Per-window predictions computed for {len(window_predictions)} windows")
 
             adhd_1, adhd_2, adhd_3, control = np.sum(predictions, axis=0) / np.sum(
                 predictions
@@ -342,34 +372,21 @@ class EEGService:
             # Store confidence as decimal (0-1) - frontend/PDF will multiply by 100 for display
             conf = float(maximum)
 
-            if -0.001 <= maximum - adhd_1 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_1_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_1_name, conf, band_data
-            elif -0.001 <= maximum - adhd_2 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_2_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_2_name, conf, band_data
-            elif -0.001 <= maximum - adhd_3 <= 0.001:
-                logger.info(
-                    f"Classification result: {adhd_3_name} with {conf * 100:.2f}% confidence"
-                )
-                return adhd_3_name, conf, band_data
-            elif -0.001 <= maximum - control <= 0.001:
-                logger.info(
-                    f"Classification result: {control_name} with {conf * 100:.2f}% confidence"
-                )
-                return control_name, conf, band_data
-            raise ValueError("Unreachable")
+            class_probs = [adhd_1, adhd_2, adhd_3, control]
+            overall_idx = int(np.argmax(class_probs))
+            overall_name = class_names[overall_idx]
+
+            logger.info(
+                f"Classification result: {overall_name} with {conf * 100:.2f}% confidence"
+            )
+            return overall_name, conf, band_data, window_predictions
 
     def classify_and_save(
         self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
     ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
-        classification, confidence, band_data = self.classify(df)
+        classification, confidence, band_data, window_predictions = self.classify(df)
 
         logger.info(
             f"Saving classification result to database: {classification} ({confidence * 100:.2f}%)"
@@ -390,4 +407,5 @@ class EEGService:
             "classification": classification,
             "confidence_score": confidence,
             "clinician_id": clinician_id,
+            "window_predictions": window_predictions,
         }

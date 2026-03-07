@@ -4,6 +4,8 @@ import torch.nn.functional as F  # For softmax
 
 import numpy as np
 
+N_FREQS    = 77   # len(np.arange(2.0, 40.5, 0.5))
+N_CHANNELS = 19   # electrode count
 class EEGCNNLSTM(nn.Module):
     def __init__(self, num_band_features=7, num_classes=4,
                  cnn_kernels_1=32,
@@ -28,7 +30,7 @@ class EEGCNNLSTM(nn.Module):
 
         # Compute flatten size dynamically
         with torch.no_grad():
-            dummy = torch.zeros(1, 1, 77, 19)
+            dummy = torch.zeros(1, 1, N_FREQS, N_CHANNELS)
             out = self._forward_cnn(dummy)   # [B, C, H, W]
             b, c, h, w = out.shape
             self.seq_len = h                      # sequence length (rows)

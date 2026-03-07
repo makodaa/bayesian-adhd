@@ -1,0 +1,15 @@
+{
+    "batch_size": 48,
+    "cnn_dense": 256,
+    "cnn_dropout": 0.24205666720642469,
+    "cnn_kernel_size_1": 5,
+    "cnn_kernel_size_2": 5,
+    "cnn_kernels_1": 32,
+    "cnn_kernels_2": 64,
+    "learning_rate": 0.00013975559179342043,
+    "lstm_dense": 64,
+    "lstm_hidden_size": 128,
+    "lstm_layers": 2,
+    "optimizer": "adam",
+    "dropout": 0.24205666720642469
+}
