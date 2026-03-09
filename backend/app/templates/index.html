@@ -1825,6 +1825,59 @@
         word-break: break-word;
       }
 
+      .acos-grid {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .acos-item-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 110px;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .acos-item-row label {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--text-700);
+      }
+
+      .acos-item-row select {
+        border: 1px solid #cddae2;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.38rem 0.45rem;
+        font-size: 0.8rem;
+        color: var(--text-900);
+      }
+
+      .acos-summary-grid {
+        border: 1px solid #d8e3e8;
+        border-radius: var(--radius-sm);
+        background: #ffffff;
+        padding: 0.65rem;
+        display: grid;
+        gap: 0.38rem;
+      }
+
+      .acos-summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.82rem;
+      }
+
+      .acos-summary-row span:first-child {
+        color: var(--text-500);
+      }
+
+      .acos-summary-row span:last-child {
+        color: var(--text-900);
+        font-weight: 600;
+        text-align: right;
+      }
+
       .disclaimer-note {
         border: 1px solid #c9dbe5;
         border-radius: var(--radius-sm);
@@ -2320,6 +2373,13 @@
                   <article class="summary-card">
                     <h3>Classification Summary</h3>
                     <div id="prediction-result"></div>
+                  </article>
+
+                  <article class="summary-card">
+                    <h3>ACOS-C Outcome Summary</h3>
+                    <div id="acos-summary" class="acos-summary-grid">
+                      <p class="helper-copy" style="margin: 0">ACOS-C scoring appears after assessment.</p>
+                    </div>
                   </article>
 
                   <article id="quality-notice-section" class="quality-card hidden">
@@ -2909,6 +2969,15 @@
                 </div>
               </div>
             </div>
+
+            <div class="form-panel">
+              <h3>ADHD Clinical Outcome Scale - Clinician (ACOS-C)</h3>
+              <p class="hint">
+                Rate each item for the past 2 weeks on a 0-5 scale (0 = No problem, 5 =
+                Extreme problem).
+              </p>
+              <div id="acos-grid" class="acos-grid"></div>
+            </div>
           </section>
 
           <section class="drawer-step hidden" data-step="2">
@@ -3027,6 +3096,32 @@
         theta_beta_ratio: { label: "Theta/Beta Ratio (TBR)", range: "Reference: 1.0 to 2.5" },
         theta_alpha_ratio: { label: "Theta/Alpha Ratio (TAR)", range: "Reference: 0.8 to 1.8" },
         alpha_theta_ratio: { label: "Alpha/Theta Ratio (ATR)", range: "Reference: 0.5 to 1.2" },
+      };
+
+      const ACOS_ITEMS = [
+        [1, "Hyperactivity or restlessness"],
+        [2, "Attention and concentration difficulties"],
+        [3, "Impulsivity in actions or decisions"],
+        [4, "Alcohol-related problems"],
+        [5, "Emotional fluctuation or mood instability"],
+        [6, "Organization and planning difficulties"],
+        [7, "Temper or anger outbursts"],
+        [8, "Drug-related problems"],
+        [9, "Interpersonal conflict or relationship tension"],
+        [10, "Procrastination or delayed task completion"],
+        [11, "Anxiety symptoms"],
+        [12, "Depressive symptoms"],
+        [13, "Sleep-related problems"],
+        [14, "Work or study functioning difficulties"],
+        [15, "Everyday life management difficulties"],
+      ];
+
+      const ACOS_SUBSCALE_META = {
+        attention_and_functional_difficulties: "Attention and Functional Difficulties",
+        hyperactivity_impulsivity_emotional_dysregulation:
+          "Hyperactivity/Impulsivity and Emotional Dysregulation",
+        cooccurring_mental_health_problems: "Co-occurring Mental Health Problems",
+        risk_behaviours_interpersonal_problems: "Risk Behaviours and Interpersonal Problems",
       };
 
       const appState = {
@@ -3293,6 +3388,128 @@
         return String(value).trim();
       }
 
+      function getAcosSeverityFromAverage(averageScore) {
+        if (!Number.isFinite(averageScore)) return "N/A";
+        if (averageScore < 0.5) return "No Problem";
+        if (averageScore < 1.5) return "Minor";
+        if (averageScore < 2.5) return "Mild";
+        if (averageScore < 3.5) return "Moderately Severe";
+        if (averageScore < 4.5) return "Severe";
+        return "Very Severe";
+      }
+
+      function collectAcosScores() {
+        const scores = {};
+        for (let itemIndex = 1; itemIndex <= 15; itemIndex += 1) {
+          const value = byId(`acos-item-${itemIndex}`)?.value;
+          if (value === undefined || value === null || value === "") {
+            return null;
+          }
+          const numeric = Number(value);
+          if (!Number.isInteger(numeric) || numeric < 0 || numeric > 5) {
+            return null;
+          }
+          scores[`item_${itemIndex}`] = numeric;
+        }
+        return scores;
+      }
+
+      function computeAcosFromScores(itemScores) {
+        if (!itemScores || Object.keys(itemScores).length !== 15) return null;
+        const scoreValues = Object.values(itemScores);
+        const totalScore = scoreValues.reduce((sum, value) => sum + Number(value || 0), 0);
+        const averageScore = totalScore / 15;
+        const subscaleItems = {
+          attention_and_functional_difficulties: [2, 6, 10, 14, 15],
+          hyperactivity_impulsivity_emotional_dysregulation: [1, 3, 5, 7],
+          cooccurring_mental_health_problems: [11, 12, 13],
+          risk_behaviours_interpersonal_problems: [4, 8, 9],
+        };
+
+        const subscales = {};
+        Object.entries(subscaleItems).forEach(([key, items]) => {
+          const score = items.reduce((sum, item) => sum + Number(itemScores[`item_${item}`] || 0), 0);
+          const avg = score / items.length;
+          subscales[key] = {
+            score,
+            average_score: Number(avg.toFixed(3)),
+            severity: getAcosSeverityFromAverage(avg),
+          };
+        });
+
+        return {
+          total_score: totalScore,
+          average_score: Number(averageScore.toFixed(3)),
+          severity: getAcosSeverityFromAverage(averageScore),
+          subscales,
+        };
+      }
+
+      function renderAcosSummary(acos) {
+        const container = byId("acos-summary");
+        if (!container) return;
+
+        if (!acos || !Number.isFinite(Number(acos.total_score))) {
+          container.innerHTML = "<p class='helper-copy' style='margin:0'>ACOS-C scoring appears after assessment.</p>";
+          return;
+        }
+
+        const rows = [
+          ["Total Score", String(acos.total_score)],
+          [
+            "Average Score",
+            Number.isFinite(Number(acos.average_score))
+              ? Number(acos.average_score).toFixed(2)
+              : "N/A",
+          ],
+          ["Severity", acos.severity || "N/A"],
+        ];
+
+        const subscaleRows = Object.entries(acos.subscales || {}).map(([key, value]) => {
+          const label = ACOS_SUBSCALE_META[key] || key.replace(/_/g, " ");
+          const average = Number(value.average_score);
+          const score = Number(value.score);
+          const severity = value.severity || "N/A";
+          return [
+            label,
+            `${Number.isFinite(score) ? score : "-"} (${Number.isFinite(average) ? average.toFixed(2) : "-"}; ${severity})`,
+          ];
+        });
+
+        container.innerHTML = [...rows, ...subscaleRows]
+          .map(
+            ([label, value]) => `
+            <div class="acos-summary-row">
+              <span>${escapeHtml(label)}</span>
+              <span>${escapeHtml(String(value))}</span>
+            </div>
+          `,
+          )
+          .join("");
+      }
+
+      function initAcosInputs() {
+        const container = byId("acos-grid");
+        if (!container) return;
+
+        container.innerHTML = ACOS_ITEMS.map(
+          ([itemIndex, label]) => `
+          <div class="acos-item-row">
+            <label for="acos-item-${itemIndex}">${itemIndex}. ${escapeHtml(label)}</label>
+            <select id="acos-item-${itemIndex}" required>
+              <option value="" selected disabled>Select 0-5</option>
+              <option value="0">0 - None</option>
+              <option value="1">1 - Minor</option>
+              <option value="2">2 - Mild</option>
+              <option value="3">3 - Moderate</option>
+              <option value="4">4 - Severe</option>
+              <option value="5">5 - Extreme</option>
+            </select>
+          </div>
+        `,
+        ).join("");
+      }
+
       function isContextAlignedWithLatest(context) {
         const latest = appState.latestAssessmentContext;
         if (!context || !latest) return false;
@@ -3307,11 +3524,15 @@
           "medicated",
           "medicationIntake",
           "notes",
+          "acosScores",
         ];
 
-        return trackedFields.every(
-          (field) => normalizeContextField(context[field]) === normalizeContextField(latest[field]),
-        );
+        return trackedFields.every((field) => {
+          if (field === "acosScores") {
+            return JSON.stringify(context.acosScores || null) === JSON.stringify(latest.acosScores || null);
+          }
+          return normalizeContextField(context[field]) === normalizeContextField(latest[field]);
+        });
       }
 
       function renderSubjectSummary(context, result = null) {
@@ -3356,6 +3577,16 @@
           ],
           ["Latest Classification", formatContextValue(result && result.classification, "Pending")],
           ["Confidence", confidenceText],
+          [
+            "ACOS-C Total",
+            result && result.acos && Number.isFinite(Number(result.acos.total_score))
+              ? String(result.acos.total_score)
+              : "Pending",
+          ],
+          [
+            "ACOS-C Severity",
+            formatContextValue(result && result.acos && result.acos.severity, "Pending"),
+          ],
         ];
 
         body.innerHTML = items
@@ -3415,6 +3646,7 @@
           medicated: getCheckedValue("medicated"),
           medicationIntake: byId("medication-intake").value.trim(),
           notes: byId("notes").value.trim(),
+          acosScores: collectAcosScores(),
           clinicianName: byId("clinician-input").value,
           occupation: byId("occupation").value,
           fileMeta: appState.fileMeta,
@@ -3453,6 +3685,12 @@
             context.fileMeta ? formatDuration(context.fileMeta.durationSec) : "-",
           ],
         ];
+
+        const acos = computeAcosFromScores(context.acosScores);
+        if (acos) {
+          rows.push(["ACOS-C Total", String(acos.total_score)]);
+          rows.push(["ACOS-C Severity", acos.severity]);
+        }
 
         summary.innerHTML = rows
           .map(
@@ -3506,9 +3744,12 @@
         const ageValue = age ? Number(age.value) : NaN;
         const ageValid = Number.isFinite(ageValue) && ageValue >= 1 && ageValue <= 120;
         const genderValid = Boolean(gender && gender.value);
+        const acosScores = collectAcosScores();
+        const acosValid = Boolean(acosScores);
 
-        if (!subjectValid || !ageValid || !genderValid) {
-          error.textContent = "Enter subject code, age, and gender to continue.";
+        if (!subjectValid || !ageValid || !genderValid || !acosValid) {
+          error.textContent =
+            "Enter subject code, age, gender, and complete all ACOS-C item ratings to continue.";
           error.classList.remove("hidden");
           return false;
         }
@@ -4351,6 +4592,12 @@
         if (context.medicationIntake)
           formData.append("medication_intake", context.medicationIntake);
         if (context.notes) formData.append("notes", context.notes);
+        if (context.acosScores) {
+          Object.entries(context.acosScores).forEach(([key, value]) => {
+            const itemSuffix = key.replace("item_", "");
+            formData.append(`acos_item_${itemSuffix}`, String(value));
+          });
+        }
 
         return formData;
       }
@@ -4439,6 +4686,7 @@
           displayPrediction(result.classification, result.confidence_score);
           displayBandPowers(result.band_analysis || {});
           displayClinicalRatios((result.band_analysis || {}).band_ratios || {});
+          renderAcosSummary(result.acos || null);
           renderDataQualityNotice(context, result.confidence_score || 0);
           renderInterventionSuggestions(result.classification || "Unknown");
           renderSubjectSummary(context, result);
@@ -4756,6 +5004,11 @@
           byId(id)?.addEventListener("input", updateDraftIndicator);
           byId(id)?.addEventListener("change", updateDraftIndicator);
         });
+
+        for (let itemIndex = 1; itemIndex <= 15; itemIndex += 1) {
+          const select = byId(`acos-item-${itemIndex}`);
+          select?.addEventListener("change", updateDraftIndicator);
+        }
 
         byId("band-view-average")?.addEventListener("click", () => setBandView("average"));
         byId("band-view-electrode")?.addEventListener("click", () => setBandView("electrode"));
@@ -5096,6 +5349,7 @@
 
       async function initializePage() {
         setStep(1);
+        initAcosInputs();
         initChannelGrid();
         renderFileMetadata(null);
         resetVisualizationState();

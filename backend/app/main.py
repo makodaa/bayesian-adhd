@@ -28,6 +28,7 @@ from .db.repositories.topographic_maps import TopographicMapsRepository
 from .db.repositories.eeg_visualizations import EEGVisualizationsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
+from .services.acos_service import AcosService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
@@ -113,6 +114,7 @@ eeg_visualizations_repo = EEGVisualizationsRepository()
 file_service = FileService()
 eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
+acos_service = AcosService()
 visualization_service = VisualizationService()
 visualization_cache_service = VisualizationCacheService()
 topographic_service = TopographicService()
@@ -545,6 +547,28 @@ def predict():
         medication_intake = request.form.get("medication_intake")
         notes = request.form.get("notes")
 
+        acos_item_scores: dict[str, int] | None = None
+        acos_result: dict[str, object] | None = None
+        acos_raw: dict[int, int] = {}
+        for item_index in range(1, 16):
+            raw_value = request.form.get(f"acos_item_{item_index}")
+            if raw_value is not None and raw_value != "":
+                try:
+                    score_value = int(raw_value)
+                except ValueError as exc:
+                    raise ValueError(f"ACOS item {item_index} must be an integer") from exc
+                if not (0 <= score_value <= 5):
+                    raise ValueError(f"ACOS item {item_index} must be between 0 and 5")
+                acos_raw[item_index] = score_value
+
+        if acos_raw:
+            if len(acos_raw) != 15:
+                raise ValueError("All 15 ACOS-C items are required when ACOS scoring is provided")
+            acos_result = dict(acos_service.compute(acos_raw))
+            acos_item_scores = {
+                f"item_{index}": value for index, value in sorted(acos_raw.items())
+            }
+
         # Validate required subject data
         if not subject_code or not age or not gender:
             logger.error(
@@ -613,7 +637,11 @@ def predict():
 
         # Classify and save results
         result = eeg_service.classify_and_save(
-            recording_id, df, clinician_id=clinician_id
+            recording_id,
+            df,
+            clinician_id=clinician_id,
+            acos_result=acos_result,
+            acos_item_scores=acos_item_scores,
         )
 
         # Compute band powers and ratios for the same recording
@@ -707,6 +735,7 @@ def predict():
                     "band_analysis": result.get("band_analysis", {}),
                     "visualization_context_id": visualization_context_id,
                     "window_predictions": result.get("window_predictions", []),
+                    "acos": result.get("acos"),
                 },
             }
         ), 200

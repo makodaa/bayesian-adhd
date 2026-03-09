@@ -1328,13 +1328,14 @@
                     <th>Subject Code</th>
                     <th>Classification</th>
                     <th>Confidence</th>
+                    <th>ACOS-C</th>
                     <th>Clinician</th>
                     <th>Date</th>
                   </tr>
                 </thead>
                 <tbody id="results-table-body">
                   <tr>
-                    <td colspan="5" class="table-feedback">
+                    <td colspan="6" class="table-feedback">
                       <div class="loading-state">
                         <div class="skeleton-row"></div>
                         <div class="skeleton-row"></div>
@@ -1548,7 +1549,7 @@
 
         if (!results || results.length === 0) {
           const hasFilters = appState.filters.search || appState.filters.classification !== "all";
-          tbody.innerHTML = `<tr><td colspan="5" class="table-feedback">
+          tbody.innerHTML = `<tr><td colspan="6" class="table-feedback">
             <strong>${hasFilters ? "No matching results" : "No results yet"}</strong>
             ${hasFilters ? "Try resetting filters." : "Complete an assessment to see records here."}
           </td></tr>`;
@@ -1562,10 +1563,14 @@
               : "N/A";
             const clinician = [r.first_name, r.last_name].filter(Boolean).join(" ") || "N/A";
             const date = r.inferenced_at ? new Date(r.inferenced_at).toLocaleString() : "N/A";
+            const acos = Number.isFinite(Number(r.acos_total_score))
+              ? `${Number(r.acos_total_score)} (${r.acos_severity || "N/A"})`
+              : "N/A";
             return `<tr class="result-row" data-result-id="${r.result_id}" tabindex="0" role="button" aria-label="Open result for ${escapeHtml(r.subject_code || "")}">
             <td class="subject-code">${escapeHtml(r.subject_code || "-")}</td>
             <td>${renderClassificationPill(r.predicted_class)}</td>
             <td class="mono">${escapeHtml(confidence)}</td>
+            <td>${escapeHtml(acos)}</td>
             <td>${escapeHtml(clinician)}</td>
             <td>${escapeHtml(date)}</td>
           </tr>`;
@@ -1590,7 +1595,7 @@
       async function loadResults() {
         const tbody = byId("results-table-body");
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="5" class="table-feedback"><div class="loading-state">
+          tbody.innerHTML = `<tr><td colspan="6" class="table-feedback"><div class="loading-state">
             <div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>
           </div></td></tr>`;
         }
@@ -1626,11 +1631,13 @@
           return;
         }
         const rows = [
-          ["Subject Code", "Classification", "Confidence", "Date"],
+          ["Subject Code", "Classification", "Confidence", "ACOS-C Total", "ACOS-C Severity", "Date"],
           ...appState.allResults.map((r) => [
             r.subject_code,
             r.predicted_class,
             (r.confidence_score * 100).toFixed(2) + "%",
+            Number.isFinite(Number(r.acos_total_score)) ? String(r.acos_total_score) : "",
+            r.acos_severity || "",
             new Date(r.inferenced_at).toLocaleString(),
           ]),
         ];
@@ -1758,6 +1765,62 @@
                 )
                 .join("")}
             </ul>
+          </section>`;
+
+        const acosTotal = Number(data.acos_total_score);
+        const acosAverage = Number(data.acos_average_score);
+        const acosHasData = Number.isFinite(acosTotal);
+        const acosSubscales = data.acos_subscale_scores || {};
+        const acosSubscaleLabels = {
+          attention_and_functional_difficulties: "Attention and Functional Difficulties",
+          hyperactivity_impulsivity_emotional_dysregulation:
+            "Hyperactivity/Impulsivity and Emotional Dysregulation",
+          cooccurring_mental_health_problems: "Co-occurring Mental Health Problems",
+          risk_behaviours_interpersonal_problems: "Risk Behaviours and Interpersonal Problems",
+        };
+
+        const acosItems = acosHasData
+          ? [
+              ["Total Score", String(acosTotal)],
+              [
+                "Average Score",
+                Number.isFinite(acosAverage) ? acosAverage.toFixed(2) : "N/A",
+              ],
+              ["Severity", data.acos_severity || "N/A"],
+            ]
+          : [];
+
+        const acosSubscaleItems = Object.entries(acosSubscales)
+          .map(([key, value]) => {
+            if (!value || typeof value !== "object") return null;
+            const score = Number(value.score);
+            const average = Number(value.average_score);
+            const severity = value.severity || "N/A";
+            const label = acosSubscaleLabels[key] || key.replace(/_/g, " ");
+            return [
+              label,
+              `${Number.isFinite(score) ? score : "-"} (${Number.isFinite(average) ? average.toFixed(2) : "-"}; ${severity})`,
+            ];
+          })
+          .filter(Boolean);
+
+        const acosSection = `
+          <section class="detail-section">
+            <h3>ACOS-C (Clinician) Outcome</h3>
+            ${
+              acosHasData
+                ? `<ul class="detail-list">
+                    ${[...acosItems, ...acosSubscaleItems]
+                      .map(
+                        ([label, value]) => `<li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(String(value))}</span>
+                      </li>`,
+                      )
+                      .join("")}
+                  </ul>`
+                : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No ACOS-C data recorded for this assessment.</p>'
+            }
           </section>`;
 
         // Band power section
@@ -1895,6 +1958,7 @@
         body.innerHTML =
           classificationSection +
           subjectSection +
+          acosSection +
           bandSection +
           ratioSection +
           notesSection +

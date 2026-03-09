@@ -1,21 +1,61 @@
+import json
+
 from .base import BaseRepository
 from ...core.logging_config import get_db_logger
 
 logger = get_db_logger(__name__)
 
 class ResultsRepository(BaseRepository):
-    def create_result(self, recording_id, classification, confidence_score, clinician_id=None):
+    def create_result(
+        self,
+        recording_id,
+        classification,
+        confidence_score,
+        clinician_id=None,
+        acos_total_score=None,
+        acos_average_score=None,
+        acos_severity=None,
+        acos_subscale_scores=None,
+        acos_item_scores=None,
+    ):
         """Create a new result and return its ID."""
         logger.info(f"Creating result for recording {recording_id}: classification={classification}, confidence={confidence_score*100:.2f}%")
         query = """
-        INSERT INTO results(recording_id, clinician_id, predicted_class, confidence_score)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO results(
+            recording_id,
+            clinician_id,
+            predicted_class,
+            confidence_score,
+            acos_total_score,
+            acos_average_score,
+            acos_severity,
+            acos_subscale_scores,
+            acos_item_scores
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)
         RETURNING id;
         """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, (recording_id, clinician_id, classification, confidence_score))
+                cursor.execute(
+                    query,
+                    (
+                        recording_id,
+                        clinician_id,
+                        classification,
+                        confidence_score,
+                        acos_total_score,
+                        acos_average_score,
+                        acos_severity,
+                        json.dumps(acos_subscale_scores)
+                        if acos_subscale_scores is not None
+                        else None,
+                        json.dumps(acos_item_scores)
+                        if acos_item_scores is not None
+                        else None,
+                    ),
+                )
                 result_id = cursor.fetchone()[0]
                 logger.info(f"Result created successfully with ID: {result_id}")
                 return result_id

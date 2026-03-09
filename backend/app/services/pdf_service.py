@@ -160,6 +160,7 @@ class PDFReportService:
         story.extend(self._build_subject_section(result_data))
         story.extend(self._build_recording_section(result_data))
         story.extend(self._build_classification_section(result_data))
+        story.extend(self._build_acos_section(result_data))
         story.extend(self._build_band_powers_section(result_data))
         story.extend(self._build_ratios_section(result_data))
         story.extend(self._build_eeg_visualizations_section(result_data))
@@ -366,6 +367,71 @@ class PDFReportService:
         elements.append(Paragraph(interpretation, self.styles['ReportBody']))
         elements.append(Spacer(1, 8))
         
+        return elements
+
+    def _build_acos_section(self, result_data: dict) -> list:
+        """Build ACOS-C clinician outcome section."""
+        elements = []
+        acos_total = result_data.get('acos_total_score')
+        if acos_total is None:
+            return elements
+
+        elements.append(Paragraph("ACOS-C (Clinician) Outcome", self.styles['SectionHeader']))
+
+        acos_average = result_data.get('acos_average_score')
+        acos_severity = result_data.get('acos_severity') or 'N/A'
+        overview_rows = [
+            ['Total Score:', str(acos_total)],
+            ['Average Score:', f"{float(acos_average):.2f}" if acos_average is not None else 'N/A'],
+            ['Severity:', acos_severity],
+        ]
+
+        overview_table = Table(overview_rows, colWidths=[50 * mm, 120 * mm])
+        overview_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(overview_table)
+
+        subscales = result_data.get('acos_subscale_scores') or {}
+        if subscales:
+            label_map = {
+                'attention_and_functional_difficulties': 'Attention and Functional Difficulties',
+                'hyperactivity_impulsivity_emotional_dysregulation': 'Hyperactivity/Impulsivity and Emotional Dysregulation',
+                'cooccurring_mental_health_problems': 'Co-occurring Mental Health Problems',
+                'risk_behaviours_interpersonal_problems': 'Risk Behaviours and Interpersonal Problems',
+            }
+            data = [['Subscale', 'Score', 'Average', 'Severity']]
+            for key, values in subscales.items():
+                data.append([
+                    label_map.get(key, key.replace('_', ' ').title()),
+                    str(values.get('score', 'N/A')),
+                    f"{float(values.get('average_score')):.2f}"
+                    if values.get('average_score') is not None
+                    else 'N/A',
+                    str(values.get('severity', 'N/A')),
+                ])
+
+            subscale_table = Table(data, colWidths=[85 * mm, 25 * mm, 25 * mm, 35 * mm])
+            subscale_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('ALIGN', (1, 0), (2, -1), 'RIGHT'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(subscale_table)
+
+        elements.append(Spacer(1, 8))
         return elements
     
     def _get_clinical_interpretation(self, predicted_class: str, confidence_pct: float) -> str:

@@ -382,7 +382,12 @@ class EEGService:
             return overall_name, conf, band_data, window_predictions
 
     def classify_and_save(
-        self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
+        self,
+        recording_id: int,
+        df: pd.DataFrame,
+        clinician_id: int | None = None,
+        acos_result: dict[str, Any] | None = None,
+        acos_item_scores: dict[str, int] | None = None,
     ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
@@ -396,6 +401,21 @@ class EEGService:
             classification=classification,
             confidence_score=confidence,
             clinician_id=clinician_id,
+            acos_total_score=(
+                int(acos_result["total_score"]) if acos_result and "total_score" in acos_result else None
+            ),
+            acos_average_score=(
+                float(acos_result["average_score"])
+                if acos_result and "average_score" in acos_result
+                else None
+            ),
+            acos_severity=(
+                str(acos_result["severity"]) if acos_result and "severity" in acos_result else None
+            ),
+            acos_subscale_scores=(
+                acos_result.get("subscales") if acos_result else None
+            ),
+            acos_item_scores=acos_item_scores,
         )
 
         logger.info(
@@ -408,4 +428,5 @@ class EEGService:
             "confidence_score": confidence,
             "clinician_id": clinician_id,
             "window_predictions": window_predictions,
+            "acos": acos_result,
         }
