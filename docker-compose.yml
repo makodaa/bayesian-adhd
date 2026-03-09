@@ -57,6 +57,8 @@ services:
     cloudflared:
         image: cloudflare/cloudflared:latest
         container_name: cloudflared
+        profiles:
+            - cloudflare
         command: tunnel run
         environment:
             - TUNNEL_TOKEN=${TUNNEL_TOKEN}

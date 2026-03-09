@@ -100,7 +100,7 @@ EEG CSV files should contain time-series data with columns representing differen
 ### Local Development Setup
 
 ```bash
-# Build and start in development mode
+# Build and start in development mode (local only)
 docker-compose up --build
 
 # View logs
@@ -113,6 +113,17 @@ docker-compose down
 docker compose down -v && docker compose up --build # For macOS / Linux
 docker compose down -v ; docker compose up --build # For Windows
 ```
+
+### Optional Cloudflare Tunnel (Not Required for Local Dev)
+
+Cloudflare is optional and disabled by default in development. The app runs locally at `http://localhost:8000` without a tunnel.
+
+```bash
+# Start the local stack plus Cloudflare tunnel profile
+TUNNEL_TOKEN=your_token_here docker compose --profile cloudflare up --build
+```
+
+If you do not enable the `cloudflare` profile, only the local services (`database`, `backend`) are started.
 
 ### Database Access
 
