@@ -2828,10 +2828,14 @@
         </div>
         <div class="step-item" id="step-item-2">
           <span class="step-dot">2</span>
-          <span class="step-text">EEG Upload</span>
+          <span class="step-text">ACOS-C</span>
         </div>
         <div class="step-item" id="step-item-3">
           <span class="step-dot">3</span>
+          <span class="step-text">EEG Upload</span>
+        </div>
+        <div class="step-item" id="step-item-4">
+          <span class="step-dot">4</span>
           <span class="step-text">Review & Submit</span>
         </div>
       </div>
@@ -2970,6 +2974,9 @@
               </div>
             </div>
 
+          </section>
+
+          <section class="drawer-step hidden" data-step="2">
             <div class="form-panel">
               <h3>ADHD Clinical Outcome Scale - Clinician (ACOS-C)</h3>
               <p class="hint">
@@ -2980,7 +2987,7 @@
             </div>
           </section>
 
-          <section class="drawer-step hidden" data-step="2">
+          <section class="drawer-step hidden" data-step="3">
             <div class="form-panel">
               <h3>Upload EEG CSV</h3>
               <label class="upload-dropzone" id="file-dropzone" for="file">
@@ -3014,7 +3021,7 @@
             </div>
           </section>
 
-          <section class="drawer-step hidden" data-step="3">
+          <section class="drawer-step hidden" data-step="4">
             <div class="form-panel">
               <h3>Review Summary</h3>
               <div id="review-summary" class="review-summary"></div>
@@ -3029,6 +3036,7 @@
 
           <p id="step-1-error" class="form-error hidden"></p>
           <p id="step-2-error" class="form-error hidden"></p>
+          <p id="step-3-error" class="form-error hidden"></p>
 
           <div class="drawer-actions" id="drawer-actions">
             <button type="button" class="btn-secondary-app" id="step-back-btn">Back</button>
@@ -3708,7 +3716,7 @@
           section.classList.toggle("hidden", sectionStep !== step);
         });
 
-        [1, 2, 3].forEach((index) => {
+        [1, 2, 3, 4].forEach((index) => {
           const item = byId(`step-item-${index}`);
           if (!item) return;
           item.classList.toggle("is-active", index === step);
@@ -3723,13 +3731,13 @@
           backBtn.classList.toggle("hidden", step === 1);
         }
         if (nextBtn) {
-          nextBtn.classList.toggle("hidden", step === 3);
+          nextBtn.classList.toggle("hidden", step === 4);
         }
         if (analyzeBtn) {
-          analyzeBtn.classList.toggle("hidden", step !== 3);
+          analyzeBtn.classList.toggle("hidden", step !== 4);
         }
 
-        if (step === 3) {
+        if (step === 4) {
           renderReviewSummary(collectAssessmentContext());
         }
       }
@@ -3744,12 +3752,9 @@
         const ageValue = age ? Number(age.value) : NaN;
         const ageValid = Number.isFinite(ageValue) && ageValue >= 1 && ageValue <= 120;
         const genderValid = Boolean(gender && gender.value);
-        const acosScores = collectAcosScores();
-        const acosValid = Boolean(acosScores);
 
-        if (!subjectValid || !ageValid || !genderValid || !acosValid) {
-          error.textContent =
-            "Enter subject code, age, gender, and complete all ACOS-C item ratings to continue.";
+        if (!subjectValid || !ageValid || !genderValid) {
+          error.textContent = "Enter subject code, age, and gender to continue.";
           error.classList.remove("hidden");
           return false;
         }
@@ -3760,6 +3765,20 @@
 
       function validateStepTwo() {
         const error = byId("step-2-error");
+        const acosScores = collectAcosScores();
+        const acosValid = Boolean(acosScores);
+        if (!acosValid) {
+          error.textContent = "Complete all 15 ACOS-C item ratings to continue.";
+          error.classList.remove("hidden");
+          return false;
+        }
+
+        error.classList.add("hidden");
+        return true;
+      }
+
+      function validateStepThree() {
+        const error = byId("step-3-error");
         if (!appState.file) {
           error.textContent = "Upload an EEG CSV file before moving to review.";
           error.classList.remove("hidden");
@@ -4658,6 +4677,10 @@
           setStep(2);
           return;
         }
+        if (!validateStepThree()) {
+          setStep(3);
+          return;
+        }
 
         const context = collectAssessmentContext();
         appState.latestAssessmentContext = context;
@@ -4724,7 +4747,7 @@
           updateDraftIndicator();
         } catch (error) {
           leaveProcessingMode();
-          setStep(3);
+          setStep(4);
           showToast(
             error.message || "An unexpected error occurred while running assessment.",
             "error",
@@ -4977,6 +5000,11 @@
           if (appState.currentStep === 2) {
             if (!validateStepTwo()) return;
             setStep(3);
+            return;
+          }
+          if (appState.currentStep === 3) {
+            if (!validateStepThree()) return;
+            setStep(4);
           }
         });
 
