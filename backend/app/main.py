@@ -299,12 +299,6 @@ def results():
     return render_template("results.html")
 
 
-@app.route("/about.html")
-@login_required
-def about():
-    return render_template("about.html")
-
-
 @app.route("/index.html")
 @login_required
 def index():
