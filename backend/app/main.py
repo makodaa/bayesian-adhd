@@ -522,6 +522,9 @@ def predict():
     if filename is None or filename == "":
         return jsonify({"error": "No selected file"}), 400
 
+    if not file_service.is_allowed_file(filename):
+        return jsonify({"error": "File extension not supported"}), 400
+
     try:
         # Extract form data
         subject_code = request.form.get("subject_code")
@@ -545,6 +548,16 @@ def predict():
                 f"Missing required subject data: {subject_code}, {age}, {gender}"
             )
             return jsonify({"error": "Subject code, age, and gender are required"}), 400
+
+        if len(subject_code) > 50:
+            return jsonify({"error": "Subject code must be 50 characters or fewer"}), 400
+
+        try:
+            age_int = int(age)
+            if not (1 <= age_int <= 120):
+                return jsonify({"error": "Age must be between 1 and 120"}), 400
+        except ValueError:
+            return jsonify({"error": "Age must be a valid integer"}), 400
 
         # Validate optional numeric fields
         if sleep_hours is not None and sleep_hours != "":
@@ -919,6 +932,9 @@ def api_topographic_maps():
     if file.filename is None or file.filename == "":
         return jsonify({"error": "No selected file"}), 400
 
+    if not file_service.is_allowed_file(file.filename):
+        return jsonify({"error": "File extension not supported"}), 400
+
     try:
         df = file_service.read_csv(file)
         file_service.validate_eeg_data(df)
@@ -996,6 +1012,9 @@ def api_temporal_biomarkers():
     file = request.files["file"]
     if file.filename is None or file.filename == "":
         return jsonify({"error": "No selected file"}), 400
+
+    if not file_service.is_allowed_file(file.filename):
+        return jsonify({"error": "File extension not supported"}), 400
 
     try:
         df = file_service.read_csv(file)

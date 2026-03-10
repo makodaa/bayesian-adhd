@@ -1,18 +1,18 @@
 CREATE TABLE subjects (
     id SERIAL PRIMARY KEY,
     subject_code VARCHAR(50) UNIQUE NOT NULL,
-    age INTEGER,
-    gender VARCHAR(20),
+    age INTEGER CHECK (age >= 1 AND age <= 120),
+    gender VARCHAR(20) CHECK (gender IN ('Male', 'Female', 'Other', 'Prefer not to say')),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE clinicians (
     id SERIAL PRIMARY KEY,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     middle_name VARCHAR(50),
-    occupation VARCHAR(50),
-    password_hash VARCHAR(255),
+    occupation VARCHAR(50) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -30,7 +30,7 @@ CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(50) NOT NULL,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    sleep_hours NUMERIC(4,2),
+    sleep_hours NUMERIC(4,2) CHECK (sleep_hours >= 0),
     food_intake TEXT,
     caffeinated BOOLEAN,
     medicated BOOLEAN,
@@ -45,7 +45,7 @@ CREATE TABLE results (
     recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
     clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
-    confidence_score FLOAT NOT NULL,
+    confidence_score FLOAT NOT NULL CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
     inferenced_at TIMESTAMP DEFAULT NOW()
 );
 
