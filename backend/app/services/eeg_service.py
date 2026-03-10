@@ -447,6 +447,7 @@ class EEGService:
                 {
                     "domains": vanderbilt_result.get("domains", {}),
                     "criteria_outcome": vanderbilt_result.get("criteria_outcome"),
+                    "normative": vanderbilt_result.get("normative", {}),
                 }
                 if vanderbilt_result
                 else None
