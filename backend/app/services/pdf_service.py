@@ -14,6 +14,7 @@ from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from reportlab.lib.utils import ImageReader
 from ..core.logging_config import get_app_logger
+from .narrative_service import NarrativeService
 
 logger = get_app_logger(__name__)
 
@@ -44,6 +45,7 @@ class PDFReportService:
     def __init__(self):
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
+        self._narrative_service = NarrativeService()
     
     def _setup_custom_styles(self):
         """Setup custom paragraph styles for the report."""
@@ -160,6 +162,7 @@ class PDFReportService:
         story.extend(self._build_subject_section(result_data))
         story.extend(self._build_recording_section(result_data))
         story.extend(self._build_classification_section(result_data))
+        story.extend(self._build_narrative_section(result_data))
         story.extend(self._build_band_powers_section(result_data))
         story.extend(self._build_ratios_section(result_data))
         story.extend(self._build_eeg_visualizations_section(result_data))
@@ -409,7 +412,68 @@ class PDFReportService:
                 return ("The EEG analysis results are inconclusive. The patterns observed do not "
                        "clearly indicate either ADHD or non-ADHD characteristics. Further evaluation "
                        "and additional testing are recommended.")
-    
+
+    def _build_narrative_section(self, result_data: dict) -> list:
+        """Build the arousal and attention regulation narrative section."""
+        elements = []
+        elements.append(Paragraph("Arousal & Attention Profile", self.styles['SectionHeader']))
+
+        # Derive average relative band powers from stored band_powers rows
+        band_powers = result_data.get('band_powers', [])
+        avg_relative: dict[str, list[float]] = {}
+        for bp in band_powers:
+            band = str(bp.get('frequency_band', '')).lower()
+            power = bp.get('relative_power', 0)
+            avg_relative.setdefault(band, []).append(float(power))
+
+        avg_relative_power = {
+            band: sum(vals) / len(vals)
+            for band, vals in avg_relative.items()
+        }
+
+        # Build band_ratios dict from stored ratios rows
+        ratios = result_data.get('ratios', [])
+        band_ratios = {
+            str(r.get('ratio_name', '')): float(r.get('ratio_value', 0))
+            for r in ratios
+        }
+
+        predicted_class = result_data.get('predicted_class', 'Unknown')
+        confidence = result_data.get('confidence_score', 0)
+        confidence_norm = confidence / 100 if confidence > 1 else confidence
+
+        if not avg_relative_power or not band_ratios:
+            elements.append(
+                Paragraph(
+                    "Insufficient spectral data to generate an arousal and attention profile.",
+                    self.styles['ReportBody'],
+                )
+            )
+            elements.append(Spacer(1, 8))
+            return elements
+
+        narrative = self._narrative_service.generate_arousal_narrative(
+            predicted_class=predicted_class,
+            confidence_score=confidence_norm,
+            avg_relative_power=avg_relative_power,
+            band_ratios=band_ratios,
+        )
+
+        # Render in a lightly shaded box for visual separation
+        narrative_para = Paragraph(narrative, self.styles['ReportBody'])
+        narrative_table = Table([[narrative_para]], colWidths=[170 * mm])
+        narrative_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f0f4f8')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#c0cdd8')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        elements.append(narrative_table)
+        elements.append(Spacer(1, 8))
+        return elements
+
     def _build_band_powers_section(self, result_data: dict) -> list:
         """Build relative band power analysis section with professional bar chart."""
         elements = []
