@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BayesADHD - Assessment Dashboard</title>
+    <link rel="icon" type="image/png" href="/static/images/icon.png" />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -166,10 +167,10 @@
 
       .sidebar-brand {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
+        flex-direction: column;
+        align-items: stretch;
         margin-bottom: 1.2rem;
-        gap: 0.5rem;
+        gap: 0.55rem;
         min-width: 0;
         overflow: hidden;
       }
@@ -177,9 +178,13 @@
       .sidebar-brand-inner {
         display: flex;
         align-items: center;
-        gap: 0.55rem;
+        justify-content: center;
         min-width: 0;
         overflow: hidden;
+      }
+
+      .app-sidebar:not(.expanded) .sidebar-brand-inner {
+        display: none;
       }
 
       .brand-mark {
@@ -211,15 +216,27 @@
       }
 
       .app-sidebar.expanded .brand-name {
+        font-size: 0.97rem;
         opacity: 1;
-        max-width: 140px;
+        max-width: 160px;
+      }
+
+      .app-sidebar.expanded .sidebar-brand {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .app-sidebar.expanded .sidebar-brand-inner {
+        justify-content: flex-start;
       }
 
       .sidebar-expand-btn {
         background: none;
         border: none;
         color: rgba(230, 246, 253, 0.7);
-        padding: 0.25rem;
+        width: 100%;
+        padding: 0.38rem;
         border-radius: var(--radius-xs);
         display: flex;
         align-items: center;
@@ -239,6 +256,11 @@
       .sidebar-expand-btn svg {
         width: 16px;
         height: 16px;
+      }
+
+      .app-sidebar.expanded .sidebar-expand-btn {
+        width: auto;
+        padding: 0.25rem;
       }
 
       .sidebar-nav {
@@ -349,7 +371,7 @@
         background: transparent;
         border-radius: var(--radius-sm);
         padding: 0;
-        width: 36px;
+        width: 100%;
         height: 36px;
         font-size: 0.76rem;
         font-weight: 600;
@@ -468,6 +490,11 @@
         color: var(--brand-700);
         font-size: 0.8rem;
         font-weight: 600;
+      }
+
+      .draft-badge.complete {
+        background: #e8f4ed;
+        color: var(--success-600);
       }
 
       .page-actions {
@@ -3439,6 +3466,9 @@
       }
 
       function updateDraftIndicator() {
+        const indicator = byId("draft-indicator");
+        if (!indicator) return;
+
         const fields = [
           byId("subject-code")?.value,
           byId("age")?.value,
@@ -3455,7 +3485,23 @@
           fields.some((value) => Boolean(value && String(value).trim())) ||
           hasRadioSelection ||
           Boolean(appState.file);
-        setHidden("draft-indicator", !hasDraft);
+        const hasCompletedAssessment = Boolean(
+          appState.latestAssessmentContext &&
+            String(appState.latestAssessmentContext.subjectCode || "").trim(),
+        );
+
+        if (hasDraft) {
+          indicator.textContent = "Draft assessment in progress";
+          indicator.classList.remove("complete");
+          setHidden("draft-indicator", false);
+        } else if (hasCompletedAssessment) {
+          indicator.textContent = "Assessment completed";
+          indicator.classList.add("complete");
+          setHidden("draft-indicator", false);
+        } else {
+          indicator.classList.remove("complete");
+          setHidden("draft-indicator", true);
+        }
 
         if (hasDraft) {
           const draftContext = collectAssessmentContext();
@@ -4588,7 +4634,7 @@
 
           byId("sidebar-clinician-name").textContent = clinicianName;
           const logoutLabel = byId("sidebar-logout-name");
-          if (logoutLabel) logoutLabel.textContent = clinicianName;
+          if (logoutLabel) logoutLabel.textContent = "Logout";
           byId("clinician-input").value = clinicianName;
           byId("occupation").value = clinicianOccupation;
 
