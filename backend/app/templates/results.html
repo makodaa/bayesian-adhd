@@ -822,7 +822,7 @@
 
       .vadprs-row {
         display: grid;
-        grid-template-columns: minmax(0, 1.45fr) 70px 115px 95px minmax(140px, 1fr);
+        grid-template-columns: minmax(0, 1.75fr) 80px minmax(130px, 1fr);
         column-gap: 0;
         padding: 0.45rem 0.55rem;
         align-items: center;
@@ -843,25 +843,10 @@
         color: var(--text-700);
       }
 
-      .vadprs-row.group {
-        background: #f9fcfe;
-        color: var(--text-600);
-        font-weight: 700;
-      }
-
       .vadprs-row .value {
         text-align: right;
         color: var(--text-900);
         font-weight: 600;
-      }
-
-      .vadprs-row > span:nth-child(4) {
-        border-left: 1px solid #dbe6ec;
-      }
-
-      .vadprs-group-label {
-        grid-column: 4 / span 2;
-        text-align: center;
       }
 
       .detail-footer {
@@ -1831,10 +1816,6 @@
           </section>`;
 
         const vanderbiltHasData = Number.isFinite(Number(data.vanderbilt_inattentive_count));
-        const normative = data.vanderbilt_domain_scores?.normative || {};
-        const normInattentive = normative.inattentive || {};
-        const normHyperactive = normative.hyperactive_impulsive || {};
-
         const vanderbiltSection = `
           <section class="detail-section">
             <h3>Vanderbilt Scale Results</h3>
@@ -1842,44 +1823,31 @@
               vanderbiltHasData
                 ? `<p style="margin:0;font-size:0.82rem;color:var(--text-700)"><strong>Form Type:</strong> ${escapeHtml(String(data.vanderbilt_scale_type || "N/A").replace("_", " "))}</p>
                   <div class="vadprs-grid">
-                    <div class="vadprs-row group">
-                      <span></span><span></span><span></span>
-                      <span class="vadprs-group-label">Normative Context</span>
-                      <span></span>
-                    </div>
                     <div class="vadprs-row head">
                       <span>Subscales</span>
                       <span class="value">Count</span>
                       <span class="value">VADPRS Result</span>
-                      <span class="value">Percentile</span>
-                      <span class="value">Descriptor</span>
                     </div>
                     <div class="vadprs-row">
                       <span>Inattentive Symptoms</span>
                       <span class="value">${escapeHtml(String(data.vanderbilt_inattentive_count))}</span>
                       <span class="value">${data.vanderbilt_adhd_inattentive_met ? "Met" : "Not Met"}</span>
-                      <span class="value">${escapeHtml(Number.isFinite(Number(normInattentive.percentile)) ? Number(normInattentive.percentile).toFixed(1) + "%" : "N/A")}</span>
-                      <span class="value">${escapeHtml(String(normInattentive.descriptor || "N/A"))}</span>
                     </div>
                     <div class="vadprs-row">
                       <span>Hyperactive/Impulsive Symptoms</span>
                       <span class="value">${escapeHtml(String(data.vanderbilt_hyperactive_impulsive_count))}</span>
                       <span class="value">${data.vanderbilt_adhd_hyperactive_impulsive_met ? "Met" : "Not Met"}</span>
-                      <span class="value">${escapeHtml(Number.isFinite(Number(normHyperactive.percentile)) ? Number(normHyperactive.percentile).toFixed(1) + "%" : "N/A")}</span>
-                      <span class="value">${escapeHtml(String(normHyperactive.descriptor || "N/A"))}</span>
                     </div>
                     <div class="vadprs-row">
                       <span>Performance Impairment</span>
                       <span class="value">${escapeHtml(String(data.vanderbilt_performance_impairment_count))}</span>
                       <span class="value">${data.vanderbilt_performance_impairment_count >= 1 ? "Met" : "Not Met"}</span>
-                      <span class="value"></span>
-                      <span class="value"></span>
                     </div>
                   </div>
                   <ul class="detail-list" style="margin-top:.5rem">
                     <li class="detail-item">
                       <span class="detail-label">Criteria Outcome</span>
-                      <span class="detail-value">${escapeHtml(String(data.vanderbilt_domain_scores?.criteria_outcome || (data.vanderbilt_adhd_combined_met ? "ADHD Combined Presentation Criteria Met" : "ADHD Core Criteria Not Met")))}</span>
+                      <span class="detail-value">${escapeHtml(String(data.vanderbilt_domain_scores?.criteria_outcome || (data.vanderbilt_adhd_combined_met ? "ADHD Combined Presentation Criteria Met" : "No Criteria Met")))}</span>
                     </li>
                     <li class="detail-item">
                       <span class="detail-label">Interpretation</span>

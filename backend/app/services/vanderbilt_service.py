@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Literal, TypedDict
 
 
@@ -23,7 +22,6 @@ class VanderbiltResult(TypedDict):
     adhd_combined_criteria_met: bool
     criteria_outcome: str
     interpretation: str
-    normative: dict[str, dict[str, float | str]]
     domains: dict[str, VanderbiltDomainResult]
 
 
@@ -44,12 +42,6 @@ class VanderbiltService:
         "assignment_completion",
         "organizational_skills",
     )
-
-    NORMATIVE_REFERENCE = {
-        "inattentive": {"mean": 8.1, "sd": 5.70},
-        "hyperactive_impulsive": {"mean": 7.5, "sd": 6.04},
-        "combined": {"mean": 15.6, "sd": 10.96},
-    }
 
     @staticmethod
     def symptom_positive(value: int) -> bool:
@@ -100,32 +92,6 @@ class VanderbiltService:
                     f"Vanderbilt performance item '{key}' must be an integer between 1 and 5"
                 )
 
-    @staticmethod
-    def _normal_cdf(z_score: float) -> float:
-        return 0.5 * (1.0 + math.erf(z_score / math.sqrt(2.0)))
-
-    @staticmethod
-    def _normative_descriptor(percentile: float) -> str:
-        if percentile >= 95:
-            return "Very elevated"
-        if percentile >= 85:
-            return "Elevated"
-        if percentile < 16:
-            return "Lower than normative mean range"
-        return "Typical range"
-
-    def _build_normative_domain(self, raw_score: int, mean: float, sd: float) -> dict[str, float | str]:
-        z_score = (raw_score - mean) / sd
-        percentile = self._normal_cdf(z_score) * 100
-        return {
-            "raw_score": float(raw_score),
-            "mean": mean,
-            "sd": sd,
-            "z_score": round(z_score, 2),
-            "percentile": round(percentile, 1),
-            "descriptor": self._normative_descriptor(percentile),
-        }
-
     def compute(
         self,
         symptom_scores: dict[int, int],
@@ -153,25 +119,6 @@ class VanderbiltService:
             hyperactive_impulsive_count >= 6 and performance_impairment_count >= 1
         )
         combined_met = inattentive_met and hyperactive_met
-        combined_score = inattentive_count + hyperactive_impulsive_count
-
-        normative = {
-            "inattentive": self._build_normative_domain(
-                inattentive_count,
-                self.NORMATIVE_REFERENCE["inattentive"]["mean"],
-                self.NORMATIVE_REFERENCE["inattentive"]["sd"],
-            ),
-            "hyperactive_impulsive": self._build_normative_domain(
-                hyperactive_impulsive_count,
-                self.NORMATIVE_REFERENCE["hyperactive_impulsive"]["mean"],
-                self.NORMATIVE_REFERENCE["hyperactive_impulsive"]["sd"],
-            ),
-            "combined": self._build_normative_domain(
-                combined_score,
-                self.NORMATIVE_REFERENCE["combined"]["mean"],
-                self.NORMATIVE_REFERENCE["combined"]["sd"],
-            ),
-        }
 
         if combined_met:
             criteria_outcome = "ADHD Combined Presentation Criteria Met"
@@ -192,7 +139,7 @@ class VanderbiltService:
                 "Vanderbilt parent scale and should be interpreted alongside full clinical assessment."
             )
         else:
-            criteria_outcome = "ADHD Core Criteria Not Met"
+            criteria_outcome = "No Criteria Met"
             interpretation = (
                 "Vanderbilt ADHD-core criteria are not fully met in this response set. "
                 "Findings remain supportive only and do not replace clinical diagnosis."
@@ -211,7 +158,6 @@ class VanderbiltService:
             "adhd_combined_criteria_met": combined_met,
             "criteria_outcome": criteria_outcome,
             "interpretation": interpretation,
-            "normative": normative,
             "domains": {
                 "inattentive": {
                     "symptom_positive_count": inattentive_count,

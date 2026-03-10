@@ -1884,7 +1884,7 @@
 
       .vanderbilt-matrix-row {
         display: grid;
-        grid-template-columns: minmax(0, 1.5fr) 90px 120px 105px minmax(150px, 1fr);
+        grid-template-columns: minmax(0, 1.8fr) 100px minmax(180px, 1fr);
         column-gap: 0;
         align-items: center;
         padding: 0.5rem 0.58rem;
@@ -1893,17 +1893,6 @@
 
       .vanderbilt-matrix-row > span {
         padding: 0 0.28rem;
-      }
-
-      .vanderbilt-matrix-row--group {
-        background: #f8fbfd;
-        font-weight: 650;
-        color: var(--text-600);
-      }
-
-      .vanderbilt-group-label {
-        grid-column: 4 / span 2;
-        text-align: center;
       }
 
       .vanderbilt-matrix-row + .vanderbilt-matrix-row {
@@ -1924,10 +1913,6 @@
         color: var(--text-900);
         text-align: right;
         font-weight: 600;
-      }
-
-      .vanderbilt-matrix-row > span:nth-child(4) {
-        border-left: 1px solid #d9e5eb;
       }
 
       .vanderbilt-reference-title {
@@ -3599,11 +3584,6 @@
         return `<span class="criteria-chip ${met ? "met" : "not-met"}">${escapeHtml(label)}</span>`;
       }
 
-      function formatNormative(v) {
-        const value = Number(v);
-        return Number.isFinite(value) ? value.toFixed(1) : "N/A";
-      }
-
       function renderVanderbiltSummary(vanderbilt) {
         const container = byId("vanderbilt-summary");
         if (!container) return;
@@ -3619,51 +3599,32 @@
         const perfCount = Number(vanderbilt.performance_impairment_count);
         const inattentiveMet = Boolean(vanderbilt.adhd_inattentive_criteria_met);
         const hyperactiveMet = Boolean(vanderbilt.adhd_hyperactive_impulsive_criteria_met);
-        const criteriaOutcome = String(vanderbilt.criteria_outcome || "ADHD Core Criteria Not Met");
+        const criteriaOutcome = String(vanderbilt.criteria_outcome || "No Criteria Met");
         const interpretation = String(vanderbilt.interpretation || "");
-        const normative = vanderbilt.normative || {};
-        const inattentiveNorm = normative.inattentive || {};
-        const hyperactiveNorm = normative.hyperactive_impulsive || {};
-        const combinedNorm = normative.combined || {};
 
         container.innerHTML = `
           <p class="helper-copy" style="margin:0 0 .35rem"><strong>Form type:</strong> ${escapeHtml(scaleType)}</p>
           <div class="vanderbilt-matrix-wrap">
             <div class="vanderbilt-matrix">
-              <div class="vanderbilt-matrix-row vanderbilt-matrix-row--group">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span class="vanderbilt-group-label">Normative Context (Anderson et al., 2022)</span>
-                <span></span>
-              </div>
               <div class="vanderbilt-matrix-row vanderbilt-matrix-row--head">
                 <span>Subscales</span>
                 <span class="vanderbilt-cell-value">Count</span>
                 <span class="vanderbilt-cell-value">VADPRS Result</span>
-                <span class="vanderbilt-cell-value">Percentile</span>
-                <span class="vanderbilt-cell-value">Descriptor</span>
               </div>
               <div class="vanderbilt-matrix-row">
                 <span class="vanderbilt-cell-label">Inattentive Symptoms</span>
                 <span class="vanderbilt-cell-value">${escapeHtml(String(inattentiveCount))}</span>
                 <span class="vanderbilt-cell-value">${criteriaChip(inattentiveMet ? "Met" : "Not Met", inattentiveMet)}</span>
-                <span class="vanderbilt-cell-value">${escapeHtml(formatNormative(inattentiveNorm.percentile))}%</span>
-                <span class="vanderbilt-cell-value">${escapeHtml(String(inattentiveNorm.descriptor || "N/A"))}</span>
               </div>
               <div class="vanderbilt-matrix-row">
                 <span class="vanderbilt-cell-label">Hyperactive/Impulsive Symptoms</span>
                 <span class="vanderbilt-cell-value">${escapeHtml(String(hyperactiveCount))}</span>
                 <span class="vanderbilt-cell-value">${criteriaChip(hyperactiveMet ? "Met" : "Not Met", hyperactiveMet)}</span>
-                <span class="vanderbilt-cell-value">${escapeHtml(formatNormative(hyperactiveNorm.percentile))}%</span>
-                <span class="vanderbilt-cell-value">${escapeHtml(String(hyperactiveNorm.descriptor || "N/A"))}</span>
               </div>
               <div class="vanderbilt-matrix-row">
                 <span class="vanderbilt-cell-label">Performance Impairment</span>
                 <span class="vanderbilt-cell-value">${escapeHtml(String(perfCount))}</span>
                 <span class="vanderbilt-cell-value">${criteriaChip(perfCount >= 1 ? "Met" : "Not Met", perfCount >= 1)}</span>
-                <span class="vanderbilt-cell-value"></span>
-                <span class="vanderbilt-cell-value"></span>
               </div>
             </div>
           </div>

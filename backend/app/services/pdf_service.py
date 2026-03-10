@@ -2,7 +2,6 @@
 
 from io import BytesIO
 from datetime import datetime
-from typing import Any, cast
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -392,70 +391,36 @@ class PDFReportService:
             )
         )
 
-        normative = result_data.get('vanderbilt_domain_scores', {}).get('normative')
-
-        def _num(value: Any, digits: int = 1) -> str:
-            if value is None:
-                return 'N/A'
-            try:
-                parsed = float(cast(float | int | str, value))
-            except (TypeError, ValueError):
-                return 'N/A'
-            return f"{parsed:.{digits}f}"
-
-        inattentive_norm = (
-            normative.get('inattentive', {})
-            if isinstance(normative, dict) and isinstance(normative.get('inattentive', {}), dict)
-            else {}
-        )
-        hyperactive_norm = (
-            normative.get('hyperactive_impulsive', {})
-            if isinstance(normative, dict)
-            and isinstance(normative.get('hyperactive_impulsive', {}), dict)
-            else {}
-        )
-
         overview_rows: list[list[str]] = [
-            ['', '', '', 'Normative Context', ''],
-            ['Subscales', 'Count', 'VADPRS Result', 'Percentile', 'Descriptor'],
+            ['Subscales', 'Count', 'VADPRS Result'],
             [
                 'Inattentive Symptoms',
                 str(inattentive_count if inattentive_count is not None else 'N/A'),
                 'Met' if inattentive_met else 'Not Met',
-                f"{_num(inattentive_norm.get('percentile'))}%",
-                str(inattentive_norm.get('descriptor', 'N/A')),
             ],
             [
                 'Hyperactive/Impulsive Symptoms',
                 str(hyperactive_count if hyperactive_count is not None else 'N/A'),
                 'Met' if hyperactive_met else 'Not Met',
-                f"{_num(hyperactive_norm.get('percentile'))}%",
-                str(hyperactive_norm.get('descriptor', 'N/A')),
             ],
             [
                 'Performance Impairment',
                 str(perf_impairment_count if perf_impairment_count is not None else 'N/A'),
                 'Met' if perf_impairment_count and perf_impairment_count >= 1 else 'Not Met',
-                'N/A',
-                'Not norm-referenced',
             ],
         ]
 
         overview_table = Table(
             overview_rows,
-            colWidths=[50 * mm, 20 * mm, 30 * mm, 25 * mm, 45 * mm],
+            colWidths=[70 * mm, 25 * mm, 70 * mm],
         )
         overview_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
-            ('FONTNAME', (0, 2), (0, -1), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fbfd')),
-            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#f3f8fb')),
-            ('SPAN', (3, 0), (4, 0)),
-            ('ALIGN', (3, 0), (4, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f3f8fb')),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
             ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor('#dbe6ec')),
-            ('LINEBEFORE', (3, 0), (3, -1), 0.8, colors.HexColor('#c7d6df')),
             ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
             ('ALIGN', (0, 0), (0, -1), 'LEFT'),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
@@ -469,13 +434,6 @@ class PDFReportService:
             elements.append(Spacer(1, 4))
             elements.append(Paragraph("<b>Interpretation:</b>", self.styles['ReportBody']))
             elements.append(Paragraph(str(interpretation), self.styles['ReportBody']))
-
-        elements.append(
-            Paragraph(
-                "Normative references are based on caregivers of children ages 5-12 and provide context only.",
-                self.styles['ReportBody'],
-            )
-        )
 
         elements.append(Spacer(1, 8))
         return elements
