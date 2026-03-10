@@ -19,13 +19,13 @@
   --brand-700: #225c72;
   --brand-600: #2b718c;
   --brand-500: #3f8dab;
-  --surface-bg: #eef3f5;
-  --surface-shell: #f8fbfd;
+  --surface-bg: #f2f4f5;
+  --surface-shell: #f8fbfc;
   --surface-card: #ffffff;
-  --surface-muted: #f5f8fa;
-  --border-shell: #c6d8e3;
-  --border-card: #dbe3e8;
-  --border-soft: #d4dde3;
+  --surface-muted: #f2f4f5;
+  --border-shell: #d0dde5;
+  --border-card: #d8e4ea;
+  --border-soft: #d2dee5;
   --text-900: #1f2f39;
   --text-700: #3f515d;
   --text-500: #607484;
@@ -57,9 +57,9 @@ body {
   color: var(--text-900);
   background: radial-gradient(
     circle at 15% -10%,
-    #f7fbfd 0%,
+    #ffffff 0%,
     var(--surface-bg) 45%,
-    #e8eef2 100%
+    #eff1f3 100%
   );
 }
 
@@ -318,7 +318,7 @@ a:focus-visible {
 
 .sidebar-link span {
   font-size: 0.89rem;
-  font-weight: 600;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
@@ -379,7 +379,7 @@ a:focus-visible {
   width: 100%;
   height: 36px;
   font-size: 0.76rem;
-  font-weight: 600;
+  font-weight: 400;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,8 +439,8 @@ a:focus-visible {
   z-index: 900;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  background: rgba(238, 243, 245, 0.92);
-  border-bottom: 1px solid #dbe3e8;
+  background: rgba(242, 244, 245, 0.92);
+  border-bottom: 1px solid #d8e4ea;
 }
 
 .page-header-inner {
@@ -502,7 +502,7 @@ a:focus-visible {
   padding: 0 1rem;
   height: 36px;
   font-size: 0.91rem;
-  font-weight: 600;
+  font-weight: 400;
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
@@ -519,13 +519,13 @@ a:focus-visible {
 }
 
 .btn-secondary-app {
-  background: #f9fcfd;
+  background: #f4f9fb;
   color: var(--brand-700);
   border: 1px solid var(--border-soft);
 }
 
 .btn-secondary-app:hover:not(:disabled) {
-  background: #f0f6f9;
+  background: #eaf2f6;
 }
 
 .btn-primary-app:disabled,
@@ -576,7 +576,7 @@ a:focus-visible {
 .skeleton-row {
   border-radius: var(--radius-xs);
   height: 14px;
-  background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
+  background: linear-gradient(90deg, #eaf2f6 25%, #dceaf0 50%, #eaf2f6 75%);
   background-size: 240% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
 }

@@ -12,7 +12,7 @@
 }
 
 .clinicians-table thead {
-  background: #f4f8fa;
+  background: #f2f6f8;
 }
 
 .clinicians-table th,
@@ -44,7 +44,7 @@
 }
 
 .clinician-row:hover {
-  background: #f7fbfd;
+  background: #f7fbfc;
 }
 
 .clinician-row:focus-visible {
@@ -139,7 +139,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.8rem;
-  background: #f5fafc;
+  background: #f3f8fb;
   flex-shrink: 0;
 }
 
@@ -210,7 +210,7 @@
   font-size: 0.84rem;
   color: var(--text-700);
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid #eef3f6;
+  border-bottom: 1px solid #eaf0f5;
 }
 
 .detail-item:last-child {

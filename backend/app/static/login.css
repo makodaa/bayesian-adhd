@@ -4,11 +4,11 @@
     --brand-700: #225c72;
     --brand-600: #2b718c;
     --brand-500: #3f8dab;
-    --surface-bg: #eef3f5;
-    --surface-shell: #f8fbfd;
+    --surface-bg: #f2f4f5;
+    --surface-shell: #f8fbfc;
     --surface-card: #ffffff;
-    --border-card: #dbe3e8;
-    --border-soft: #d4dde3;
+    --border-card: #d8e4ea;
+    --border-soft: #d2dee5;
     --text-900: #1f2f39;
     --text-700: #3f515d;
     --text-500: #607484;
@@ -30,7 +30,7 @@ body {
     min-height: 100vh;
     font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", sans-serif;
     color: var(--text-900);
-    background: radial-gradient(circle at 15% -10%, #f7fbfd 0%, var(--surface-bg) 45%, #e8eef2 100%);
+    background: radial-gradient(circle at 15% -10%, #ffffff 0%, var(--surface-bg) 45%, #eff1f3 100%);
 }
 
 button,
@@ -228,7 +228,7 @@ a:focus-visible {
 }
 
 .password-toggle:hover {
-    background: #edf4f8;
+    background: #eaf2f6;
     color: var(--brand-700);
 }
 
@@ -240,7 +240,7 @@ a:focus-visible {
     min-height: 42px;
     padding: 0.6rem 0.9rem;
     font-size: 0.92rem;
-    font-weight: 650;
+    font-weight: 400;
     color: #f6fbfd;
     background: var(--brand-700);
     box-shadow: 0 6px 14px rgba(35, 98, 120, 0.25);

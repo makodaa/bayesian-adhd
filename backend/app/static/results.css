@@ -55,7 +55,7 @@
 }
 
 .assessment-table thead {
-  background: #f4f8fa;
+  background: #f2f6f8;
 }
 
 .assessment-table th,
@@ -87,7 +87,7 @@
 }
 
 .result-row:hover {
-  background: #f7fbfd;
+  background: #f7fbfc;
 }
 
 .result-row:focus-visible {
@@ -193,7 +193,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.8rem;
-  background: #f5fafc;
+  background: #f3f8fb;
   flex-shrink: 0;
 }
 
@@ -264,7 +264,7 @@
   font-size: 0.84rem;
   color: var(--text-700);
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid #eef3f6;
+  border-bottom: 1px solid #eaf0f5;
 }
 
 .detail-item:last-child {
@@ -315,7 +315,7 @@
   width: 100%;
   height: 9px;
   border-radius: var(--radius-pill);
-  background: #e2e9ee;
+  background: #d8e4ea;
   overflow: hidden;
 }
 
@@ -360,7 +360,7 @@
   flex: 1;
   height: 8px;
   border-radius: var(--radius-pill);
-  background: #e2e9ee;
+  background: #d8e4ea;
   overflow: hidden;
 }
 
@@ -437,7 +437,7 @@
 
 .temporal-plot-header {
   padding: 0.4rem 0.65rem;
-  background: #f4f8fa;
+  background: #f2f6f8;
   border-bottom: 1px solid #e6edf1;
   font-weight: 600;
   font-size: 0.82rem;
@@ -448,7 +448,7 @@
 }
 
 .temporal-plot-header:hover {
-  background: #edf4f8;
+  background: #eaf2f6;
 }
 
 .temporal-plot-body {
@@ -474,7 +474,7 @@
 .skeleton-row {
   border-radius: var(--radius-xs);
   height: 14px;
-  background: linear-gradient(90deg, #edf4f8 25%, #e1ebf1 50%, #edf4f8 75%);
+  background: linear-gradient(90deg, #eaf2f6 25%, #dceaf0 50%, #eaf2f6 75%);
   background-size: 240% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
 }
