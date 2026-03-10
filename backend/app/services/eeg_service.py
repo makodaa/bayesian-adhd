@@ -386,8 +386,9 @@ class EEGService:
         recording_id: int,
         df: pd.DataFrame,
         clinician_id: int | None = None,
-        acos_result: dict[str, Any] | None = None,
-        acos_item_scores: dict[str, int] | None = None,
+        vanderbilt_result: dict[str, Any] | None = None,
+        vanderbilt_symptom_scores: dict[str, int] | None = None,
+        vanderbilt_performance_scores: dict[str, int] | None = None,
     ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
@@ -401,21 +402,57 @@ class EEGService:
             classification=classification,
             confidence_score=confidence,
             clinician_id=clinician_id,
-            acos_total_score=(
-                int(acos_result["total_score"]) if acos_result and "total_score" in acos_result else None
-            ),
-            acos_average_score=(
-                float(acos_result["average_score"])
-                if acos_result and "average_score" in acos_result
+            vanderbilt_scale_type=(
+                str(vanderbilt_result["scale_type"])
+                if vanderbilt_result and "scale_type" in vanderbilt_result
                 else None
             ),
-            acos_severity=(
-                str(acos_result["severity"]) if acos_result and "severity" in acos_result else None
+            vanderbilt_inattentive_count=(
+                int(vanderbilt_result["inattentive_count"])
+                if vanderbilt_result and "inattentive_count" in vanderbilt_result
+                else None
             ),
-            acos_subscale_scores=(
-                acos_result.get("subscales") if acos_result else None
+            vanderbilt_hyperactive_impulsive_count=(
+                int(vanderbilt_result["hyperactive_impulsive_count"])
+                if vanderbilt_result and "hyperactive_impulsive_count" in vanderbilt_result
+                else None
             ),
-            acos_item_scores=acos_item_scores,
+            vanderbilt_performance_impairment_count=(
+                int(vanderbilt_result["performance_impairment_count"])
+                if vanderbilt_result and "performance_impairment_count" in vanderbilt_result
+                else None
+            ),
+            vanderbilt_adhd_inattentive_met=(
+                bool(vanderbilt_result["adhd_inattentive_criteria_met"])
+                if vanderbilt_result and "adhd_inattentive_criteria_met" in vanderbilt_result
+                else None
+            ),
+            vanderbilt_adhd_hyperactive_impulsive_met=(
+                bool(vanderbilt_result["adhd_hyperactive_impulsive_criteria_met"])
+                if vanderbilt_result
+                and "adhd_hyperactive_impulsive_criteria_met" in vanderbilt_result
+                else None
+            ),
+            vanderbilt_adhd_combined_met=(
+                bool(vanderbilt_result["adhd_combined_criteria_met"])
+                if vanderbilt_result and "adhd_combined_criteria_met" in vanderbilt_result
+                else None
+            ),
+            vanderbilt_interpretation=(
+                str(vanderbilt_result["interpretation"])
+                if vanderbilt_result and "interpretation" in vanderbilt_result
+                else None
+            ),
+            vanderbilt_domain_scores=(
+                {
+                    "domains": vanderbilt_result.get("domains", {}),
+                    "criteria_outcome": vanderbilt_result.get("criteria_outcome"),
+                }
+                if vanderbilt_result
+                else None
+            ),
+            vanderbilt_symptom_scores=vanderbilt_symptom_scores,
+            vanderbilt_performance_scores=vanderbilt_performance_scores,
         )
 
         logger.info(
@@ -428,5 +465,5 @@ class EEGService:
             "confidence_score": confidence,
             "clinician_id": clinician_id,
             "window_predictions": window_predictions,
-            "acos": acos_result,
+            "vanderbilt": vanderbilt_result,
         }

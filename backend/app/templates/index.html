@@ -1547,8 +1547,8 @@
 
       .drawer-stepper {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.4rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.35rem;
         padding: 0.72rem 0.95rem;
         border-bottom: 1px solid #dbe6ec;
         background: #f1f7fa;
@@ -1561,6 +1561,14 @@
         font-size: 0.76rem;
         color: var(--text-500);
         font-weight: 600;
+        min-width: 0;
+      }
+
+      .step-text {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .step-dot {
@@ -1825,25 +1833,25 @@
         word-break: break-word;
       }
 
-      .acos-grid {
+      .vanderbilt-grid {
         display: grid;
         gap: 0.45rem;
       }
 
-      .acos-item-row {
+      .vanderbilt-item-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 110px;
         gap: 0.5rem;
         align-items: center;
       }
 
-      .acos-item-row label {
+      .vanderbilt-item-row label {
         margin: 0;
         font-size: 0.78rem;
         color: var(--text-700);
       }
 
-      .acos-item-row select {
+      .vanderbilt-item-row select {
         border: 1px solid #cddae2;
         border-radius: var(--radius-sm);
         background: #ffffff;
@@ -1852,27 +1860,106 @@
         color: var(--text-900);
       }
 
-      .acos-summary-grid {
-        border: 1px solid #d8e3e8;
-        border-radius: var(--radius-sm);
-        background: #ffffff;
-        padding: 0.65rem;
+      .vanderbilt-summary-layout {
         display: grid;
-        gap: 0.38rem;
+        gap: 0.75rem;
       }
 
-      .acos-summary-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.75rem;
+      #vanderbilt-summary-card {
+        grid-column: 1 / -1;
+        order: 2;
+      }
+
+      .vanderbilt-matrix-wrap {
+        overflow-x: auto;
+      }
+
+      .vanderbilt-matrix {
+        min-width: 650px;
+        border: 1px solid #d9e5eb;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .vanderbilt-matrix-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) 100px 110px minmax(150px, 1fr);
+        gap: 0.55rem;
+        align-items: center;
+        padding: 0.5rem 0.58rem;
         font-size: 0.82rem;
       }
 
-      .acos-summary-row span:first-child {
+      .vanderbilt-matrix-row + .vanderbilt-matrix-row {
+        border-top: 1px solid #d9e5eb;
+      }
+
+      .vanderbilt-matrix-row--head {
+        background: #f3f8fb;
+        font-weight: 650;
+        color: var(--text-700);
+      }
+
+      .vanderbilt-cell-label {
+        color: var(--text-700);
+      }
+
+      .vanderbilt-cell-value {
+        color: var(--text-900);
+        text-align: right;
+        font-weight: 600;
+      }
+
+      .vanderbilt-reference-title {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 650;
+        color: var(--text-700);
+      }
+
+      .criteria-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid #cfdce3;
+        padding: 0.1rem 0.45rem;
+        font-size: 0.73rem;
+        line-height: 1.3;
+        font-weight: 700;
+      }
+
+      .criteria-chip.met {
+        color: #1f5f36;
+        background: #e9f6ee;
+        border-color: #b8dfc3;
+      }
+
+      .criteria-chip.not-met {
+        color: #8a3f2a;
+        background: #fbeee9;
+        border-color: #e7c4b8;
+      }
+
+      .acos-reference-grid {
+        display: grid;
+        gap: 0.35rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .acos-reference-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .acos-reference-item span:first-child {
         color: var(--text-500);
       }
 
-      .acos-summary-row span:last-child {
+      .acos-reference-item span:last-child {
         color: var(--text-900);
         font-weight: 600;
         text-align: right;
@@ -2098,6 +2185,14 @@
         }
 
         .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .drawer-stepper {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .acos-reference-grid {
           grid-template-columns: 1fr;
         }
 
@@ -2375,10 +2470,12 @@
                     <div id="prediction-result"></div>
                   </article>
 
-                  <article class="summary-card">
-                    <h3>ACOS-C Outcome Summary</h3>
-                    <div id="acos-summary" class="acos-summary-grid">
-                      <p class="helper-copy" style="margin: 0">ACOS-C scoring appears after assessment.</p>
+                  <article class="summary-card" id="vanderbilt-summary-card">
+                    <h3>Vanderbilt ADHD-Parent (Core)</h3>
+                    <div id="vanderbilt-summary" class="vanderbilt-summary-layout">
+                      <p class="helper-copy" style="margin: 0">
+                        Vanderbilt ADHD-core scoring appears after assessment.
+                      </p>
                     </div>
                   </article>
 
@@ -2824,19 +2921,19 @@
       <div class="drawer-stepper" aria-label="Assessment steps">
         <div class="step-item is-active" id="step-item-1">
           <span class="step-dot">1</span>
-          <span class="step-text">Subject & Metadata</span>
+          <span class="step-text">Patient Details</span>
         </div>
         <div class="step-item" id="step-item-2">
           <span class="step-dot">2</span>
-          <span class="step-text">ACOS-C</span>
+          <span class="step-text">Vanderbilt Ratings</span>
         </div>
         <div class="step-item" id="step-item-3">
           <span class="step-dot">3</span>
-          <span class="step-text">EEG Upload</span>
+          <span class="step-text">EEG File Upload</span>
         </div>
         <div class="step-item" id="step-item-4">
           <span class="step-dot">4</span>
-          <span class="step-text">Review & Submit</span>
+          <span class="step-text">Review & Analyze</span>
         </div>
       </div>
 
@@ -2978,12 +3075,12 @@
 
           <section class="drawer-step hidden" data-step="2">
             <div class="form-panel">
-              <h3>ADHD Clinical Outcome Scale - Clinician (ACOS-C)</h3>
-              <p class="hint">
-                Rate each item for the past 2 weeks on a 0-5 scale (0 = No problem, 5 =
-                Extreme problem).
+              <h3>Vanderbilt ADHD Diagnostic Parent Rating Scale</h3>
+              <p class="hint" id="vanderbilt-step-copy">
+                Complete the ADHD-core symptom and performance items for this assessment.
               </p>
-              <div id="acos-grid" class="acos-grid"></div>
+              <p class="hint" id="vanderbilt-scale-indicator">Form type: Initial</p>
+              <div id="vanderbilt-grid" class="vanderbilt-grid"></div>
             </div>
           </section>
 
@@ -3106,37 +3203,46 @@
         alpha_theta_ratio: { label: "Alpha/Theta Ratio (ATR)", range: "Reference: 0.5 to 1.2" },
       };
 
-      const ACOS_ITEMS = [
-        [1, "Hyperactivity or restlessness"],
-        [2, "Attention and concentration difficulties"],
-        [3, "Impulsivity in actions or decisions"],
-        [4, "Alcohol-related problems"],
-        [5, "Emotional fluctuation or mood instability"],
-        [6, "Organization and planning difficulties"],
-        [7, "Temper or anger outbursts"],
-        [8, "Drug-related problems"],
-        [9, "Interpersonal conflict or relationship tension"],
-        [10, "Procrastination or delayed task completion"],
-        [11, "Anxiety symptoms"],
-        [12, "Depressive symptoms"],
-        [13, "Sleep-related problems"],
-        [14, "Work or study functioning difficulties"],
-        [15, "Everyday life management difficulties"],
+      const VANDERBILT_SYMPTOM_ITEMS = [
+        [1, "Fails to give close attention to details or makes careless mistakes"],
+        [2, "Has difficulty sustaining attention"],
+        [3, "Does not seem to listen when spoken to directly"],
+        [4, "Does not follow through on instructions and fails to finish tasks"],
+        [5, "Has difficulty organizing tasks and activities"],
+        [6, "Avoids or dislikes tasks requiring sustained mental effort"],
+        [7, "Loses things necessary for tasks or activities"],
+        [8, "Is easily distracted by extraneous stimuli"],
+        [9, "Is forgetful in daily activities"],
+        [10, "Fidgets with hands or feet or squirms in seat"],
+        [11, "Leaves seat when remaining seated is expected"],
+        [12, "Runs about or climbs excessively"],
+        [13, "Has difficulty playing or engaging in leisure quietly"],
+        [14, "Is often on the go or acts as if driven by a motor"],
+        [15, "Talks excessively"],
+        [16, "Blurts out answers before questions are completed"],
+        [17, "Has difficulty waiting turn"],
+        [18, "Interrupts or intrudes on others"],
       ];
 
-      const ACOS_SUBSCALE_META = {
-        attention_and_functional_difficulties: "Attention and Functional Difficulties",
-        hyperactivity_impulsivity_emotional_dysregulation:
-          "Hyperactivity/Impulsivity and Emotional Dysregulation",
-        cooccurring_mental_health_problems: "Co-occurring Mental Health Problems",
-        risk_behaviours_interpersonal_problems: "Risk Behaviours and Interpersonal Problems",
-      };
+      const VANDERBILT_PERFORMANCE_ITEMS = [
+        ["school_performance", "Overall school performance"],
+        ["reading", "Reading"],
+        ["writing", "Writing"],
+        ["mathematics", "Mathematics"],
+        ["relationship_parents", "Relationship with parents"],
+        ["relationship_siblings", "Relationship with siblings"],
+        ["relationship_peers", "Relationship with peers"],
+        ["classroom_behavior", "Classroom behavior"],
+        ["assignment_completion", "Assignment completion"],
+        ["organizational_skills", "Organizational skills"],
+      ];
 
       const appState = {
         currentStep: 1,
         file: null,
         fileMeta: null,
         subjectLookup: new Map(),
+        vanderbiltScaleType: "initial",
         isDrawerOpen: false,
         isProcessing: false,
         currentBandData: null,
@@ -3396,126 +3502,205 @@
         return String(value).trim();
       }
 
-      function getAcosSeverityFromAverage(averageScore) {
-        if (!Number.isFinite(averageScore)) return "N/A";
-        if (averageScore < 0.5) return "No Problem";
-        if (averageScore < 1.5) return "Minor";
-        if (averageScore < 2.5) return "Mild";
-        if (averageScore < 3.5) return "Moderately Severe";
-        if (averageScore < 4.5) return "Severe";
-        return "Very Severe";
-      }
-
-      function collectAcosScores() {
+      function collectVanderbiltSymptomScores() {
         const scores = {};
-        for (let itemIndex = 1; itemIndex <= 15; itemIndex += 1) {
-          const value = byId(`acos-item-${itemIndex}`)?.value;
-          if (value === undefined || value === null || value === "") {
-            return null;
-          }
+        for (let itemIndex = 1; itemIndex <= 18; itemIndex += 1) {
+          const value = byId(`vanderbilt-symptom-item-${itemIndex}`)?.value;
+          if (value === undefined || value === null || value === "") return null;
           const numeric = Number(value);
-          if (!Number.isInteger(numeric) || numeric < 0 || numeric > 5) {
-            return null;
-          }
+          if (!Number.isInteger(numeric) || numeric < 0 || numeric > 3) return null;
           scores[`item_${itemIndex}`] = numeric;
         }
         return scores;
       }
 
-      function computeAcosFromScores(itemScores) {
-        if (!itemScores || Object.keys(itemScores).length !== 15) return null;
-        const scoreValues = Object.values(itemScores);
-        const totalScore = scoreValues.reduce((sum, value) => sum + Number(value || 0), 0);
-        const averageScore = totalScore / 15;
-        const subscaleItems = {
-          attention_and_functional_difficulties: [2, 6, 10, 14, 15],
-          hyperactivity_impulsivity_emotional_dysregulation: [1, 3, 5, 7],
-          cooccurring_mental_health_problems: [11, 12, 13],
-          risk_behaviours_interpersonal_problems: [4, 8, 9],
-        };
+      function collectVanderbiltPerformanceScores() {
+        const scores = {};
+        for (const [key] of VANDERBILT_PERFORMANCE_ITEMS) {
+          const value = byId(`vanderbilt-performance-${key}`)?.value;
+          if (value === undefined || value === null || value === "") return null;
+          const numeric = Number(value);
+          if (!Number.isInteger(numeric) || numeric < 1 || numeric > 5) return null;
+          scores[key] = numeric;
+        }
+        return scores;
+      }
 
-        const subscales = {};
-        Object.entries(subscaleItems).forEach(([key, items]) => {
-          const score = items.reduce((sum, item) => sum + Number(itemScores[`item_${item}`] || 0), 0);
-          const avg = score / items.length;
-          subscales[key] = {
-            score,
-            average_score: Number(avg.toFixed(3)),
-            severity: getAcosSeverityFromAverage(avg),
-          };
-        });
+      function computeVanderbiltFromScores(symptomScores, performanceScores, scaleType) {
+        if (!symptomScores || Object.keys(symptomScores).length !== 18) return null;
+        if (!performanceScores || Object.keys(performanceScores).length !== 10) return null;
+
+        const inattentiveCount = Array.from({ length: 9 }, (_, i) => i + 1).reduce(
+          (sum, item) => sum + (Number(symptomScores[`item_${item}`]) >= 2 ? 1 : 0),
+          0,
+        );
+        const hyperactiveImpulsiveCount = Array.from({ length: 9 }, (_, i) => i + 10).reduce(
+          (sum, item) => sum + (Number(symptomScores[`item_${item}`]) >= 2 ? 1 : 0),
+          0,
+        );
+        const performanceImpairmentCount = Object.values(performanceScores).reduce(
+          (sum, value) => sum + (Number(value) >= 4 ? 1 : 0),
+          0,
+        );
+
+        const inattentiveMet = inattentiveCount >= 6 && performanceImpairmentCount >= 1;
+        const hyperactiveMet = hyperactiveImpulsiveCount >= 6 && performanceImpairmentCount >= 1;
+        const combinedMet = inattentiveMet && hyperactiveMet;
+        const criteriaOutcome = combinedMet
+          ? "ADHD Combined Presentation Criteria Met"
+          : inattentiveMet
+            ? "ADHD Inattentive Presentation Criteria Met"
+            : hyperactiveMet
+              ? "ADHD Hyperactive/Impulsive Presentation Criteria Met"
+              : "ADHD Core Criteria Not Met";
+
+        const interpretation = combinedMet
+          ? "Findings are consistent with ADHD combined presentation criteria on the Vanderbilt parent scale and should be interpreted alongside full clinical assessment."
+          : inattentiveMet
+            ? "Findings are consistent with ADHD inattentive presentation criteria on the Vanderbilt parent scale and should be interpreted alongside full clinical assessment."
+            : hyperactiveMet
+              ? "Findings are consistent with ADHD hyperactive/impulsive presentation criteria on the Vanderbilt parent scale and should be interpreted alongside full clinical assessment."
+              : "Vanderbilt ADHD-core criteria are not fully met in this response set. Findings remain supportive only and do not replace clinical diagnosis.";
 
         return {
-          total_score: totalScore,
-          average_score: Number(averageScore.toFixed(3)),
-          severity: getAcosSeverityFromAverage(averageScore),
-          subscales,
+          scale_type: scaleType || "initial",
+          inattentive_count: inattentiveCount,
+          hyperactive_impulsive_count: hyperactiveImpulsiveCount,
+          performance_impairment_count: performanceImpairmentCount,
+          adhd_inattentive_criteria_met: inattentiveMet,
+          adhd_hyperactive_impulsive_criteria_met: hyperactiveMet,
+          adhd_combined_criteria_met: combinedMet,
+          criteria_outcome: criteriaOutcome,
+          interpretation,
+          performance_items: performanceScores,
         };
       }
 
-      function renderAcosSummary(acos) {
-        const container = byId("acos-summary");
-        if (!container) return;
+      function criteriaChip(label, met) {
+        return `<span class="criteria-chip ${met ? "met" : "not-met"}">${escapeHtml(label)}</span>`;
+      }
 
-        if (!acos || !Number.isFinite(Number(acos.total_score))) {
-          container.innerHTML = "<p class='helper-copy' style='margin:0'>ACOS-C scoring appears after assessment.</p>";
+      function renderVanderbiltSummary(vanderbilt) {
+        const container = byId("vanderbilt-summary");
+        if (!container) return;
+        if (!vanderbilt || !Number.isFinite(Number(vanderbilt.inattentive_count))) {
+          container.innerHTML =
+            "<p class='helper-copy' style='margin:0'>Vanderbilt ADHD-core scoring appears after assessment.</p>";
           return;
         }
 
-        const rows = [
-          ["Total Score", String(acos.total_score)],
-          [
-            "Average Score",
-            Number.isFinite(Number(acos.average_score))
-              ? Number(acos.average_score).toFixed(2)
-              : "N/A",
-          ],
-          ["Severity", acos.severity || "N/A"],
-        ];
+        const scaleType = String(vanderbilt.scale_type || "initial").replace("_", " ");
+        const inattentiveCount = Number(vanderbilt.inattentive_count);
+        const hyperactiveCount = Number(vanderbilt.hyperactive_impulsive_count);
+        const perfCount = Number(vanderbilt.performance_impairment_count);
+        const inattentiveMet = Boolean(vanderbilt.adhd_inattentive_criteria_met);
+        const hyperactiveMet = Boolean(vanderbilt.adhd_hyperactive_impulsive_criteria_met);
+        const combinedMet = Boolean(vanderbilt.adhd_combined_criteria_met);
+        const criteriaOutcome = String(vanderbilt.criteria_outcome || "ADHD Core Criteria Not Met");
+        const interpretation = String(vanderbilt.interpretation || "");
 
-        const subscaleRows = Object.entries(acos.subscales || {}).map(([key, value]) => {
-          const label = ACOS_SUBSCALE_META[key] || key.replace(/_/g, " ");
-          const average = Number(value.average_score);
-          const score = Number(value.score);
-          const severity = value.severity || "N/A";
-          return [
-            label,
-            `${Number.isFinite(score) ? score : "-"} (${Number.isFinite(average) ? average.toFixed(2) : "-"}; ${severity})`,
-          ];
-        });
-
-        container.innerHTML = [...rows, ...subscaleRows]
-          .map(
-            ([label, value]) => `
-            <div class="acos-summary-row">
-              <span>${escapeHtml(label)}</span>
-              <span>${escapeHtml(String(value))}</span>
+        container.innerHTML = `
+          <div class="vanderbilt-matrix-wrap">
+            <div class="vanderbilt-matrix">
+              <div class="vanderbilt-matrix-row vanderbilt-matrix-row--head">
+                <span>Domain</span>
+                <span class="vanderbilt-cell-value">Count</span>
+                <span class="vanderbilt-cell-value">Threshold</span>
+                <span class="vanderbilt-cell-value">Result</span>
+              </div>
+              <div class="vanderbilt-matrix-row">
+                <span class="vanderbilt-cell-label">Form Type</span>
+                <span class="vanderbilt-cell-value">-</span>
+                <span class="vanderbilt-cell-value">-</span>
+                <span class="vanderbilt-cell-value">${escapeHtml(scaleType)}</span>
+              </div>
+              <div class="vanderbilt-matrix-row">
+                <span class="vanderbilt-cell-label">Inattentive Symptoms (items 1-9)</span>
+                <span class="vanderbilt-cell-value">${escapeHtml(String(inattentiveCount))}</span>
+                <span class="vanderbilt-cell-value">>= 6</span>
+                <span class="vanderbilt-cell-value">${criteriaChip(inattentiveMet ? "Met" : "Not Met", inattentiveMet)}</span>
+              </div>
+              <div class="vanderbilt-matrix-row">
+                <span class="vanderbilt-cell-label">Hyperactive/Impulsive Symptoms (items 10-18)</span>
+                <span class="vanderbilt-cell-value">${escapeHtml(String(hyperactiveCount))}</span>
+                <span class="vanderbilt-cell-value">>= 6</span>
+                <span class="vanderbilt-cell-value">${criteriaChip(hyperactiveMet ? "Met" : "Not Met", hyperactiveMet)}</span>
+              </div>
+              <div class="vanderbilt-matrix-row">
+                <span class="vanderbilt-cell-label">Performance Impairment (items rated 4 or 5)</span>
+                <span class="vanderbilt-cell-value">${escapeHtml(String(perfCount))}</span>
+                <span class="vanderbilt-cell-value">>= 1</span>
+                <span class="vanderbilt-cell-value">${criteriaChip(perfCount >= 1 ? "Met" : "Not Met", perfCount >= 1)}</span>
+              </div>
+              <div class="vanderbilt-matrix-row">
+                <span class="vanderbilt-cell-label">Overall Outcome</span>
+                <span class="vanderbilt-cell-value">-</span>
+                <span class="vanderbilt-cell-value">DSM-based Vanderbilt core rule</span>
+                <span class="vanderbilt-cell-value">${criteriaChip(combinedMet ? "Met" : "Not Met", combinedMet)}</span>
+              </div>
             </div>
-          `,
-          )
-          .join("");
+          </div>
+          <div>
+            <p class="vanderbilt-reference-title">Interpretation</p>
+            <p class="helper-copy" style="margin:0 0 .4rem"><strong>${escapeHtml(criteriaOutcome)}</strong></p>
+            <p class="helper-copy" style="margin:0">${escapeHtml(interpretation)}</p>
+          </div>
+        `;
       }
 
-      function initAcosInputs() {
-        const container = byId("acos-grid");
+      function updateVanderbiltScaleIndicator() {
+        const label = byId("vanderbilt-scale-indicator");
+        const helper = byId("vanderbilt-step-copy");
+        if (!label || !helper) return;
+        const isFollowUp = appState.vanderbiltScaleType === "follow_up";
+        label.textContent = `Form type: ${isFollowUp ? "Follow-Up" : "Initial"}`;
+        helper.textContent = isFollowUp
+          ? "This subject has prior assessments. Complete the Vanderbilt Follow-Up ADHD-core response set."
+          : "This is the subject's first assessment. Complete the Vanderbilt Initial ADHD-core response set.";
+      }
+
+      function initVanderbiltInputs() {
+        const container = byId("vanderbilt-grid");
         if (!container) return;
 
-        container.innerHTML = ACOS_ITEMS.map(
+        const symptomMarkup = VANDERBILT_SYMPTOM_ITEMS.map(
           ([itemIndex, label]) => `
-          <div class="acos-item-row">
-            <label for="acos-item-${itemIndex}">${itemIndex}. ${escapeHtml(label)}</label>
-            <select id="acos-item-${itemIndex}" required>
-              <option value="" selected disabled>Select 0-5</option>
-              <option value="0">0 - None</option>
-              <option value="1">1 - Minor</option>
-              <option value="2">2 - Mild</option>
-              <option value="3">3 - Moderate</option>
-              <option value="4">4 - Severe</option>
-              <option value="5">5 - Extreme</option>
+          <div class="vanderbilt-item-row">
+            <label for="vanderbilt-symptom-item-${itemIndex}">${itemIndex}. ${escapeHtml(label)}</label>
+            <select id="vanderbilt-symptom-item-${itemIndex}" required>
+              <option value="" selected disabled>Select 0-3</option>
+              <option value="0">0 - Never</option>
+              <option value="1">1 - Occasionally</option>
+              <option value="2">2 - Often</option>
+              <option value="3">3 - Very Often</option>
             </select>
           </div>
         `,
         ).join("");
+
+        const performanceMarkup = VANDERBILT_PERFORMANCE_ITEMS.map(
+          ([key, label]) => `
+          <div class="vanderbilt-item-row">
+            <label for="vanderbilt-performance-${key}">${escapeHtml(label)}</label>
+            <select id="vanderbilt-performance-${key}" required>
+              <option value="" selected disabled>Select 1-5</option>
+              <option value="1">1 - Above Average</option>
+              <option value="2">2 - Average</option>
+              <option value="3">3 - Somewhat of a Problem</option>
+              <option value="4">4 - Problematic</option>
+              <option value="5">5 - Severe Problem</option>
+            </select>
+          </div>
+        `,
+        ).join("");
+
+        container.innerHTML = `
+          <h4 style="margin:0 0 .6rem">ADHD Symptoms (0-3)</h4>
+          ${symptomMarkup}
+          <h4 style="margin:1rem 0 .6rem">Performance (1-5)</h4>
+          ${performanceMarkup}
+        `;
+        updateVanderbiltScaleIndicator();
       }
 
       function isContextAlignedWithLatest(context) {
@@ -3532,12 +3717,19 @@
           "medicated",
           "medicationIntake",
           "notes",
-          "acosScores",
+          "vanderbiltSymptomScores",
+          "vanderbiltPerformanceScores",
+          "vanderbiltScaleType",
         ];
 
         return trackedFields.every((field) => {
-          if (field === "acosScores") {
-            return JSON.stringify(context.acosScores || null) === JSON.stringify(latest.acosScores || null);
+          if (
+            field === "vanderbiltSymptomScores" ||
+            field === "vanderbiltPerformanceScores"
+          ) {
+            return (
+              JSON.stringify(context[field] || null) === JSON.stringify(latest[field] || null)
+            );
           }
           return normalizeContextField(context[field]) === normalizeContextField(latest[field]);
         });
@@ -3586,14 +3778,22 @@
           ["Latest Classification", formatContextValue(result && result.classification, "Pending")],
           ["Confidence", confidenceText],
           [
-            "ACOS-C Total",
-            result && result.acos && Number.isFinite(Number(result.acos.total_score))
-              ? String(result.acos.total_score)
+            "Vanderbilt Inattentive",
+            result && result.vanderbilt && Number.isFinite(Number(result.vanderbilt.inattentive_count))
+              ? String(result.vanderbilt.inattentive_count)
               : "Pending",
           ],
           [
-            "ACOS-C Severity",
-            formatContextValue(result && result.acos && result.acos.severity, "Pending"),
+            "Vanderbilt Hyperactive/Impulsive",
+            result && result.vanderbilt && Number.isFinite(Number(result.vanderbilt.hyperactive_impulsive_count))
+              ? String(result.vanderbilt.hyperactive_impulsive_count)
+              : "Pending",
+          ],
+          [
+            "Vanderbilt Outcome",
+            result && result.vanderbilt && result.vanderbilt.criteria_outcome
+              ? String(result.vanderbilt.criteria_outcome)
+              : "Pending",
           ],
         ];
 
@@ -3654,7 +3854,9 @@
           medicated: getCheckedValue("medicated"),
           medicationIntake: byId("medication-intake").value.trim(),
           notes: byId("notes").value.trim(),
-          acosScores: collectAcosScores(),
+          vanderbiltSymptomScores: collectVanderbiltSymptomScores(),
+          vanderbiltPerformanceScores: collectVanderbiltPerformanceScores(),
+          vanderbiltScaleType: appState.vanderbiltScaleType,
           clinicianName: byId("clinician-input").value,
           occupation: byId("occupation").value,
           fileMeta: appState.fileMeta,
@@ -3694,10 +3896,22 @@
           ],
         ];
 
-        const acos = computeAcosFromScores(context.acosScores);
-        if (acos) {
-          rows.push(["ACOS-C Total", String(acos.total_score)]);
-          rows.push(["ACOS-C Severity", acos.severity]);
+        const vanderbilt = computeVanderbiltFromScores(
+          context.vanderbiltSymptomScores,
+          context.vanderbiltPerformanceScores,
+          context.vanderbiltScaleType,
+        );
+        if (vanderbilt) {
+          rows.push(["Vanderbilt Form", String(vanderbilt.scale_type).replace("_", " ")]);
+          rows.push(["Inattentive Count", String(vanderbilt.inattentive_count)]);
+          rows.push([
+            "Hyperactive/Impulsive Count",
+            String(vanderbilt.hyperactive_impulsive_count),
+          ]);
+          rows.push([
+            "Performance Impairment Count",
+            String(vanderbilt.performance_impairment_count),
+          ]);
         }
 
         summary.innerHTML = rows
@@ -3765,10 +3979,12 @@
 
       function validateStepTwo() {
         const error = byId("step-2-error");
-        const acosScores = collectAcosScores();
-        const acosValid = Boolean(acosScores);
-        if (!acosValid) {
-          error.textContent = "Complete all 15 ACOS-C item ratings to continue.";
+        const symptomScores = collectVanderbiltSymptomScores();
+        const performanceScores = collectVanderbiltPerformanceScores();
+        const vanderbiltValid = Boolean(symptomScores && performanceScores);
+        if (!vanderbiltValid) {
+          error.textContent =
+            "Complete all Vanderbilt symptom and performance item ratings to continue.";
           error.classList.remove("hidden");
           return false;
         }
@@ -4611,10 +4827,15 @@
         if (context.medicationIntake)
           formData.append("medication_intake", context.medicationIntake);
         if (context.notes) formData.append("notes", context.notes);
-        if (context.acosScores) {
-          Object.entries(context.acosScores).forEach(([key, value]) => {
+        if (context.vanderbiltSymptomScores) {
+          Object.entries(context.vanderbiltSymptomScores).forEach(([key, value]) => {
             const itemSuffix = key.replace("item_", "");
-            formData.append(`acos_item_${itemSuffix}`, String(value));
+            formData.append(`vanderbilt_symptom_item_${itemSuffix}`, String(value));
+          });
+        }
+        if (context.vanderbiltPerformanceScores) {
+          Object.entries(context.vanderbiltPerformanceScores).forEach(([key, value]) => {
+            formData.append(`vanderbilt_performance_${key}`, String(value));
           });
         }
 
@@ -4709,7 +4930,7 @@
           displayPrediction(result.classification, result.confidence_score);
           displayBandPowers(result.band_analysis || {});
           displayClinicalRatios((result.band_analysis || {}).band_ratios || {});
-          renderAcosSummary(result.acos || null);
+          renderVanderbiltSummary(result.vanderbilt || null);
           renderDataQualityNotice(context, result.confidence_score || 0);
           renderInterventionSuggestions(result.classification || "Unknown");
           renderSubjectSummary(context, result);
@@ -4773,6 +4994,7 @@
             appState.subjectLookup.set(subject.subject_code, {
               age: subject.age,
               gender: subject.gender,
+              assessmentCount: Number(subject.assessment_count || 0),
             });
             const option = document.createElement("option");
             option.value = subject.subject_code;
@@ -4827,6 +5049,16 @@
         const subjectInput = byId("subject-code");
         if (!subjectInput) return;
 
+        const recalculateScaleType = () => {
+          const selectedCode = subjectInput.value;
+          const details = appState.subjectLookup.get(selectedCode);
+          appState.vanderbiltScaleType =
+            details && Number(details.assessmentCount || 0) > 0 ? "follow_up" : "initial";
+          updateVanderbiltScaleIndicator();
+        };
+
+        subjectInput.addEventListener("blur", recalculateScaleType);
+
         subjectInput.addEventListener("input", () => {
           const selectedCode = subjectInput.value;
           const details = appState.subjectLookup.get(selectedCode);
@@ -4843,9 +5075,13 @@
               gender.value = details.gender;
               gender.disabled = true;
             }
+            appState.vanderbiltScaleType = details.assessmentCount > 0 ? "follow_up" : "initial";
+            updateVanderbiltScaleIndicator();
           } else {
             age.readOnly = false;
             gender.disabled = false;
+            appState.vanderbiltScaleType = "initial";
+            updateVanderbiltScaleIndicator();
           }
 
           updateDraftIndicator();
@@ -5033,10 +5269,14 @@
           byId(id)?.addEventListener("change", updateDraftIndicator);
         });
 
-        for (let itemIndex = 1; itemIndex <= 15; itemIndex += 1) {
-          const select = byId(`acos-item-${itemIndex}`);
+        for (let itemIndex = 1; itemIndex <= 18; itemIndex += 1) {
+          const select = byId(`vanderbilt-symptom-item-${itemIndex}`);
           select?.addEventListener("change", updateDraftIndicator);
         }
+        VANDERBILT_PERFORMANCE_ITEMS.forEach(([key]) => {
+          const select = byId(`vanderbilt-performance-${key}`);
+          select?.addEventListener("change", updateDraftIndicator);
+        });
 
         byId("band-view-average")?.addEventListener("click", () => setBandView("average"));
         byId("band-view-electrode")?.addEventListener("click", () => setBandView("electrode"));
@@ -5377,7 +5617,7 @@
 
       async function initializePage() {
         setStep(1);
-        initAcosInputs();
+        initVanderbiltInputs();
         initChannelGrid();
         renderFileMetadata(null);
         resetVisualizationState();

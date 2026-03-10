@@ -12,11 +12,17 @@ class ResultsRepository(BaseRepository):
         classification,
         confidence_score,
         clinician_id=None,
-        acos_total_score=None,
-        acos_average_score=None,
-        acos_severity=None,
-        acos_subscale_scores=None,
-        acos_item_scores=None,
+        vanderbilt_scale_type=None,
+        vanderbilt_inattentive_count=None,
+        vanderbilt_hyperactive_impulsive_count=None,
+        vanderbilt_performance_impairment_count=None,
+        vanderbilt_adhd_inattentive_met=None,
+        vanderbilt_adhd_hyperactive_impulsive_met=None,
+        vanderbilt_adhd_combined_met=None,
+        vanderbilt_interpretation=None,
+        vanderbilt_domain_scores=None,
+        vanderbilt_symptom_scores=None,
+        vanderbilt_performance_scores=None,
     ):
         """Create a new result and return its ID."""
         logger.info(f"Creating result for recording {recording_id}: classification={classification}, confidence={confidence_score*100:.2f}%")
@@ -26,13 +32,19 @@ class ResultsRepository(BaseRepository):
             clinician_id,
             predicted_class,
             confidence_score,
-            acos_total_score,
-            acos_average_score,
-            acos_severity,
-            acos_subscale_scores,
-            acos_item_scores
+            vanderbilt_scale_type,
+            vanderbilt_inattentive_count,
+            vanderbilt_hyperactive_impulsive_count,
+            vanderbilt_performance_impairment_count,
+            vanderbilt_adhd_inattentive_met,
+            vanderbilt_adhd_hyperactive_impulsive_met,
+            vanderbilt_adhd_combined_met,
+            vanderbilt_interpretation,
+            vanderbilt_domain_scores,
+            vanderbilt_symptom_scores,
+            vanderbilt_performance_scores
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb)
         RETURNING id;
         """
         try:
@@ -45,14 +57,22 @@ class ResultsRepository(BaseRepository):
                         clinician_id,
                         classification,
                         confidence_score,
-                        acos_total_score,
-                        acos_average_score,
-                        acos_severity,
-                        json.dumps(acos_subscale_scores)
-                        if acos_subscale_scores is not None
+                        vanderbilt_scale_type,
+                        vanderbilt_inattentive_count,
+                        vanderbilt_hyperactive_impulsive_count,
+                        vanderbilt_performance_impairment_count,
+                        vanderbilt_adhd_inattentive_met,
+                        vanderbilt_adhd_hyperactive_impulsive_met,
+                        vanderbilt_adhd_combined_met,
+                        vanderbilt_interpretation,
+                        json.dumps(vanderbilt_domain_scores)
+                        if vanderbilt_domain_scores is not None
                         else None,
-                        json.dumps(acos_item_scores)
-                        if acos_item_scores is not None
+                        json.dumps(vanderbilt_symptom_scores)
+                        if vanderbilt_symptom_scores is not None
+                        else None,
+                        json.dumps(vanderbilt_performance_scores)
+                        if vanderbilt_performance_scores is not None
                         else None,
                     ),
                 )
@@ -94,4 +114,25 @@ class ResultsRepository(BaseRepository):
                 return results
         except Exception as e:
             logger.error(f"Failed to fetch results for recording {recording_id}: {e}", exc_info=True)
+            raise
+
+    def count_results_for_subject(self, subject_id):
+        """Count all saved results for a subject across recordings."""
+        query = """
+        SELECT COUNT(r.id)
+        FROM results r
+        JOIN recordings rec ON rec.id = r.recording_id
+        WHERE rec.subject_id = %s;
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (subject_id,))
+                row = cursor.fetchone()
+                return int(row[0]) if row and row[0] is not None else 0
+        except Exception as e:
+            logger.error(
+                f"Failed to count results for subject {subject_id}: {e}",
+                exc_info=True,
+            )
             raise

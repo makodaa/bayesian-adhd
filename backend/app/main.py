@@ -28,7 +28,7 @@ from .db.repositories.topographic_maps import TopographicMapsRepository
 from .db.repositories.eeg_visualizations import EEGVisualizationsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
-from .services.acos_service import AcosService
+from .services.vanderbilt_service import VanderbiltService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
@@ -114,7 +114,7 @@ eeg_visualizations_repo = EEGVisualizationsRepository()
 file_service = FileService()
 eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
-acos_service = AcosService()
+vanderbilt_service = VanderbiltService()
 visualization_service = VisualizationService()
 visualization_cache_service = VisualizationCacheService()
 topographic_service = TopographicService()
@@ -547,27 +547,9 @@ def predict():
         medication_intake = request.form.get("medication_intake")
         notes = request.form.get("notes")
 
-        acos_item_scores: dict[str, int] | None = None
-        acos_result: dict[str, object] | None = None
-        acos_raw: dict[int, int] = {}
-        for item_index in range(1, 16):
-            raw_value = request.form.get(f"acos_item_{item_index}")
-            if raw_value is not None and raw_value != "":
-                try:
-                    score_value = int(raw_value)
-                except ValueError as exc:
-                    raise ValueError(f"ACOS item {item_index} must be an integer") from exc
-                if not (0 <= score_value <= 5):
-                    raise ValueError(f"ACOS item {item_index} must be between 0 and 5")
-                acos_raw[item_index] = score_value
-
-        if acos_raw:
-            if len(acos_raw) != 15:
-                raise ValueError("All 15 ACOS-C items are required when ACOS scoring is provided")
-            acos_result = dict(acos_service.compute(acos_raw))
-            acos_item_scores = {
-                f"item_{index}": value for index, value in sorted(acos_raw.items())
-            }
+        vanderbilt_symptom_scores: dict[str, int] | None = None
+        vanderbilt_performance_scores: dict[str, int] | None = None
+        vanderbilt_result: dict[str, object] | None = None
 
         # Validate required subject data
         if not subject_code or not age or not gender:
@@ -622,6 +604,62 @@ def predict():
             subject_code, int(age), gender
         )
 
+        prior_assessment_count = results_service.count_results_for_subject(subject_id)
+        vanderbilt_scale_type = "follow_up" if prior_assessment_count > 0 else "initial"
+
+        raw_symptom_scores: dict[int, int] = {}
+        for item_index in range(1, 19):
+            raw_value = request.form.get(f"vanderbilt_symptom_item_{item_index}")
+            if raw_value is None or raw_value == "":
+                raise ValueError(
+                    f"All 18 Vanderbilt symptom items are required for {vanderbilt_scale_type}"
+                )
+            try:
+                score_value = int(raw_value)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Vanderbilt symptom item {item_index} must be an integer"
+                ) from exc
+            if not (0 <= score_value <= 3):
+                raise ValueError(
+                    f"Vanderbilt symptom item {item_index} must be between 0 and 3"
+                )
+            raw_symptom_scores[item_index] = score_value
+
+        performance_scores_raw: dict[str, int] = {}
+        for key in VanderbiltService.REQUIRED_PERFORMANCE_KEYS:
+            raw_value = request.form.get(f"vanderbilt_performance_{key}")
+            if raw_value is None or raw_value == "":
+                raise ValueError(
+                    f"All Vanderbilt performance items are required for {vanderbilt_scale_type}"
+                )
+            try:
+                score_value = int(raw_value)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Vanderbilt performance item '{key}' must be an integer"
+                ) from exc
+            if not (1 <= score_value <= 5):
+                raise ValueError(
+                    f"Vanderbilt performance item '{key}' must be between 1 and 5"
+                )
+            performance_scores_raw[key] = score_value
+
+        vanderbilt_result = dict(
+            vanderbilt_service.compute(
+                symptom_scores=raw_symptom_scores,
+                performance_scores=performance_scores_raw,
+                scale_type=vanderbilt_scale_type,
+            )
+        )
+        vanderbilt_symptom_scores = {
+            f"item_{index}": value for index, value in sorted(raw_symptom_scores.items())
+        }
+        vanderbilt_performance_scores = {
+            key: performance_scores_raw[key]
+            for key in VanderbiltService.REQUIRED_PERFORMANCE_KEYS
+        }
+
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
         recording_id = recording_service.create_recording(
@@ -640,8 +678,9 @@ def predict():
             recording_id,
             df,
             clinician_id=clinician_id,
-            acos_result=acos_result,
-            acos_item_scores=acos_item_scores,
+            vanderbilt_result=vanderbilt_result,
+            vanderbilt_symptom_scores=vanderbilt_symptom_scores,
+            vanderbilt_performance_scores=vanderbilt_performance_scores,
         )
 
         # Compute band powers and ratios for the same recording
@@ -689,7 +728,9 @@ def predict():
 
             viz_bands = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"]
             for band_name in viz_bands:
-                img_bytes = visualization_service.render_detail_png(df, band_name)
+                img_bytes = visualization_service.render_detail_png(
+                    df, cast(BandFilter, band_name)
+                )
                 b64 = "data:image/png;base64," + base64.b64encode(img_bytes).decode("ascii")
                 eeg_visualizations_repo.create_visualization(
                     result["result_id"], band_name, b64
@@ -735,7 +776,7 @@ def predict():
                     "band_analysis": result.get("band_analysis", {}),
                     "visualization_context_id": visualization_context_id,
                     "window_predictions": result.get("window_predictions", []),
-                    "acos": result.get("acos"),
+                    "vanderbilt": result.get("vanderbilt"),
                 },
             }
         ), 200

@@ -129,7 +129,8 @@ class SubjectsRepository(BaseRepository):
         SELECT 
             s.*,
             MAX(r.inferenced_at) as last_update,
-            (array_agg(r.predicted_class ORDER BY r.inferenced_at DESC))[1] as last_result
+            (array_agg(r.predicted_class ORDER BY r.inferenced_at DESC))[1] as last_result,
+            COUNT(r.id) as assessment_count
         FROM subjects s
         LEFT JOIN recordings rec ON s.id = rec.subject_id
         LEFT JOIN results r ON rec.id = r.recording_id

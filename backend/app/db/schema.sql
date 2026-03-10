@@ -46,11 +46,17 @@ CREATE TABLE results (
     clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
     confidence_score FLOAT NOT NULL,
-    acos_total_score INTEGER,
-    acos_average_score NUMERIC(4,3),
-    acos_severity VARCHAR(40),
-    acos_subscale_scores JSONB,
-    acos_item_scores JSONB,
+    vanderbilt_scale_type VARCHAR(20),
+    vanderbilt_inattentive_count INTEGER,
+    vanderbilt_hyperactive_impulsive_count INTEGER,
+    vanderbilt_performance_impairment_count INTEGER,
+    vanderbilt_adhd_inattentive_met BOOLEAN,
+    vanderbilt_adhd_hyperactive_impulsive_met BOOLEAN,
+    vanderbilt_adhd_combined_met BOOLEAN,
+    vanderbilt_interpretation TEXT,
+    vanderbilt_domain_scores JSONB,
+    vanderbilt_symptom_scores JSONB,
+    vanderbilt_performance_scores JSONB,
     inferenced_at TIMESTAMP DEFAULT NOW()
 );
 

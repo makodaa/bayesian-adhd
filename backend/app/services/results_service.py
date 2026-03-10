@@ -21,11 +21,17 @@ class ResultsService:
         classification: str,
         confidence_score: float,
         clinician_id: int | None = None,
-        acos_total_score: int | None = None,
-        acos_average_score: float | None = None,
-        acos_severity: str | None = None,
-        acos_subscale_scores: dict | None = None,
-        acos_item_scores: dict | None = None,
+        vanderbilt_scale_type: str | None = None,
+        vanderbilt_inattentive_count: int | None = None,
+        vanderbilt_hyperactive_impulsive_count: int | None = None,
+        vanderbilt_performance_impairment_count: int | None = None,
+        vanderbilt_adhd_inattentive_met: bool | None = None,
+        vanderbilt_adhd_hyperactive_impulsive_met: bool | None = None,
+        vanderbilt_adhd_combined_met: bool | None = None,
+        vanderbilt_interpretation: str | None = None,
+        vanderbilt_domain_scores: dict | None = None,
+        vanderbilt_symptom_scores: dict | None = None,
+        vanderbilt_performance_scores: dict | None = None,
     ) -> int:
         """Create a new result entry."""
         logger.info(f"ResultsService: creating result for recording {recording_id}")
@@ -34,11 +40,17 @@ class ResultsService:
             classification=classification,
             confidence_score=confidence_score,
             clinician_id=clinician_id,
-            acos_total_score=acos_total_score,
-            acos_average_score=acos_average_score,
-            acos_severity=acos_severity,
-            acos_subscale_scores=acos_subscale_scores,
-            acos_item_scores=acos_item_scores,
+            vanderbilt_scale_type=vanderbilt_scale_type,
+            vanderbilt_inattentive_count=vanderbilt_inattentive_count,
+            vanderbilt_hyperactive_impulsive_count=vanderbilt_hyperactive_impulsive_count,
+            vanderbilt_performance_impairment_count=vanderbilt_performance_impairment_count,
+            vanderbilt_adhd_inattentive_met=vanderbilt_adhd_inattentive_met,
+            vanderbilt_adhd_hyperactive_impulsive_met=vanderbilt_adhd_hyperactive_impulsive_met,
+            vanderbilt_adhd_combined_met=vanderbilt_adhd_combined_met,
+            vanderbilt_interpretation=vanderbilt_interpretation,
+            vanderbilt_domain_scores=vanderbilt_domain_scores,
+            vanderbilt_symptom_scores=vanderbilt_symptom_scores,
+            vanderbilt_performance_scores=vanderbilt_performance_scores,
         )
     
     def get_all_results_with_details(self):
@@ -49,9 +61,11 @@ class ResultsService:
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
-            r.acos_total_score,
-            r.acos_average_score,
-            r.acos_severity,
+            r.vanderbilt_scale_type,
+            r.vanderbilt_inattentive_count,
+            r.vanderbilt_hyperactive_impulsive_count,
+            r.vanderbilt_performance_impairment_count,
+            r.vanderbilt_adhd_combined_met,
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
@@ -86,11 +100,17 @@ class ResultsService:
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
-            r.acos_total_score,
-            r.acos_average_score,
-            r.acos_severity,
-            r.acos_subscale_scores,
-            r.acos_item_scores,
+            r.vanderbilt_scale_type,
+            r.vanderbilt_inattentive_count,
+            r.vanderbilt_hyperactive_impulsive_count,
+            r.vanderbilt_performance_impairment_count,
+            r.vanderbilt_adhd_inattentive_met,
+            r.vanderbilt_adhd_hyperactive_impulsive_met,
+            r.vanderbilt_adhd_combined_met,
+            r.vanderbilt_interpretation,
+            r.vanderbilt_domain_scores,
+            r.vanderbilt_symptom_scores,
+            r.vanderbilt_performance_scores,
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
@@ -143,3 +163,7 @@ class ResultsService:
         except Exception as e:
             logger.error(f"Failed to fetch full details for result {result_id}: {e}", exc_info=True)
             raise
+
+    def count_results_for_subject(self, subject_id: int) -> int:
+        """Count existing assessments for a subject."""
+        return self.results_repo.count_results_for_subject(subject_id)

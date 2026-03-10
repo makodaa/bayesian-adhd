@@ -1328,7 +1328,7 @@
                     <th>Subject Code</th>
                     <th>Classification</th>
                     <th>Confidence</th>
-                    <th>ACOS-C</th>
+                    <th>Vanderbilt</th>
                     <th>Clinician</th>
                     <th>Date</th>
                   </tr>
@@ -1563,14 +1563,14 @@
               : "N/A";
             const clinician = [r.first_name, r.last_name].filter(Boolean).join(" ") || "N/A";
             const date = r.inferenced_at ? new Date(r.inferenced_at).toLocaleString() : "N/A";
-            const acos = Number.isFinite(Number(r.acos_total_score))
-              ? `${Number(r.acos_total_score)} (${r.acos_severity || "N/A"})`
+            const vanderbilt = Number.isFinite(Number(r.vanderbilt_inattentive_count))
+              ? `I:${Number(r.vanderbilt_inattentive_count)} H:${Number(r.vanderbilt_hyperactive_impulsive_count || 0)} (${r.vanderbilt_scale_type || "N/A"})`
               : "N/A";
             return `<tr class="result-row" data-result-id="${r.result_id}" tabindex="0" role="button" aria-label="Open result for ${escapeHtml(r.subject_code || "")}">
             <td class="subject-code">${escapeHtml(r.subject_code || "-")}</td>
             <td>${renderClassificationPill(r.predicted_class)}</td>
             <td class="mono">${escapeHtml(confidence)}</td>
-            <td>${escapeHtml(acos)}</td>
+            <td>${escapeHtml(vanderbilt)}</td>
             <td>${escapeHtml(clinician)}</td>
             <td>${escapeHtml(date)}</td>
           </tr>`;
@@ -1631,13 +1631,26 @@
           return;
         }
         const rows = [
-          ["Subject Code", "Classification", "Confidence", "ACOS-C Total", "ACOS-C Severity", "Date"],
+          [
+            "Subject Code",
+            "Classification",
+            "Confidence",
+            "Vanderbilt Scale",
+            "Inattentive Count",
+            "Hyperactive/Impulsive Count",
+            "Date",
+          ],
           ...appState.allResults.map((r) => [
             r.subject_code,
             r.predicted_class,
             (r.confidence_score * 100).toFixed(2) + "%",
-            Number.isFinite(Number(r.acos_total_score)) ? String(r.acos_total_score) : "",
-            r.acos_severity || "",
+            r.vanderbilt_scale_type || "",
+            Number.isFinite(Number(r.vanderbilt_inattentive_count))
+              ? String(r.vanderbilt_inattentive_count)
+              : "",
+            Number.isFinite(Number(r.vanderbilt_hyperactive_impulsive_count))
+              ? String(r.vanderbilt_hyperactive_impulsive_count)
+              : "",
             new Date(r.inferenced_at).toLocaleString(),
           ]),
         ];
@@ -1767,50 +1780,50 @@
             </ul>
           </section>`;
 
-        const acosTotal = Number(data.acos_total_score);
-        const acosAverage = Number(data.acos_average_score);
-        const acosHasData = Number.isFinite(acosTotal);
-        const acosSubscales = data.acos_subscale_scores || {};
-        const acosSubscaleLabels = {
-          attention_and_functional_difficulties: "Attention and Functional Difficulties",
-          hyperactivity_impulsivity_emotional_dysregulation:
-            "Hyperactivity/Impulsivity and Emotional Dysregulation",
-          cooccurring_mental_health_problems: "Co-occurring Mental Health Problems",
-          risk_behaviours_interpersonal_problems: "Risk Behaviours and Interpersonal Problems",
-        };
+        const vanderbiltHasData = Number.isFinite(Number(data.vanderbilt_inattentive_count));
 
-        const acosItems = acosHasData
+        const vanderbiltItems = vanderbiltHasData
           ? [
-              ["Total Score", String(acosTotal)],
               [
-                "Average Score",
-                Number.isFinite(acosAverage) ? acosAverage.toFixed(2) : "N/A",
+                "Form Type",
+                String(data.vanderbilt_scale_type || "N/A").replace("_", " "),
               ],
-              ["Severity", data.acos_severity || "N/A"],
+              ["Inattentive Count", String(data.vanderbilt_inattentive_count)],
+              [
+                "Hyperactive/Impulsive Count",
+                String(data.vanderbilt_hyperactive_impulsive_count),
+              ],
+              [
+                "Performance Impairment Count",
+                String(data.vanderbilt_performance_impairment_count),
+              ],
+              [
+                "Inattentive Criteria",
+                data.vanderbilt_adhd_inattentive_met ? "Met" : "Not Met",
+              ],
+              [
+                "Hyperactive/Impulsive Criteria",
+                data.vanderbilt_adhd_hyperactive_impulsive_met ? "Met" : "Not Met",
+              ],
+              ["Combined Criteria", data.vanderbilt_adhd_combined_met ? "Met" : "Not Met"],
+              [
+                "Criteria Outcome",
+                data.vanderbilt_domain_scores?.criteria_outcome ||
+                  (data.vanderbilt_adhd_combined_met
+                    ? "ADHD Combined Presentation Criteria Met"
+                    : "ADHD Core Criteria Not Met"),
+              ],
+              ["Interpretation", data.vanderbilt_interpretation || "N/A"],
             ]
           : [];
 
-        const acosSubscaleItems = Object.entries(acosSubscales)
-          .map(([key, value]) => {
-            if (!value || typeof value !== "object") return null;
-            const score = Number(value.score);
-            const average = Number(value.average_score);
-            const severity = value.severity || "N/A";
-            const label = acosSubscaleLabels[key] || key.replace(/_/g, " ");
-            return [
-              label,
-              `${Number.isFinite(score) ? score : "-"} (${Number.isFinite(average) ? average.toFixed(2) : "-"}; ${severity})`,
-            ];
-          })
-          .filter(Boolean);
-
-        const acosSection = `
+        const vanderbiltSection = `
           <section class="detail-section">
-            <h3>ACOS-C (Clinician) Outcome</h3>
+            <h3>Vanderbilt ADHD-Parent (Core)</h3>
             ${
-              acosHasData
+              vanderbiltHasData
                 ? `<ul class="detail-list">
-                    ${[...acosItems, ...acosSubscaleItems]
+                    ${vanderbiltItems
                       .map(
                         ([label, value]) => `<li class="detail-item">
                         <span class="detail-label">${escapeHtml(label)}</span>
@@ -1819,7 +1832,7 @@
                       )
                       .join("")}
                   </ul>`
-                : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No ACOS-C data recorded for this assessment.</p>'
+                : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No Vanderbilt data recorded for this assessment.</p>'
             }
           </section>`;
 
@@ -1958,7 +1971,7 @@
         body.innerHTML =
           classificationSection +
           subjectSection +
-          acosSection +
+          vanderbiltSection +
           bandSection +
           ratioSection +
           notesSection +

@@ -81,7 +81,7 @@ class PDFReportService:
             spaceAfter=3,
             leftIndent=0,
         ))
-        
+
         # Normal text with compact spacing
         self.styles.add(ParagraphStyle(
             name='ReportBody',
@@ -160,7 +160,7 @@ class PDFReportService:
         story.extend(self._build_subject_section(result_data))
         story.extend(self._build_recording_section(result_data))
         story.extend(self._build_classification_section(result_data))
-        story.extend(self._build_acos_section(result_data))
+        story.extend(self._build_vanderbilt_section(result_data))
         story.extend(self._build_band_powers_section(result_data))
         story.extend(self._build_ratios_section(result_data))
         story.extend(self._build_eeg_visualizations_section(result_data))
@@ -369,21 +369,29 @@ class PDFReportService:
         
         return elements
 
-    def _build_acos_section(self, result_data: dict) -> list:
-        """Build ACOS-C clinician outcome section."""
+    def _build_vanderbilt_section(self, result_data: dict) -> list:
+        """Build Vanderbilt ADHD-core outcome section."""
         elements = []
-        acos_total = result_data.get('acos_total_score')
-        if acos_total is None:
+        inattentive_count = result_data.get('vanderbilt_inattentive_count')
+        hyperactive_count = result_data.get('vanderbilt_hyperactive_impulsive_count')
+        if inattentive_count is None and hyperactive_count is None:
             return elements
 
-        elements.append(Paragraph("ACOS-C (Clinician) Outcome", self.styles['SectionHeader']))
+        elements.append(Paragraph("Vanderbilt ADHD-Parent (Core)", self.styles['SectionHeader']))
 
-        acos_average = result_data.get('acos_average_score')
-        acos_severity = result_data.get('acos_severity') or 'N/A'
-        overview_rows = [
-            ['Total Score:', str(acos_total)],
-            ['Average Score:', f"{float(acos_average):.2f}" if acos_average is not None else 'N/A'],
-            ['Severity:', acos_severity],
+        scale_type = result_data.get('vanderbilt_scale_type') or 'N/A'
+        perf_impairment_count = result_data.get('vanderbilt_performance_impairment_count')
+        inattentive_met = result_data.get('vanderbilt_adhd_inattentive_met')
+        hyperactive_met = result_data.get('vanderbilt_adhd_hyperactive_impulsive_met')
+        combined_met = result_data.get('vanderbilt_adhd_combined_met')
+        overview_rows: list[list[str]] = [
+            ['Form Type:', str(scale_type).replace('_', ' ').title()],
+            ['Inattentive Symptoms (items 1-9):', str(inattentive_count if inattentive_count is not None else 'N/A')],
+            ['Hyperactive/Impulsive Symptoms (items 10-18):', str(hyperactive_count if hyperactive_count is not None else 'N/A')],
+            ['Impairment Count (performance items):', str(perf_impairment_count if perf_impairment_count is not None else 'N/A')],
+            ['Inattentive Criteria Met:', 'Yes' if inattentive_met else 'No'],
+            ['Hyperactive/Impulsive Criteria Met:', 'Yes' if hyperactive_met else 'No'],
+            ['Combined Criteria Met:', 'Yes' if combined_met else 'No'],
         ]
 
         overview_table = Table(overview_rows, colWidths=[50 * mm, 120 * mm])
@@ -397,39 +405,11 @@ class PDFReportService:
         ]))
         elements.append(overview_table)
 
-        subscales = result_data.get('acos_subscale_scores') or {}
-        if subscales:
-            label_map = {
-                'attention_and_functional_difficulties': 'Attention and Functional Difficulties',
-                'hyperactivity_impulsivity_emotional_dysregulation': 'Hyperactivity/Impulsivity and Emotional Dysregulation',
-                'cooccurring_mental_health_problems': 'Co-occurring Mental Health Problems',
-                'risk_behaviours_interpersonal_problems': 'Risk Behaviours and Interpersonal Problems',
-            }
-            data = [['Subscale', 'Score', 'Average', 'Severity']]
-            for key, values in subscales.items():
-                data.append([
-                    label_map.get(key, key.replace('_', ' ').title()),
-                    str(values.get('score', 'N/A')),
-                    f"{float(values.get('average_score')):.2f}"
-                    if values.get('average_score') is not None
-                    else 'N/A',
-                    str(values.get('severity', 'N/A')),
-                ])
-
-            subscale_table = Table(data, colWidths=[85 * mm, 25 * mm, 25 * mm, 35 * mm])
-            subscale_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                ('ALIGN', (1, 0), (2, -1), 'RIGHT'),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-            ]))
-            elements.append(subscale_table)
+        interpretation = result_data.get('vanderbilt_interpretation')
+        if interpretation:
+            elements.append(Spacer(1, 4))
+            elements.append(Paragraph("<b>Interpretation:</b>", self.styles['ReportBody']))
+            elements.append(Paragraph(str(interpretation), self.styles['ReportBody']))
 
         elements.append(Spacer(1, 8))
         return elements
@@ -519,9 +499,9 @@ class PDFReportService:
             drawing = Drawing(170*mm, chart_height + 20)
             
             chart = HorizontalBarChart()
-            chart.x = 50*mm  # Left margin for labels
+            chart.x = int(50 * mm)  # Left margin for labels
             chart.y = 10
-            chart.width = 110*mm
+            chart.width = int(110 * mm)
             chart.height = chart_height
             
             # Data - reverse for top-to-bottom display (Delta at top)
