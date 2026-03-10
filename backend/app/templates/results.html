@@ -1134,7 +1134,6 @@
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
         <div class="sidebar-brand">
           <div class="sidebar-brand-inner">
-            <span class="brand-mark">B</span>
             <span class="brand-name">BayesianADHD</span>
           </div>
           <button
@@ -1871,16 +1870,6 @@
             </div>
           </section>`;
 
-        // Temporal biomarkers placeholder (populated async)
-        const temporalSection = `
-          <section class="detail-section" id="drawer-temporal-section">
-            <h3>Temporal Biomarkers</h3>
-            <div id="drawer-temporal-plots"></div>
-            <div id="drawer-temporal-loading" class="loading-state">
-              <div class="skeleton-row"></div><div class="skeleton-row"></div>
-            </div>
-          </section>`;
-
         // EEG visualizations placeholder (populated async)
         const eegVizSection = `
           <section class="detail-section" id="drawer-eeg-viz-section">
@@ -1899,8 +1888,7 @@
           ratioSection +
           notesSection +
           eegVizSection +
-          topoSection +
-          temporalSection;
+          topoSection;
 
         // Setup topo toggle
         document.querySelectorAll("[data-topo]").forEach((btn) => {
@@ -2100,7 +2088,6 @@
           renderResultDetail(data);
           loadDrawerEEGVisualizations(resultId);
           loadDrawerTopoMaps(resultId);
-          loadDrawerTemporalBiomarkers(resultId);
         } catch {
           showToast("Failed to load result details", "error");
           closeResultDrawer();

@@ -609,6 +609,40 @@
         align-items: start;
       }
 
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #waveform-section-card,
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #spectral-section-card {
+        height: 100%;
+      }
+
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #waveform-section-card,
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #spectral-section-card {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #waveform-content,
+      .results-content:has(#waveform-section-card .section-toggle[aria-expanded="true"]):has(
+          #spectral-section-card .section-toggle[aria-expanded="true"]
+        )
+        #spectral-content {
+        flex: 1;
+      }
+
       .summary-card,
       .quality-card,
       .section-shell.section-shell--card {
@@ -635,7 +669,7 @@
 
       #export-bar {
         grid-column: 1 / -1;
-        order: 6;
+        order: 7;
         display: none !important;
       }
 
@@ -646,17 +680,23 @@
 
       #topographic-section-card {
         grid-column: 1 / -1;
-        order: 7;
+        order: 8;
+      }
+
+      #clinical-ratios-card {
+        grid-column: 1 / -1;
+        order: 6;
       }
 
       #temporal-card {
         grid-column: 1 / -1;
-        order: 8;
+        order: 9;
+        display: none !important;
       }
 
       #intervention-card {
         grid-column: 1 / -1;
-        order: 9;
+        order: 10;
         display: none !important;
       }
 
@@ -738,8 +778,19 @@
       }
 
       .quality-card {
-        border-color: #e1bc8f;
-        background: linear-gradient(180deg, #fffaf5 0%, #fffdf9 100%);
+        border-color: #e5ebef;
+        background: #ffffff;
+      }
+
+      #quality-notice-title {
+        color: var(--warning-600);
+      }
+
+      .quality-card .warning-description {
+        margin: -0.25rem 0 0.75rem;
+        font-size: 0.84rem;
+        color: var(--text-700);
+        line-height: 1.45;
       }
 
       .quality-card .warning-rows {
@@ -2069,7 +2120,6 @@
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
         <div class="sidebar-brand">
           <div class="sidebar-brand-inner">
-            <span class="brand-mark">B</span>
             <span class="brand-name">BayesianADHD</span>
           </div>
           <button
@@ -2352,7 +2402,6 @@
                         </button>
                       </div>
                       <div id="band-power-bars"></div>
-                      <div id="clinical-ratios" class="ratio-grid"></div>
                     </div>
                   </article>
 
@@ -2588,6 +2637,26 @@
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </article>
+
+                  <article class="section-shell section-shell--card" id="clinical-ratios-card">
+                    <button
+                      type="button"
+                      class="section-toggle"
+                      data-collapsible-toggle
+                      data-target="clinical-ratios-content"
+                      aria-expanded="true"
+                    >
+                      <span>Clinical Ratios</span>
+                      <span class="toggle-symbol" aria-hidden="true"></span>
+                    </button>
+                    <div
+                      id="clinical-ratios-content"
+                      class="section-content"
+                      data-collapsible-content
+                    >
+                      <div id="clinical-ratios" class="ratio-grid"></div>
                     </div>
                   </article>
 
@@ -3010,7 +3079,6 @@
         "Running classification pipeline",
         "Loading waveform visualizations",
         "Loading topographic maps",
-        "Loading temporal biomarkers",
       ];
 
       const bandColors = {
@@ -3726,7 +3794,9 @@
           })
           .join("");
 
-        content.innerHTML = `<div class="warning-rows">${rows}</div>`;
+        content.innerHTML =
+          "<p class='warning-description'>Items were found that may affect final clinical judgment.</p>" +
+          `<div class="warning-rows">${rows}</div>`;
         section.classList.remove("hidden");
       }
 
@@ -3751,14 +3821,6 @@
           return;
         }
 
-        const normativeRanges = {
-          delta: "15% to 30%",
-          theta: "15% to 25%",
-          alpha: "25% to 35%",
-          beta: "10% to 15%",
-          gamma: "5% to 10%",
-        };
-
         let html = "";
         bands.forEach((band) => {
           const value = Number(averageRelative[band]) || 0;
@@ -3774,7 +3836,6 @@
                         </div>
                         <div class="band-value">${percentage.toFixed(1)}%</div>
                     </div>
-                    <div class="normal-range">Reference range: ${normativeRanges[band] || "N/A"}</div>
                 `;
         });
 
@@ -4454,11 +4515,9 @@
           if (appState.latestResultId) {
             updateProcessingStage(3, "Loading topographic maps...");
             await loadTopographicMapsByResult(appState.latestResultId);
-            updateProcessingStage(4, "Loading temporal biomarkers...");
-            await loadTemporalBiomarkersByResult(appState.latestResultId);
           }
 
-          updateProcessingStage(4, "Assessment complete. Review findings below.");
+          updateProcessingStage(3, "Assessment complete. Review findings below.");
           await new Promise((resolve) => window.setTimeout(resolve, 480));
           leaveProcessingMode();
           closeAssessmentDrawer(true);
