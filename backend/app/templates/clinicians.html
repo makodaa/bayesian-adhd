@@ -828,6 +828,8 @@
         if (error) error.classList.remove("visible");
       }
 
+      const NAME_PATTERN = /^[A-Za-z\s'\-]+$/;
+
       function validateAddClinicianForm() {
         let valid = true;
         const firstName = byId("ac-first-name")?.value.trim() || "";
@@ -839,17 +841,44 @@
         if (!firstName) {
           showFieldError("ac-first-name", "ac-first-name-error", "First name is required.");
           valid = false;
-        } else clearFieldError("ac-first-name", "ac-first-name-error");
+        } else if (!NAME_PATTERN.test(firstName)) {
+          showFieldError(
+            "ac-first-name",
+            "ac-first-name-error",
+            "First name may only contain letters, spaces, hyphens, and apostrophes.",
+          );
+          valid = false;
+        } else {
+          clearFieldError("ac-first-name", "ac-first-name-error");
+        }
 
         if (!lastName) {
           showFieldError("ac-last-name", "ac-last-name-error", "Last name is required.");
           valid = false;
-        } else clearFieldError("ac-last-name", "ac-last-name-error");
+        } else if (!NAME_PATTERN.test(lastName)) {
+          showFieldError(
+            "ac-last-name",
+            "ac-last-name-error",
+            "Last name may only contain letters, spaces, hyphens, and apostrophes.",
+          );
+          valid = false;
+        } else {
+          clearFieldError("ac-last-name", "ac-last-name-error");
+        }
 
         if (!occupation) {
           showFieldError("ac-occupation", "ac-occupation-error", "Occupation is required.");
           valid = false;
-        } else clearFieldError("ac-occupation", "ac-occupation-error");
+        } else if (!NAME_PATTERN.test(occupation)) {
+          showFieldError(
+            "ac-occupation",
+            "ac-occupation-error",
+            "Occupation may only contain letters, spaces, hyphens, and apostrophes.",
+          );
+          valid = false;
+        } else {
+          clearFieldError("ac-occupation", "ac-occupation-error");
+        }
 
         if (!checkPasswordCriteria(password)) {
           showFieldError(
