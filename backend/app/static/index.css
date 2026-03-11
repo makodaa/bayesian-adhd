@@ -208,6 +208,11 @@
   order: 1;
 }
 
+#narrative-card {
+  grid-column: 1 / -1;
+  order: 2;
+}
+
 #waveform-section-card {
   grid-column: 1;
   order: 4;
@@ -263,6 +268,13 @@
   margin: 0 0 0.7rem;
   font-size: 1rem;
   color: var(--text-900);
+}
+
+.narrative-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-700);
 }
 
 .classification-label {

@@ -1,5 +1,8 @@
 import numpy as np
 
+# Application version
+APP_VERSION = "1.0"
+
 # Signal processing constants
 
 SAMPLE_RATE = 128  # Hz

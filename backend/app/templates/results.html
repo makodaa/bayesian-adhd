@@ -572,6 +572,129 @@
 
       // ── Band colors ──
 
+      // ── Narrative: cortical arousal & attention regulation ─────────────────
+      // Mirrors NarrativeService (Python) logic for client-side generation.
+
+      const _NARR_TBR_HYPO  = 3.0;
+      const _NARR_TBR_HYPER = 1.5;
+      const _NARR_THETA_HYPO = 0.35;
+      const _NARR_BETA_HYPER = 0.25;
+
+      function _narrArousalSentence(theta, beta, tbr) {
+        if (tbr > _NARR_TBR_HYPO || theta > _NARR_THETA_HYPO) {
+          return (
+            "The elevated theta activity and theta/beta ratio are consistent " +
+            "with a cortical hypoarousal pattern, suggesting reduced frontal " +
+            "activation and decreased inhibitory tone."
+          );
+        }
+        if (tbr < _NARR_TBR_HYPER && beta > _NARR_BETA_HYPER) {
+          return (
+            "The relatively high beta power and low theta/beta ratio suggest " +
+            "a cortical hyperarousal or heightened activation pattern, which " +
+            "may be associated with anxiety, hypervigilance, or stimulant effects."
+          );
+        }
+        return (
+          "The theta/beta ratio and band power distribution do not clearly " +
+          "indicate cortical arousal dysregulation within this recording."
+        );
+      }
+
+      function _narrAttentionSentence(isAdhd, tbr, classification, confPct) {
+        const elevated = tbr > _NARR_TBR_HYPO;
+        if (isAdhd && elevated) {
+          return (
+            `Combined with a ${classification} classification at ${confPct}% confidence, ` +
+            "this profile is consistent with reduced attentional gating and impaired " +
+            "frontally mediated inhibitory control, patterns commonly observed in ADHD."
+          );
+        }
+        if (isAdhd && !elevated) {
+          return (
+            `The ${classification} classification (${confPct}% confidence) was reached ` +
+            "despite a theta/beta ratio that does not fall in the typically elevated range; " +
+            "other spectral and temporal features may have contributed to this classification."
+          );
+        }
+        if (!isAdhd && elevated) {
+          return (
+            `Although the recording was classified as ${classification} at ${confPct}% confidence, ` +
+            "the elevated theta/beta ratio warrants clinical consideration, as this pattern can " +
+            "occasionally appear in the context of other neurodevelopmental or attentional presentations."
+          );
+        }
+        return (
+          `Consistent with the ${classification} classification (${confPct}% confidence), ` +
+          "the attention regulation markers in this recording do not indicate the spectral " +
+          "patterns typically associated with ADHD-related cortical dysregulation."
+        );
+      }
+
+      function _narrConfidenceSentence(confidence) {
+        const pct = (confidence * 100).toFixed(1);
+        if (confidence >= 0.80) {
+          return `Model confidence is high (${pct}%), supporting a stronger weighting of these findings within a broader clinical assessment.`;
+        }
+        if (confidence >= 0.60) {
+          return `Model confidence is moderate (${pct}%); these findings should be corroborated with additional clinical and behavioral data before drawing conclusions.`;
+        }
+        return `Model confidence is low (${pct}%), and these findings should be interpreted with considerable caution; additional testing is strongly recommended.`;
+      }
+
+      /**
+       * Generate arousal & attention narrative for result drawer.
+       * @param {object} data - full result object from /api/results/<id>
+       * @returns {string|null} narrative text, or null if data is insufficient
+       */
+      function buildResultNarrative(data) {
+        const bandPowers = data.band_powers || [];
+        if (bandPowers.length === 0) return null;
+
+        // Compute average relative power across electrodes
+        const sums = {};
+        const counts = {};
+        bandPowers.forEach((bp) => {
+          const band = bp.frequency_band;
+          sums[band]   = (sums[band]   || 0) + (bp.relative_power || 0);
+          counts[band] = (counts[band] || 0) + 1;
+        });
+        const avgRel = {};
+        Object.keys(sums).forEach((band) => {
+          avgRel[band] = sums[band] / counts[band];
+        });
+
+        // Extract TBR from ratios
+        const ratios = data.ratios || [];
+        const tbrEntry = ratios.find((r) => r.ratio_name === "theta_beta_ratio");
+        const tbr = tbrEntry ? Number(tbrEntry.ratio_value) : 0;
+
+        const theta = Number(avgRel.theta) || 0;
+        const beta  = Number(avgRel.beta)  || 0;
+        const alpha = Number(avgRel.alpha) || 0;
+        const conf  = Number(data.confidence_score) || 0;
+        const confPct = (conf * 100).toFixed(1);
+        const cls   = data.predicted_class || "Unknown";
+        const isAdhd = cls.toLowerCase().includes("adhd") && !cls.toLowerCase().includes("non-adhd");
+
+        const s1 = (
+          `EEG spectral analysis shows relative theta power of ${(theta * 100).toFixed(1)}%, ` +
+          `relative beta power of ${(beta * 100).toFixed(1)}%, ` +
+          `relative alpha power of ${(alpha * 100).toFixed(1)}%, ` +
+          `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
+        );
+        const s2 = _narrArousalSentence(theta, beta, tbr);
+        const s3 = _narrAttentionSentence(isAdhd, tbr, cls, confPct);
+        const s4 = _narrConfidenceSentence(conf);
+        const s5 = (
+          "These findings are intended to support clinical decision-making " +
+          "and should not be interpreted in isolation from clinical history, " +
+          "behavioral evaluation, and qualified professional judgment."
+        );
+
+        return [s1, s2, s3, s4, s5].join(" ");
+      }
+
       const BAND_COLORS = {
         delta: "#9C27B0",
         theta: "#2196F3",
@@ -712,6 +835,18 @@
             }
           </section>`;
 
+        // Arousal & Attention narrative section
+        const narrativeText = buildResultNarrative(data);
+        const narrativeSection = `
+          <section class="detail-section">
+            <h3>Arousal &amp; Attention Profile</h3>
+            ${
+              narrativeText
+                ? `<p style="margin:0;font-size:0.84rem;line-height:1.6;color:var(--text-700)">${escapeHtml(narrativeText)}</p>`
+                : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">Insufficient spectral data to generate an arousal profile.</p>'
+            }
+          </section>`;
+
         // Notes & disclaimers section
         const disclaimers = [];
         const sleepNum = data.sleep_hours != null ? Number(data.sleep_hours) : null;
@@ -780,6 +915,7 @@
           classificationSection +
           subjectSection +
           bandSection +
+          narrativeSection +
           ratioSection +
           notesSection +
           eegVizSection +
