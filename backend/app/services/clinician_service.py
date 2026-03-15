@@ -1,5 +1,11 @@
 from typing import Optional
 from ..db.repositories.clinicians import CliniciansRepository
+from .input_validation_service import (
+    validate_name_field,
+    validate_occupation,
+    validate_password_strength,
+)
+
 
 class ClinicianService:
     """Manage clinician accounts and authentication."""
@@ -7,14 +13,29 @@ class ClinicianService:
     def __init__(self, clinicians_repo: CliniciansRepository):
         self.clinicians_repo = clinicians_repo
 
-    def create_clinician(self, data:dict) -> int:
-        """Register new clinician."""
+    def create_clinician(self, data: dict) -> int:
+        """Validate and register a new clinician.
+
+        Raises ``ValueError`` if any field fails validation.
+        """
+        first_name = validate_name_field(data.get("first_name"), "First name")
+        last_name = validate_name_field(data.get("last_name"), "Last name")
+        # middle_name is optional — validate only when provided
+        middle_name_raw = data.get("middle_name")
+        if middle_name_raw and str(middle_name_raw).strip():
+            middle_name: str | None = validate_name_field(middle_name_raw, "Middle name")
+        else:
+            middle_name = None
+        occupation = validate_occupation(data.get("occupation"))
+        password: str = data.get("password") or ""
+        validate_password_strength(password)
+
         return self.clinicians_repo.create_clinician(
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            middle_name=data.get('middle_name'),
-            occupation=data.get('occupation'),
-            password=data.get('password')
+            first_name=first_name,
+            last_name=last_name,
+            middle_name=middle_name,
+            occupation=occupation,
+            password=password,
         )
     
     def get_all_clinicians(self) -> list:

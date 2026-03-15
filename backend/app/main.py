@@ -32,6 +32,13 @@ from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
 from .services.file_service import FileService
+from .services.input_validation_service import (
+    validate_age,
+    validate_gender,
+    validate_sleep_hours,
+    validate_subject_code,
+    validate_text_field,
+)
 from .services.pdf_service import PDFReportService
 from .services.recording_service import RecordingService
 from .services.results_service import ResultsService
@@ -535,7 +542,7 @@ def predict():
         # clinician_name = request.form.get("clinician_name")
         # occupation = request.form.get("occupation")
 
-        sleep_hours = request.form.get("sleep_hours")
+        sleep_hours_raw = request.form.get("sleep_hours")
         food_intake = request.form.get("food_intake")
         caffeinated = request.form.get("caffeinated")
         medicated = request.form.get("medicated")
@@ -543,31 +550,17 @@ def predict():
         notes = request.form.get("notes")
 
         # Validate required subject data
-        if not subject_code or not age or not gender:
-            logger.error(
-                f"Missing required subject data: {subject_code}, {age}, {gender}"
-            )
-            return jsonify({"error": "Subject code, age, and gender are required"}), 400
+        subject_code = validate_subject_code(subject_code)
+        age_int = validate_age(age)
+        gender = validate_gender(gender)
 
-        if len(subject_code) > 50:
-            return jsonify({"error": "Subject code must be 50 characters or fewer"}), 400
-
-        try:
-            age_int = int(age)
-            if not (1 <= age_int <= 120):
-                return jsonify({"error": "Age must be between 1 and 120"}), 400
-        except ValueError:
-            return jsonify({"error": "Age must be a valid integer"}), 400
+        # Validate optional text fields (500-char cap)
+        food_intake = validate_text_field(food_intake, "Food intake")
+        medication_intake = validate_text_field(medication_intake, "Medication details")
+        notes = validate_text_field(notes, "Clinical notes")
 
         # Validate optional numeric fields
-        if sleep_hours is not None and sleep_hours != "":
-            try:
-                sleep_hours_float = float(sleep_hours)
-                if not (0 <= sleep_hours_float <= 99.99):
-                    return jsonify({"error": "Sleep hours must be between 0 and 99.99"}), 400
-                sleep_hours = str(sleep_hours_float)
-            except ValueError:
-                return jsonify({"error": "Invalid value for sleep hours"}), 400
+        sleep_hours_float = validate_sleep_hours(sleep_hours_raw)
 
         # Use logged-in clinician from session for result creation
         clinician_id = session.get("clinician_id")
@@ -599,10 +592,10 @@ def predict():
 
         # Get or create subject (reuse existing subject if code already exists)
         logger.info(
-            f"Getting or creating subject: {subject_code}, age={age}, gender={gender}"
+            f"Getting or creating subject: {subject_code}, age={age_int}, gender={gender}"
         )
         subject_id = subject_service.get_or_create_subject(
-            subject_code, int(age), gender
+            subject_code, age_int, gender
         )
 
         # Create recording with environmental data
@@ -610,7 +603,7 @@ def predict():
         recording_id = recording_service.create_recording(
             subject_id=subject_id,
             file_name=filename,
-            sleep_hours=float(sleep_hours) if sleep_hours else None,
+            sleep_hours=sleep_hours_float,
             food_intake=food_intake,
             caffeinated=caffeinated == "true" if caffeinated else None,
             medicated=medicated == "true" if medicated else None,

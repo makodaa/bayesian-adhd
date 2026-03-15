@@ -796,6 +796,7 @@
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
                   </select>
                 </div>
               </div>
@@ -831,7 +832,7 @@
                 </div>
                 <div class="field-wrap">
                   <label for="food-intake">Food Intake (last 3 hours)</label>
-                  <input type="text" id="food-intake" placeholder="e.g., light meal" />
+                  <input type="text" id="food-intake" placeholder="e.g., light meal" maxlength="500" />
                 </div>
                 <fieldset class="radio-group">
                   <legend>Caffeine Status</legend>
@@ -881,6 +882,7 @@
                     id="medication-intake"
                     rows="2"
                     placeholder="Enter medication details if applicable"
+                    maxlength="500"
                   ></textarea>
                 </div>
                 <div class="field-wrap full">
@@ -889,6 +891,7 @@
                     id="notes"
                     rows="3"
                     placeholder="Add recording context notes (optional)"
+                    maxlength="500"
                   ></textarea>
                 </div>
               </div>
@@ -1523,6 +1526,17 @@
         const error = byId("step-2-error");
         if (!appState.file) {
           error.textContent = "Upload an EEG CSV file before moving to review.";
+          error.classList.remove("hidden");
+          return false;
+        }
+
+        // Block if any required EEG channels are missing
+        const meta = appState.fileMeta;
+        if (meta && meta.missingChannels && meta.missingChannels.length > 0) {
+          const missing = meta.missingChannels.join(", ");
+          error.textContent =
+            `EEG file is missing required channel(s): ${missing}. ` +
+            "Upload a complete 19-channel recording using the 10-20 system.";
           error.classList.remove("hidden");
           return false;
         }
