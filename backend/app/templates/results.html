@@ -821,6 +821,38 @@
             </ul>
           </section>`;
 
+        const prep = data.preprocessing_summary || {};
+        const prepItems = [
+          ["Files", prep.files_received],
+          ["Accepted", prep.records_accepted],
+          ["Missing fields", prep.missing_fields],
+          ["Rows removed", prep.rows_removed],
+          ["Usable data", prep.usable_data_pct != null ? `${prep.usable_data_pct}%` : null],
+          ["Features", prep.feature_count],
+          ["Run ID", prep.run_id],
+        ].filter(([, v]) => v != null && v !== "");
+
+        const prepSection = `
+          <section class="detail-section prep-section">
+            <div class="prep-header" role="button" tabindex="0">
+              <h3>Recording Prep Checklist</h3>
+              <span class="prep-chevron">&#9654;</span>
+            </div>
+            <div class="prep-body collapsed">
+              <ul class="detail-list">
+                ${prepItems
+                  .map(
+                    ([label, value]) => `
+                  <li class="detail-item">
+                    <span class="detail-label">${escapeHtml(label)}</span>
+                    <span class="detail-value">${escapeHtml(String(value))}</span>
+                  </li>`,
+                  )
+                  .join("")}
+              </ul>
+            </div>
+          </section>`;
+
         // Band power section
         const averageBandPowers = {};
         if (data.band_powers && data.band_powers.length > 0) {
@@ -965,12 +997,34 @@
         body.innerHTML =
           classificationSection +
           subjectSection +
+          prepSection +
           bandSection +
           narrativeSection +
           ratioSection +
           notesSection +
           eegVizSection +
           topoSection;
+
+        const prepHeader = body.querySelector(".prep-header");
+        const prepBody = body.querySelector(".prep-body");
+        if (prepHeader && prepBody) {
+          const togglePrep = () => {
+            prepBody.classList.toggle("collapsed");
+            const chevron = prepHeader.querySelector(".prep-chevron");
+            if (chevron) {
+              chevron.innerHTML = prepBody.classList.contains("collapsed")
+                ? "&#9654;"
+                : "&#9660;";
+            }
+          };
+          prepHeader.addEventListener("click", togglePrep);
+          prepHeader.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              togglePrep();
+            }
+          });
+        }
 
         // Setup topo toggle
         document.querySelectorAll("[data-topo]").forEach((btn) => {

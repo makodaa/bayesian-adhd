@@ -243,6 +243,39 @@
   gap: 0.5rem;
 }
 
+.prep-section {
+  gap: 0.35rem;
+}
+
+.prep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.prep-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-900);
+}
+
+.prep-header:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(43, 113, 140, 0.35);
+  border-radius: var(--radius-sm);
+}
+
+.prep-chevron {
+  font-size: 0.85rem;
+  color: var(--text-500);
+}
+
+.prep-body.collapsed {
+  display: none;
+}
+
 .detail-section h3 {
   margin: 0;
   font-size: 0.9rem;
