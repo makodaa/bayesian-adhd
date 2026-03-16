@@ -792,7 +792,7 @@ class PDFReportService:
         elements.append(details_table)
         elements.append(Spacer(1, 2))
 
-        elements.append(Paragraph("Relative Band Powers", self.styles["SubHeader"]))
+        elements.append(Paragraph("Relative Band Powers", self.styles["SectionHeaderTight"]))
         elements.append(Spacer(1, 2))
         band_block = build_band_power_block(
             report_data["band_power"], self.styles, doc_width()
