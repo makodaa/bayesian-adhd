@@ -228,10 +228,7 @@ def build_band_power_chart(band_power: dict[str, float], width: float, height: f
     return d
 
 
-def _build_disclaimer_summary_box(
-    summary: str,
-    significance: str,
-    comments: str,
+def build_disclaimer_box(
     styles: dict[str, ParagraphStyle],
     content_width: float,
 ) -> Table:
@@ -250,15 +247,6 @@ def _build_disclaimer_summary_box(
         Paragraph("[!]  IMPORTANT DISCLAIMER", styles["DisclaimerHeader"]),
         Spacer(1, 4),
         Paragraph(disclaimer_text, styles["DisclaimerBody"]),
-        Spacer(1, 6),
-        Paragraph("SUMMARY OF FINDINGS", styles["SectionHeaderAmber"]),
-        Paragraph(summary, styles["ShadedBoxText"]),
-        Spacer(1, 4),
-        Paragraph("DIAGNOSTIC SIGNIFICANCE", styles["SectionHeaderAmber"]),
-        Paragraph(significance, styles["ShadedBoxText"]),
-        Spacer(1, 4),
-        Paragraph("CLINICAL COMMENTS", styles["SectionHeaderAmber"]),
-        Paragraph(comments, styles["ShadedBoxText"]),
     ]
 
     table = Table([[inner]], colWidths=[content_width])
@@ -272,6 +260,30 @@ def _build_disclaimer_summary_box(
                 ("RIGHTPADDING", (0, 0), (-1, -1), 8),
                 ("TOPPADDING", (0, 0), (-1, -1), 8),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+    return table
+
+
+def build_shaded_content_box(
+    text: str,
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+    bold: bool = False,
+) -> Table:
+    style_key = "ShadedBoxBold" if bold else "ShadedBoxText"
+    inner = [Paragraph(text, styles[style_key])]
+    table = Table([[inner]], colWidths=[content_width])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f0f0")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.black),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ]
         )
     )
@@ -355,14 +367,6 @@ class PDFReportService:
             spaceBefore=6,
             spaceAfter=2,
         )
-        styles["SectionHeaderAmber"] = ParagraphStyle(
-            name="SectionHeaderAmber",
-            fontName="Helvetica-Bold",
-            fontSize=8,
-            textColor=colors.HexColor("#7a4f00"),
-            spaceBefore=2,
-            spaceAfter=2,
-        )
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
             fontName="Helvetica-Bold",
@@ -412,6 +416,14 @@ class PDFReportService:
             leading=9.5,
             spaceAfter=2,
         )
+        styles["ShadedBoxBold"] = ParagraphStyle(
+            name="ShadedBoxBold",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=9.5,
+            spaceAfter=2,
+        )
         styles["NarrativeLabel"] = ParagraphStyle(
             name="NarrativeLabel",
             fontName="Helvetica-Bold",
@@ -423,7 +435,7 @@ class PDFReportService:
             name="DisclaimerHeader",
             fontName="Helvetica-Bold",
             fontSize=8,
-            textColor=colors.HexColor("#7a4f00"),
+            textColor=colors.black,
             spaceAfter=2,
         )
         styles["DisclaimerBody"] = ParagraphStyle(
@@ -481,13 +493,29 @@ class PDFReportService:
         story.extend(self._build_findings(report_data))
         story.append(self._build_model_classification(report_data))
         story.append(Spacer(1, 6))
+        story.append(build_disclaimer_box(self.styles, doc.width))
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]))
         story.append(
-            _build_disclaimer_summary_box(
-                report_data["summary_findings"],
+            build_shaded_content_box(
+                report_data["summary_findings"], self.styles, doc.width
+            )
+        )
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]))
+        story.append(
+            build_shaded_content_box(
                 report_data["diagnostic_significance"],
-                report_data["clinical_comments"],
                 self.styles,
                 doc.width,
+                bold=True,
+            )
+        )
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("CLINICAL COMMENTS", self.styles["SectionHeader"]))
+        story.append(
+            build_shaded_content_box(
+                report_data["clinical_comments"], self.styles, doc.width
             )
         )
         story.append(Spacer(1, 6))
