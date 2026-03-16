@@ -610,9 +610,7 @@ class PDFReportService:
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
         story.extend(self._build_model_classification(report_data))
-        story.append(Spacer(1, 6))
         story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
-        story.append(Spacer(1, 4))
         story.extend(self._build_signature_block(report_data))
 
         footer_text = report_data["footer_text"]
@@ -977,6 +975,7 @@ class PDFReportService:
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
         left_column = [
+            Spacer(1, 4),
             Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
@@ -997,11 +996,14 @@ class PDFReportService:
                 width / 2 - 6,
                 min_height=26,
             ),
+            Spacer(1, 4),
         ]
 
         right_column = [
+            Spacer(1, 4),
             Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
             build_disclaimer_box(self.styles, width / 2 - 6),
+            Spacer(1, 4),
         ]
 
         table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
