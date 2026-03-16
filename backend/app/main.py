@@ -1,3 +1,4 @@
+from datetime import datetime
 from os import PathLike
 from pathlib import Path
 from typing import cast
@@ -868,10 +869,20 @@ def generate_result_pdf(result_id):
 
         # Create filename
         subject_code = result.get("subject_code", "unknown").replace(" ", "_")
-        from datetime import datetime
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"EEG_Report_{subject_code}_{timestamp}.pdf"
+        def format_report_date(value) -> str:
+            if value is None:
+                return datetime.now().strftime("%m%d%Y")
+            if isinstance(value, datetime):
+                return value.strftime("%m%d%Y")
+            try:
+                parsed = datetime.fromisoformat(str(value))
+                return parsed.strftime("%m%d%Y")
+            except ValueError:
+                return datetime.now().strftime("%m%d%Y")
+
+        report_date = format_report_date(result.get("inferenced_at"))
+        filename = f"eeg_report_{subject_code}_{report_date}.pdf"
 
         logger.info(
             f"Generated PDF report for result {result_id}, size: {len(pdf_bytes)} bytes"
