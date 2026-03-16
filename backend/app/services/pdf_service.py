@@ -390,12 +390,9 @@ def make_footer_canvas(footer_text: str):
 
         def _draw_footer(self, page_num: int, total: int):
             self.saveState()
-            footer_height = 12
-            self.setFillColor(colors.HexColor("#222222"))
-            self.rect(0, 0, A4[0], footer_height, stroke=0, fill=1)
             self.setFont("Helvetica", 7)
-            self.setFillColor(colors.white)
-            text = f"{self._footer_text}    Page {page_num} / {total}"
+            self.setFillColor(colors.HexColor("#555555"))
+            text = f"{self._footer_text}  |  Page {page_num} / {total}"
             self.drawString(18 * mm, 3, text)
             self.restoreState()
 
@@ -687,7 +684,7 @@ class PDFReportService:
         clinical_comments = _display(result_data.get("notes"), "Not recorded")
 
         footer_text = (
-            f"Subject Code: {subject_code}    Recording ID: {recording_id}    "
+            f"Subject Code: {subject_code}  |  Recording ID: {recording_id}  |  "
             f"{report_date}"
         )
 
