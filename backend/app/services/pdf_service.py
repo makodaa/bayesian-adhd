@@ -27,6 +27,15 @@ from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
 
+DEFAULT_NORMATIVE_RANGES: dict[str, dict[str, float]] = {
+    # TODO: replace with actual normative percentiles
+    "delta": {"p25": 25.0, "p75": 55.0},
+    "theta": {"p25": 4.0, "p75": 8.0},
+    "alpha": {"p25": 8.0, "p75": 12.0},
+    "beta": {"p25": 10.0, "p75": 20.0},
+    "gamma": {"p25": 1.0, "p75": 5.0},
+}
+
 
 def _format_date(value) -> str:
     if value is None:
@@ -92,12 +101,40 @@ def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
     return 0.0
 
 
-def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]:
+def generate_band_findings(
+    band_power: dict[str, float],
+    normative_ranges: dict[str, dict[str, float]] | None = None,
+) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
     alpha = band_power.get("alpha", 0.0)
     beta = band_power.get("beta", 0.0)
     theta = band_power.get("theta", 0.0)
     tbr = theta / beta if beta > 0 else 0.0
+
+    ranges = normative_ranges or DEFAULT_NORMATIVE_RANGES
+
+    def normative_clause(band_key: str, value: float) -> str:
+        band_norms = ranges.get(band_key)
+        if not band_norms:
+            return ""
+        p25 = band_norms.get("p25")
+        p75 = band_norms.get("p75")
+        if p25 is None or p75 is None:
+            return ""
+        if value < p25:
+            state = "Below"
+        elif value > p75:
+            state = "Above"
+        else:
+            state = "Within"
+        return (
+            f"{state} normative {band_key} range of {p25:.1f}-{p75:.1f}%."
+        )
+
+    def combine_clause(note: str, clause: str) -> str:
+        if clause and note:
+            return f"{clause} {note}"
+        return clause or note
 
     if alpha > 12:
         label = f"Elevated alpha power ({alpha:.2f}%)."
@@ -117,7 +154,7 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
     findings.append(
         {
             "label": label,
-            "properties": note,
+            "properties": combine_clause(note, normative_clause("alpha", alpha)),
         }
     )
 
@@ -139,7 +176,7 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
     findings.append(
         {
             "label": label,
-            "properties": note,
+            "properties": combine_clause(note, normative_clause("beta", beta)),
         }
     )
 
@@ -158,7 +195,7 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
     findings.append(
         {
             "label": label,
-            "properties": note,
+            "properties": combine_clause(note, normative_clause("theta", theta)),
         }
     )
 
@@ -516,10 +553,17 @@ class PDFReportService:
         )
         return styles
 
-    def generate_report(self, result_data: dict, clinician_data: dict) -> bytes:
+    def generate_report(
+        self,
+        result_data: dict,
+        clinician_data: dict,
+        normative_ranges: dict[str, dict[str, float]] | None = None,
+    ) -> bytes:
         logger.info("Generating PDF report for result %s", result_data.get("result_id"))
 
-        report_data = self._build_report_data(result_data, clinician_data)
+        report_data = self._build_report_data(
+            result_data, clinician_data, normative_ranges
+        )
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(
@@ -552,7 +596,12 @@ class PDFReportService:
         logger.info("PDF report generated successfully, size: %s bytes", len(pdf_content))
         return pdf_content
 
-    def _build_report_data(self, result_data: dict, clinician_data: dict) -> dict:
+    def _build_report_data(
+        self,
+        result_data: dict,
+        clinician_data: dict,
+        normative_ranges: dict[str, dict[str, float]] | None,
+    ) -> dict:
         inferred = result_data.get("inferenced_at")
         report_date = _format_date(inferred)
 
@@ -648,6 +697,7 @@ class PDFReportService:
             "alertness": "Not recorded",
             "sensor_group": "10-20 International, 19 channels",
             "band_power": band_power,
+            "normative_ranges": normative_ranges or DEFAULT_NORMATIVE_RANGES,
             "model_classification": {
                 "label": label,
                 "confidence": confidence if confidence <= 1 else confidence / 100,
@@ -849,7 +899,9 @@ class PDFReportService:
         elements.append(Spacer(1, 1))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
-        for finding in generate_band_findings(report_data["band_power"]):
+        for finding in generate_band_findings(
+            report_data["band_power"], report_data.get("normative_ranges")
+        ):
             elements.append(Paragraph(finding["label"], self.styles["SubSubHeader"]))
             elements.append(
                 Paragraph(
