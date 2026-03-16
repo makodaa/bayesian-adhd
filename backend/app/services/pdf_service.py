@@ -385,6 +385,17 @@ class PDFReportService:
             spaceBefore=6,
             spaceAfter=2,
         )
+        styles["SectionHeaderTight"] = ParagraphStyle(
+            name="SectionHeaderTight",
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=colors.black,
+            leftIndent=-6,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=2,
+        )
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
             fontName="Helvetica-Bold",
@@ -724,7 +735,9 @@ class PDFReportService:
     def _build_recording_assessment(self, report_data: dict) -> list:
         elements: list = []
 
-        elements.append(Paragraph("ASSESSMENT INFORMATION", self.styles["SectionHeader"]))
+        elements.append(
+            Paragraph("ASSESSMENT INFORMATION", self.styles["SectionHeaderTight"])
+        )
         elements.append(Spacer(1, 1))
 
         bar_rows = [
@@ -748,8 +761,8 @@ class PDFReportService:
                     ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#e8e8e8")),
                     ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
                     ("FONTSIZE", (0, 0), (-1, -1), 7.5),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
                     ("TOPPADDING", (0, 0), (-1, -1), 4),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ]
@@ -802,7 +815,7 @@ class PDFReportService:
 
     def _build_findings(self, report_data: dict) -> list:
         elements: list = []
-        elements.append(Paragraph("FINDINGS", self.styles["SectionHeader"]))
+        elements.append(Paragraph("FINDINGS", self.styles["SectionHeaderTight"]))
         elements.append(Spacer(1, 1))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
