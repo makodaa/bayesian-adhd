@@ -390,6 +390,9 @@ class PDFReportService:
             fontName="Helvetica-Bold",
             fontSize=7.5,
             textColor=colors.black,
+            leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
             spaceBefore=2,
             spaceAfter=2,
         )
@@ -823,7 +826,7 @@ class PDFReportService:
 
         elements: list = []
         elements.append(Paragraph("Model Classification", self.styles["SubHeader"]))
-        elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 1))
 
         confidence_statement = self._format_confidence_statement(confidence, confidence_pct)
         classification_statement = (
