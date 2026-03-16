@@ -427,7 +427,7 @@ class PDFReportService:
             firstLineIndent=0,
             alignment=0,
             spaceBefore=6,
-            spaceAfter=2,
+            spaceAfter=1,
         )
         styles["SectionHeaderTight"] = ParagraphStyle(
             name="SectionHeaderTight",
@@ -438,7 +438,7 @@ class PDFReportService:
             firstLineIndent=0,
             alignment=0,
             spaceBefore=6,
-            spaceAfter=2,
+            spaceAfter=1,
         )
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
@@ -449,7 +449,7 @@ class PDFReportService:
             firstLineIndent=0,
             alignment=0,
             spaceBefore=2,
-            spaceAfter=2,
+            spaceAfter=1,
         )
         styles["SubSubHeader"] = ParagraphStyle(
             name="SubSubHeader",
@@ -497,6 +497,15 @@ class PDFReportService:
             leading=7,
             spaceAfter=2,
         )
+        styles["CenteredBody"] = ParagraphStyle(
+            name="CenteredBody",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            alignment=1,
+            spaceAfter=2,
+        )
         styles["IndentedBody"] = ParagraphStyle(
             name="IndentedBody",
             fontName="Helvetica",
@@ -504,6 +513,15 @@ class PDFReportService:
             textColor=colors.black,
             leftIndent=12,
             leading=7,
+            spaceAfter=2,
+        )
+        styles["FindingsBody"] = ParagraphStyle(
+            name="FindingsBody",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=12,
+            leading=7.5,
             spaceAfter=2,
         )
         styles["ShadedBoxText"] = ParagraphStyle(
@@ -906,7 +924,7 @@ class PDFReportService:
             elements.append(
                 Paragraph(
                     finding["properties"],
-                    self.styles["IndentedBody"],
+                    self.styles["FindingsBody"],
                 )
             )
             elements.append(Spacer(1, 2))
@@ -929,9 +947,9 @@ class PDFReportService:
             f"{model['label']}. {confidence_statement}"
         )
         elements.append(
-            Paragraph(classification_statement, self.styles["IndentedBody"])
+            Paragraph(classification_statement, self.styles["FindingsBody"])
         )
-        elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 3))
         return elements
 
     @staticmethod
@@ -989,19 +1007,20 @@ class PDFReportService:
         signature_line = "________________________"
         clinician_name = report_data.get("clinician_name", "Not recorded")
         clinician_occupation = report_data.get("clinician_occupation", "")
-        clinician_display = (
-            f"{clinician_name}<br/>{clinician_occupation}"
+        clinician_display = clinician_name
+        clinician_role = (
+            clinician_occupation
             if clinician_occupation and clinician_occupation != "Not recorded"
-            else clinician_name
+            else "Clinician"
         )
         rows = [
             [signature_line, signature_line, signature_line],
             [
                 report_data["technician_name"],
-                Paragraph(clinician_display, self.styles["BodyText"]),
+                Paragraph(clinician_display, self.styles["CenteredBody"]),
                 report_data["supervising_physician"],
             ],
-            ["Technician", "Clinician", "Supervising clinician"],
+            ["Technician", clinician_role, "Supervising clinician"],
         ]
         table = Table(rows, colWidths=[doc_width() / 3] * 3)
         table.setStyle(
@@ -1011,8 +1030,13 @@ class PDFReportService:
                     ("FONTNAME", (0, 2), (-1, 2), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 7.5),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("TOPPADDING", (0, 0), (-1, -1), 4),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, 0), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 1),
+                    ("TOPPADDING", (0, 1), (-1, 1), 1),
+                    ("BOTTOMPADDING", (0, 1), (-1, 1), 1),
+                    ("TOPPADDING", (0, 2), (-1, 2), 1),
+                    ("BOTTOMPADDING", (0, 2), (-1, 2), 2),
                 ]
             )
         )
