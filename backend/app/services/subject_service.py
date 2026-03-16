@@ -39,6 +39,8 @@ class SubjectService:
         existing = self.get_subject_by_code(subject_code)
         if existing:
             logger.info(f"Subject {subject_code} already exists with ID {existing['id']}")
+            if date_of_birth and existing.get("date_of_birth") != date_of_birth:
+                self.subjects_repo.update_date_of_birth(existing["id"], date_of_birth)
             return existing['id']
         else:
             logger.info(f"Creating new subject {subject_code}")

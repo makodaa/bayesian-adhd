@@ -41,10 +41,21 @@ class RecordingService:
             **kwargs
         )
 
-    def process_and_store(self, subject_id:int, file: FileStorage,
-                         sleep_hours=None, food_intake=None, caffeinated=None,
-                         medicated=None, medication_intake=None,
-                         artifacts_noted=None, notes=None) -> dict:
+    def process_and_store(
+        self,
+        subject_id: int,
+        file: FileStorage,
+        technician_name=None,
+        sleep_hours=None,
+        coffee_hours_ago=None,
+        drugs_hours_ago=None,
+        meal_hours_ago=None,
+        medication=None,
+        recorded_minutes=None,
+        duration_minutes=None,
+        artifacts_noted=None,
+        notes=None,
+    ) -> dict:
         """Process uploaded EEG file and store results."""
         logger.info(f"Processing and storing recording for subject {subject_id}: {file.filename}")
         
@@ -56,11 +67,14 @@ class RecordingService:
         recording_id = self.recordings_repo.create_recording(
             subject_id=subject_id,
             file_name=file.filename,
+            technician_name=technician_name,
             sleep_hours=sleep_hours,
-            food_intake=food_intake,
-            caffeinated=caffeinated,
-            medicated=medicated,
-            medication_intake=medication_intake,
+            coffee_hours_ago=coffee_hours_ago,
+            drugs_hours_ago=drugs_hours_ago,
+            meal_hours_ago=meal_hours_ago,
+            medication=medication,
+            recorded_minutes=recorded_minutes,
+            duration_minutes=duration_minutes,
             artifacts_noted=artifacts_noted,
             notes=notes
         )

@@ -37,7 +37,8 @@ from .services.input_validation_service import (
     compute_age_from_dob,
     validate_date_of_birth,
     validate_gender,
-    validate_sleep_hours,
+    validate_hours_ago,
+    validate_required_sleep_hours,
     validate_subject_code,
     validate_text_field,
 )
@@ -545,10 +546,12 @@ def predict():
         # occupation = request.form.get("occupation")
 
         sleep_hours_raw = request.form.get("sleep_hours")
-        food_intake = request.form.get("food_intake")
-        caffeinated = request.form.get("caffeinated")
-        medicated = request.form.get("medicated")
-        medication_intake = request.form.get("medication_intake")
+        coffee_hours_ago_raw = request.form.get("coffee_hours_ago")
+        drugs_hours_ago_raw = request.form.get("drugs_hours_ago")
+        meal_hours_ago_raw = request.form.get("meal_hours_ago")
+        medication = request.form.get("medication")
+        technician_name = request.form.get("technician_name")
+        recorded_minutes_raw = request.form.get("recorded_minutes")
         notes = request.form.get("notes")
 
         # Validate required subject data
@@ -558,12 +561,24 @@ def predict():
         gender = validate_gender(gender)
 
         # Validate optional text fields (500-char cap)
-        food_intake = validate_text_field(food_intake, "Food intake")
-        medication_intake = validate_text_field(medication_intake, "Medication details")
+        medication = validate_text_field(medication, "Medication")
+        technician_name = validate_text_field(technician_name, "Technician", max_len=100)
         notes = validate_text_field(notes, "Clinical notes")
 
-        # Validate optional numeric fields
-        sleep_hours_float = validate_sleep_hours(sleep_hours_raw)
+        # Validate required numeric fields
+        sleep_hours_float = validate_required_sleep_hours(sleep_hours_raw)
+        coffee_hours_ago = validate_hours_ago(coffee_hours_ago_raw, "Coffee hours ago")
+        drugs_hours_ago = validate_hours_ago(drugs_hours_ago_raw, "Drugs hours ago")
+        meal_hours_ago = validate_hours_ago(meal_hours_ago_raw, "Meal hours ago")
+
+        recorded_minutes = None
+        if recorded_minutes_raw not in (None, ""):
+            try:
+                recorded_minutes = float(recorded_minutes_raw)
+            except (TypeError, ValueError):
+                raise ValueError("Recorded minutes must be a number.")
+            if recorded_minutes < 0:
+                raise ValueError("Recorded minutes must be at least 0.")
 
         # Use logged-in clinician from session for result creation
         clinician_id = session.get("clinician_id")
@@ -606,11 +621,14 @@ def predict():
         recording_id = recording_service.create_recording(
             subject_id=subject_id,
             file_name=filename,
+            technician_name=technician_name,
             sleep_hours=sleep_hours_float,
-            food_intake=food_intake,
-            caffeinated=caffeinated == "true" if caffeinated else None,
-            medicated=medicated == "true" if medicated else None,
-            medication_intake=medication_intake,
+            coffee_hours_ago=coffee_hours_ago,
+            drugs_hours_ago=drugs_hours_ago,
+            meal_hours_ago=meal_hours_ago,
+            medication=medication,
+            recorded_minutes=recorded_minutes,
+            duration_minutes=recorded_minutes,
             notes=notes,
         )
 

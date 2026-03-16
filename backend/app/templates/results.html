@@ -779,10 +779,29 @@
           ["Age", data.age != null ? String(data.age) + " years" : null],
           ["Gender", data.gender],
           ["File", data.file_name],
+          ["Technician", data.technician_name],
           ["Sleep Hours", data.sleep_hours != null ? String(data.sleep_hours) + " h" : null],
-          ["Caffeinated", data.caffeinated != null ? (data.caffeinated ? "Yes" : "No") : null],
-          ["Medicated", data.medicated != null ? (data.medicated ? "Yes" : "No") : null],
-          ["Medication Details", data.medication_intake],
+          [
+            "Coffee (hours ago)",
+            data.coffee_hours_ago != null ? String(data.coffee_hours_ago) : null,
+          ],
+          [
+            "Drugs (hours ago)",
+            data.drugs_hours_ago != null ? String(data.drugs_hours_ago) : null,
+          ],
+          [
+            "Meal (hours ago)",
+            data.meal_hours_ago != null ? String(data.meal_hours_ago) : null,
+          ],
+          ["Medication", data.medication],
+          [
+            "Recorded Minutes",
+            data.recorded_minutes != null ? String(data.recorded_minutes) : null,
+          ],
+          [
+            "Duration Minutes",
+            data.duration_minutes != null ? String(data.duration_minutes) : null,
+          ],
           ["Notes", data.notes],
         ].filter(([, v]) => v != null && v !== "");
 
@@ -875,19 +894,26 @@
         // Notes & disclaimers section
         const disclaimers = [];
         const sleepNum = data.sleep_hours != null ? Number(data.sleep_hours) : null;
+        const coffeeNum = data.coffee_hours_ago != null ? Number(data.coffee_hours_ago) : null;
+        const drugsNum = data.drugs_hours_ago != null ? Number(data.drugs_hours_ago) : null;
         if (sleepNum !== null && !isNaN(sleepNum) && sleepNum < 4) {
           disclaimers.push(
             "Subject has less than 4 hours of sleep, which may affect EEG recordings and results.",
           );
         }
-        if (data.caffeinated === true) {
+        if (coffeeNum !== null && !isNaN(coffeeNum) && coffeeNum < 6) {
           disclaimers.push(
-            "Subject had recent caffeine intake, which can alter EEG recordings and may affect analysis.",
+            "Subject reported coffee intake within the last 6 hours, which can alter EEG recordings and may affect analysis.",
           );
         }
-        if (data.medicated === true) {
+        if (drugsNum !== null && !isNaN(drugsNum) && drugsNum < 6) {
           disclaimers.push(
-            "Subject is medicated, which can impact EEG recordings and may affect analysis.",
+            "Subject reported drug intake within the last 6 hours, which can impact EEG recordings and may affect analysis.",
+          );
+        }
+        if (data.medication && String(data.medication).trim()) {
+          disclaimers.push(
+            "Medication was reported and may affect EEG-derived features and interpretation.",
           );
         }
 
