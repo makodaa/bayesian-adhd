@@ -330,22 +330,22 @@ def build_shaded_content_box(
     content_width: float,
     bold: bool = False,
     style_key: str | None = None,
+    min_height: float | None = None,
 ) -> Table:
     resolved_key = style_key or ("ShadedBoxBold" if bold else "ShadedBoxText")
     inner = [Paragraph(text, styles[resolved_key])]
     table = Table([[inner]], colWidths=[content_width])
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f0f0")),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdbdbd")),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ]
-        )
-    )
+    style_rules = [
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f0f0")),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdbdbd")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]
+    if min_height:
+        style_rules.append(("MINROWHEIGHT", (0, 0), (-1, -1), min_height))
+    table.setStyle(TableStyle(style_rules))
     return table
 
 
@@ -497,6 +497,15 @@ class PDFReportService:
             leading=7,
             spaceAfter=2,
         )
+        styles["BodyTextRight"] = ParagraphStyle(
+            name="BodyTextRight",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            alignment=2,
+            spaceAfter=2,
+        )
         styles["CenteredBody"] = ParagraphStyle(
             name="CenteredBody",
             fontName="Helvetica",
@@ -601,7 +610,7 @@ class PDFReportService:
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
         story.extend(self._build_model_classification(report_data))
-        story.append(Spacer(1, 1))
+        story.append(Spacer(1, 3))
         story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
         story.append(Spacer(1, 6))
         story.extend(self._build_signature_block(report_data))
@@ -751,12 +760,14 @@ class PDFReportService:
                 img = Image(logo, width=iw * scale, height=ih * scale)
                 center_block = [img]
             except Exception:
-                center_block = [Paragraph("HOSPITAL LOGO", self.styles["LogoPlaceholder"])]
+                center_block = [Spacer(1, 40)]
         else:
-            center_block = [Paragraph("HOSPITAL LOGO", self.styles["LogoPlaceholder"])]
+            center_block = [Spacer(1, 40)]
 
         right_block = [
-            Paragraph(f"Date: {report_data['report_date']}", self.styles["BodyText"])
+            Paragraph(
+                f"Date: {report_data['report_date']}", self.styles["BodyTextRight"]
+            )
         ]
 
         table = Table(
@@ -767,6 +778,7 @@ class PDFReportService:
             TableStyle(
                 [
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("ALIGN", (2, 0), (2, 0), "RIGHT"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                     ("TOPPADDING", (0, 0), (-1, -1), 0),
@@ -793,7 +805,7 @@ class PDFReportService:
             referral_lines.append(Paragraph(_display(line), self.styles["BodyText"]))
 
         patient_lines = [
-            Paragraph("PATIENT - PERSONAL INFORMATION", self.styles["SectionHeader"]),
+            Paragraph("SUBJECT INFORMATION", self.styles["SectionHeader"]),
             Paragraph(
                 f"Subject Code: {_display(report_data['patient_id'])}",
                 self.styles["BodyText"],
@@ -819,6 +831,7 @@ class PDFReportService:
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("LEFTPADDING", (1, 0), (1, 0), 6),
                     ("TOPPADDING", (0, 0), (-1, -1), 2),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                     ("LINEBEFORE", (1, 0), (1, 0), 0.5, colors.black),
@@ -979,7 +992,10 @@ class PDFReportService:
             Spacer(1, 6),
             Paragraph("CLINICAL COMMENTS", self.styles["SectionHeader"]),
             build_shaded_content_box(
-                report_data["clinical_comments"], self.styles, width / 2 - 6
+                report_data["clinical_comments"],
+                self.styles,
+                width / 2 - 6,
+                min_height=26,
             ),
         ]
 
