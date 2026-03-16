@@ -368,9 +368,9 @@ def _confidence_bar(confidence: float, width: float) -> Drawing:
     return drawing
 
 
-def make_footer_canvas(footer_text: str):
+def make_footer_canvas(footer_fields: list[str]):
     class FooterCanvas(rl_canvas.Canvas):
-        _footer_text = footer_text
+        _footer_fields = footer_fields
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -392,8 +392,25 @@ def make_footer_canvas(footer_text: str):
             self.saveState()
             self.setFont("Helvetica", 7)
             self.setFillColor(colors.HexColor("#555555"))
-            text = f"{self._footer_text}  |  Page {page_num} / {total}"
-            self.drawString(18 * mm, 3, text)
+            margin = 18 * mm
+            page_width = A4[0]
+            fields = list(self._footer_fields)
+            fields.append(f"Page {page_num} / {total}")
+            slots = len(fields)
+            if slots == 0:
+                self.restoreState()
+                return
+            slot_w = (page_width - (2 * margin)) / slots
+            for idx, field in enumerate(fields):
+                x_start = margin + (idx * slot_w)
+                x_mid = x_start + (slot_w / 2)
+                x_end = x_start + slot_w
+                if idx == 0:
+                    self.drawString(x_start, 3, field)
+                elif idx == slots - 1:
+                    self.drawRightString(x_end, 3, field)
+                else:
+                    self.drawCentredString(x_mid, 3, field)
             self.restoreState()
 
     return FooterCanvas
@@ -440,7 +457,7 @@ class PDFReportService:
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -451,7 +468,7 @@ class PDFReportService:
         styles["SubSubHeader"] = ParagraphStyle(
             name="SubSubHeader",
             fontName="Helvetica-BoldOblique",
-            fontSize=7,
+            fontSize=8,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -459,7 +476,7 @@ class PDFReportService:
         styles["DetailLabel"] = ParagraphStyle(
             name="DetailLabel",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -470,7 +487,7 @@ class PDFReportService:
         styles["DetailLabelTight"] = ParagraphStyle(
             name="DetailLabelTight",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=-6,
             firstLineIndent=0,
@@ -481,7 +498,7 @@ class PDFReportService:
         styles["SubSubHeaderItalic"] = ParagraphStyle(
             name="SubSubHeaderItalic",
             fontName="Helvetica-Oblique",
-            fontSize=7,
+            fontSize=8,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -489,7 +506,7 @@ class PDFReportService:
         styles["BodyText"] = ParagraphStyle(
             name="BodyText",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -497,7 +514,7 @@ class PDFReportService:
         styles["BodyTextRight"] = ParagraphStyle(
             name="BodyTextRight",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leading=7,
             alignment=2,
@@ -506,7 +523,7 @@ class PDFReportService:
         styles["CenteredBody"] = ParagraphStyle(
             name="CenteredBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leading=7,
             alignment=1,
@@ -515,7 +532,7 @@ class PDFReportService:
         styles["IndentedBody"] = ParagraphStyle(
             name="IndentedBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=12,
             leading=7,
@@ -524,16 +541,16 @@ class PDFReportService:
         styles["FindingsBody"] = ParagraphStyle(
             name="FindingsBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=12,
-            leading=7.5,
+            leading=8,
             spaceAfter=2,
         )
         styles["ShadedBoxText"] = ParagraphStyle(
             name="ShadedBoxText",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -541,7 +558,7 @@ class PDFReportService:
         styles["ShadedBoxBold"] = ParagraphStyle(
             name="ShadedBoxBold",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -549,7 +566,7 @@ class PDFReportService:
         styles["NarrativeLabel"] = ParagraphStyle(
             name="NarrativeLabel",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.HexColor("#1a3a5c"),
             spaceAfter=2,
         )
@@ -563,7 +580,7 @@ class PDFReportService:
         styles["DisclaimerBody"] = ParagraphStyle(
             name="DisclaimerBody",
             fontName="Helvetica-Oblique",
-            fontSize=7,
+            fontSize=8,
             textColor=colors.HexColor("#e67e22"),
             leading=7,
             spaceAfter=2,
@@ -610,8 +627,8 @@ class PDFReportService:
         story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
         story.extend(self._build_signature_block(report_data))
 
-        footer_text = report_data["footer_text"]
-        doc.multiBuild(story, canvasmaker=make_footer_canvas(footer_text))
+        footer_fields = report_data["footer_fields"]
+        doc.multiBuild(story, canvasmaker=make_footer_canvas(footer_fields))
 
         pdf_content = buffer.getvalue()
         buffer.close()
@@ -683,10 +700,11 @@ class PDFReportService:
         )
         clinical_comments = _display(result_data.get("notes"), "Not recorded")
 
-        footer_text = (
-            f"Subject Code: {subject_code}  |  Recording ID: {recording_id}  |  "
-            f"{report_date}"
-        )
+        footer_fields = [
+            f"Subject Code: {subject_code}",
+            f"Recording ID: {recording_id}",
+            report_date,
+        ]
 
         return {
             "unit_name": "EEG Assessment Unit",
@@ -734,7 +752,7 @@ class PDFReportService:
             "clinician_name": clinician_name or "Not recorded",
             "clinician_occupation": clinician_occupation,
             "supervising_physician": "Not recorded",
-            "footer_text": footer_text,
+            "footer_fields": footer_fields,
         }
 
     def _build_header(self, report_data: dict) -> list:
@@ -972,7 +990,7 @@ class PDFReportService:
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
         left_column = [
-            Spacer(1, 4),
+            Spacer(1, 6),
             Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
@@ -993,14 +1011,14 @@ class PDFReportService:
                 width / 2 - 6,
                 min_height=26,
             ),
-            Spacer(1, 4),
+            Spacer(1, 6),
         ]
 
         right_column = [
-            Spacer(1, 4),
+            Spacer(1, 6),
             Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
             build_disclaimer_box(self.styles, width / 2 - 6),
-            Spacer(1, 4),
+            Spacer(1, 6),
         ]
 
         table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
