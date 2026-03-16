@@ -575,7 +575,11 @@ class PDFReportService:
             "patient_id": subject_code,
             "patient_address": None,
             "patient_dob": _format_date(result_data.get("date_of_birth")),
-            "patient_age_at_study": _display(result_data.get("age")),
+            "patient_age_at_study": (
+                f"{result_data.get('age')} years"
+                if result_data.get("age") is not None
+                else "Not recorded"
+            ),
             "gender": _display(result_data.get("gender")),
             "study_id": result_id,
             "local_study_id": recording_id,
