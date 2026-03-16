@@ -92,8 +92,8 @@ def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
     return 0.0
 
 
-def generate_band_findings(band_power: dict[str, float]) -> list[str]:
-    findings: list[str] = []
+def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
     alpha = band_power.get("alpha", 0.0)
     beta = band_power.get("beta", 0.0)
     theta = band_power.get("theta", 0.0)
@@ -114,7 +114,12 @@ def generate_band_findings(band_power: dict[str, float]) -> list[str]:
     else:
         label = f"Alpha activity within normal limits ({alpha:.2f}%)"
         note = "Posterior alpha rhythm is appropriate for age and vigilance state."
-    findings.append(f"Alpha (8-13 Hz): {label}. {note}")
+    findings.append(
+        {
+            "label": "Alpha (8-13 Hz)",
+            "properties": f"{label}. {note}",
+        }
+    )
 
     if beta > 20:
         label = f"Increased Beta activity ({beta:.2f}%)"
@@ -131,7 +136,12 @@ def generate_band_findings(band_power: dict[str, float]) -> list[str]:
     else:
         label = f"Beta activity within normal limits ({beta:.2f}%)"
         note = "Fast cortical rhythms are within expected range."
-    findings.append(f"Beta (13-30 Hz): {label}. {note}")
+    findings.append(
+        {
+            "label": "Beta (13-30 Hz)",
+            "properties": f"{label}. {note}",
+        }
+    )
 
     if theta > 8:
         label = f"Increased Theta activity ({theta:.2f}%)"
@@ -145,7 +155,12 @@ def generate_band_findings(band_power: dict[str, float]) -> list[str]:
     else:
         label = f"Theta activity within normal limits ({theta:.2f}%)"
         note = "Theta distribution is appropriate."
-    findings.append(f"Theta (4-8 Hz): {label}. {note}")
+    findings.append(
+        {
+            "label": "Theta (4-8 Hz)",
+            "properties": f"{label}. {note}",
+        }
+    )
 
     if tbr > 3.0:
         tbr_label = f"Elevated Theta/Beta Ratio ({tbr:.2f})"
@@ -159,7 +174,12 @@ def generate_band_findings(band_power: dict[str, float]) -> list[str]:
     else:
         tbr_label = f"Theta/Beta Ratio within normal limits ({tbr:.2f})"
         tbr_note = "Theta/Beta ratio does not indicate excessive slow-wave dominance."
-    findings.append(f"Theta/Beta Ratio: {tbr_label}. {tbr_note}")
+    findings.append(
+        {
+            "label": "Theta/Beta Ratio",
+            "properties": f"{tbr_label}. {tbr_note}",
+        }
+    )
 
     ab = alpha + beta
     if ab > 25:
@@ -174,7 +194,12 @@ def generate_band_findings(band_power: dict[str, float]) -> list[str]:
             "Cortical arousal markedly reduced; dominant slow-wave activity suggests "
             "hypo-arousal or pronounced inattentive state."
         )
-    findings.append(f"Cortical Arousal: {arousal} (Combined Alpha+Beta: {ab:.2f}%)")
+    findings.append(
+        {
+            "label": "Cortical Arousal",
+            "properties": f"{arousal} (Combined Alpha+Beta: {ab:.2f}%)",
+        }
+    )
 
     return findings
 
@@ -426,20 +451,6 @@ class PDFReportService:
             fontSize=7,
             textColor=colors.HexColor("#e67e22"),
             leading=9,
-            spaceAfter=2,
-        )
-        styles["ClassificationLabel"] = ParagraphStyle(
-            name="ClassificationLabel",
-            fontName="Helvetica-Bold",
-            fontSize=9,
-            textColor=colors.HexColor("#1a3a5c"),
-            spaceAfter=2,
-        )
-        styles["ClassificationValue"] = ParagraphStyle(
-            name="ClassificationValue",
-            fontName="Helvetica-Bold",
-            fontSize=10,
-            textColor=colors.HexColor("#0d2b00"),
             spaceAfter=2,
         )
         styles["LogoPlaceholder"] = ParagraphStyle(
@@ -777,10 +788,17 @@ class PDFReportService:
         elements.append(self._build_band_power_table(report_data["band_power"]))
         elements.append(Spacer(1, 6))
 
-        elements.append(Paragraph("Spectral Findings", self.styles["SubSubHeader"]))
+        elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
         for finding in generate_band_findings(report_data["band_power"]):
-            elements.append(Paragraph(finding, self.styles["BodyText"]))
-        elements.append(Spacer(1, 6))
+            elements.append(Paragraph(finding["label"], self.styles["SubSubHeader"]))
+            elements.append(
+                Paragraph(
+                    f"Properties: {finding['properties']}",
+                    self.styles["IndentedBody"],
+                )
+            )
+            elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 2))
 
         return elements
 
@@ -824,34 +842,44 @@ class PDFReportService:
         confidence_pct = confidence * 100
 
         elements: list = []
-        elements.append(Paragraph("Model Classification", self.styles["SubHeader"]))
-        elements.append(
-            Paragraph(
-                f"<b>Classification:</b> {model['label']}", self.styles["BodyText"]
-            )
-        )
-        elements.append(
-            Paragraph(
-                f"<b>Confidence:</b> {confidence_pct:.1f}%", self.styles["BodyText"]
-            )
-        )
-        elements.append(
-            Paragraph(
-                f"<b>Theta/Beta Ratio:</b> {model['theta_beta_ratio']:.2f}",
-                self.styles["BodyText"],
-            )
-        )
-        elements.append(
-            Paragraph(
-                f"<b>Model Version:</b> {model['model_version']}",
-                self.styles["BodyText"],
-            )
-        )
-        if model.get("notes"):
-            elements.append(Paragraph("Notes:", self.styles["SubSubHeader"]))
-            elements.append(Paragraph(model["notes"], self.styles["IndentedBody"]))
+        elements.append(Paragraph("Model Classification", self.styles["SectionHeader"]))
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.black))
         elements.append(Spacer(1, 4))
+
+        confidence_statement = self._format_confidence_statement(confidence, confidence_pct)
+
+        elements.append(Paragraph("Classification", self.styles["SubSubHeader"]))
+        elements.append(Paragraph(model["label"], self.styles["IndentedBody"]))
+        elements.append(Spacer(1, 4))
+
+        elements.append(Paragraph("Confidence", self.styles["SubSubHeader"]))
+        elements.append(Paragraph(confidence_statement, self.styles["IndentedBody"]))
+        elements.append(Spacer(1, 4))
+
+        elements.append(Paragraph("Theta/Beta Ratio", self.styles["SubSubHeader"]))
+        elements.append(
+            Paragraph(f"{model['theta_beta_ratio']:.2f}", self.styles["IndentedBody"])
+        )
+        elements.append(Spacer(1, 4))
+
+        elements.append(Paragraph("Model Version", self.styles["SubSubHeader"]))
+        elements.append(Paragraph(model["model_version"], self.styles["IndentedBody"]))
+        if model.get("notes"):
+            elements.append(Spacer(1, 4))
+            elements.append(Paragraph("Notes", self.styles["SubSubHeader"]))
+            elements.append(Paragraph(model["notes"], self.styles["IndentedBody"]))
+        elements.append(Spacer(1, 6))
         return elements
+
+    @staticmethod
+    def _format_confidence_statement(confidence: float, confidence_pct: float) -> str:
+        if confidence >= 0.8:
+            tier = "High confidence"
+        elif confidence >= 0.6:
+            tier = "Moderate confidence"
+        else:
+            tier = "Low confidence"
+        return f"{tier} ({confidence_pct:.1f}%)."
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
         left_column = [
