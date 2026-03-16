@@ -306,6 +306,30 @@
           .replace(/'/g, "&#39;");
       }
 
+      function parseIsoDate(value) {
+        if (!value) return null;
+        const parts = String(value).split("-");
+        if (parts.length !== 3) return null;
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+          return null;
+        }
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+          return null;
+        }
+        return { year, month, day };
+      }
+
+      function formatDateMMDDYYYY(value, fallback = "N/A") {
+        const parts = parseIsoDate(value);
+        if (!parts) return fallback;
+        const mm = String(parts.month).padStart(2, "0");
+        const dd = String(parts.day).padStart(2, "0");
+        return `${mm}/${dd}/${parts.year}`;
+      }
+
       function showToast(message, variant = "error") {
         const container = byId("toast-container");
         if (!container) return;
@@ -751,6 +775,7 @@
         // Subject & Recording section
         const subjectItems = [
           ["Subject Code", data.subject_code],
+          ["Date of Birth", formatDateMMDDYYYY(data.date_of_birth, "N/A")],
           ["Age", data.age != null ? String(data.age) + " years" : null],
           ["Gender", data.gender],
           ["File", data.file_name],
