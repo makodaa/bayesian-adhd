@@ -50,6 +50,7 @@ CREATE TABLE results (
     clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
     confidence_score FLOAT NOT NULL CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
+    preprocessing_summary JSONB,
     inferenced_at TIMESTAMP DEFAULT NOW()
 );
 
