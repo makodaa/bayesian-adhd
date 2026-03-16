@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Generator, Literal
 
 import mne
@@ -190,15 +191,18 @@ class EEGService:
 
         return rel_powers
 
-    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict, list[dict]]:
+    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict, list[dict], dict]:
         """Classify EEG data for ADHD probability.
 
         Returns:
-            (classification, confidence, band_data, window_predictions)
+            (classification, confidence, band_data, window_predictions, preprocessing_summary)
             where window_predictions is a list of dicts with per-window results.
         """
         logger.info(f"Starting EEG classification on {len(df)} samples")
         logger.info(f"DataFrame columns: {df.columns.tolist()}")
+
+        raw_row_count = len(df)
+        raw_column_count = len(df.columns)
 
         # Check if columns are numeric (0-18 or 1-19) and rename them to electrode names
         if list(df.columns) == [str(i) for i in range(19)]:
@@ -240,6 +244,8 @@ class EEGService:
         df = df[ELECTRODE_CHANNELS]
         df = self.apply_filter(df, 0.5, 30)
         df = self.apply_ica_cleaning_to_dataset(df)
+
+        cleaned_row_count = len(df)
 
         n_samples = len(df)
 
@@ -321,6 +327,13 @@ class EEGService:
         )
         full_ndarray = full_ndarray[..., np.newaxis]
 
+        preprocessing_summary = self._build_preprocessing_summary(
+            raw_row_count=raw_row_count,
+            cleaned_row_count=cleaned_row_count,
+            feature_count=numeric_df.shape[1],
+            raw_column_count=raw_column_count,
+        )
+
         logger.info("Running model inference")
         with torch.no_grad():
             tensor = torch.tensor(full_ndarray, dtype=torch.float32).permute(0, 3, 1, 2)
@@ -379,14 +392,16 @@ class EEGService:
             logger.info(
                 f"Classification result: {overall_name} with {conf * 100:.2f}% confidence"
             )
-            return overall_name, conf, band_data, window_predictions
+            return overall_name, conf, band_data, window_predictions, preprocessing_summary
 
     def classify_and_save(
         self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
     ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
-        classification, confidence, band_data, window_predictions = self.classify(df)
+        classification, confidence, band_data, window_predictions, preprocessing_summary = (
+            self.classify(df)
+        )
 
         logger.info(
             f"Saving classification result to database: {classification} ({confidence * 100:.2f}%)"
@@ -396,6 +411,7 @@ class EEGService:
             classification=classification,
             confidence_score=confidence,
             clinician_id=clinician_id,
+            preprocessing_summary=preprocessing_summary,
         )
 
         logger.info(
@@ -408,4 +424,30 @@ class EEGService:
             "confidence_score": confidence,
             "clinician_id": clinician_id,
             "window_predictions": window_predictions,
+            "preprocessing_summary": preprocessing_summary,
+        }
+
+    @staticmethod
+    def _build_preprocessing_summary(
+        raw_row_count: int,
+        cleaned_row_count: int,
+        feature_count: int,
+        raw_column_count: int,
+    ) -> dict[str, float | int | str]:
+        removed = max(raw_row_count - cleaned_row_count, 0)
+        usable_pct = (
+            (cleaned_row_count / raw_row_count) * 100
+            if raw_row_count > 0
+            else 0.0
+        )
+        missing_fields = max(19 - raw_column_count, 0)
+        run_id = datetime.utcnow().strftime("prep-%Y%m%d%H%M%S")
+        return {
+            "files_received": 1,
+            "records_accepted": cleaned_row_count,
+            "rows_removed": removed,
+            "missing_fields": missing_fields,
+            "usable_data_pct": round(usable_pct, 1),
+            "feature_count": feature_count,
+            "run_id": run_id,
         }
