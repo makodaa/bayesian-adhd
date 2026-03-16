@@ -9,6 +9,7 @@ both route handlers and service methods.
 from __future__ import annotations
 
 import re
+from datetime import date
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -81,6 +82,35 @@ def validate_gender(value: str | None) -> str:
             f"Gender must be one of: {', '.join(VALID_GENDERS)}."
         )
     return stripped
+
+
+def validate_date_of_birth(value: str | None) -> date:
+    """Validate an ISO date-of-birth string.
+
+    Expected format: YYYY-MM-DD.
+    Raises ``ValueError`` if missing, invalid, or in the future.
+    """
+    if not value:
+        raise ValueError("Date of birth is required.")
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("Date of birth is required.")
+    try:
+        parsed = date.fromisoformat(stripped)
+    except ValueError as exc:
+        raise ValueError("Date of birth must be in YYYY-MM-DD format.") from exc
+    if parsed > date.today():
+        raise ValueError("Date of birth cannot be in the future.")
+    return parsed
+
+
+def compute_age_from_dob(dob: date, reference_date: date | None = None) -> int:
+    """Compute age in years from DOB and a reference date."""
+    ref = reference_date or date.today()
+    years = ref.year - dob.year
+    if (ref.month, ref.day) < (dob.month, dob.day):
+        years -= 1
+    return max(years, 0)
 
 
 def validate_sleep_hours(value: str | float | None) -> float | None:
