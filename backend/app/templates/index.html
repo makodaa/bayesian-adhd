@@ -779,13 +779,10 @@
                   <p class="hint">Select an existing subject code or enter a new one.</p>
                 </div>
                 <div class="field-wrap">
-                  <label for="age">Age</label>
+                  <label for="date-of-birth">Date of Birth</label>
                   <input
-                    type="number"
-                    id="age"
-                    min="1"
-                    max="120"
-                    placeholder="Age in years"
+                    type="date"
+                    id="date-of-birth"
                     required
                   />
                 </div>
@@ -1279,13 +1276,50 @@
         return String(value).trim();
       }
 
+      function parseIsoDate(value) {
+        if (!value) return null;
+        const parts = String(value).split("-");
+        if (parts.length !== 3) return null;
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+          return null;
+        }
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+          return null;
+        }
+        return { year, month, day };
+      }
+
+      function formatDateMMDDYYYY(value, fallback = "Not provided") {
+        const parts = parseIsoDate(value);
+        if (!parts) return fallback;
+        const mm = String(parts.month).padStart(2, "0");
+        const dd = String(parts.day).padStart(2, "0");
+        return `${mm}/${dd}/${parts.year}`;
+      }
+
+      function computeAgeFromDob(value, referenceDate = new Date()) {
+        const parts = parseIsoDate(value);
+        if (!parts) return null;
+        const refYear = referenceDate.getFullYear();
+        const refMonth = referenceDate.getMonth() + 1;
+        const refDay = referenceDate.getDate();
+        let years = refYear - parts.year;
+        if (refMonth < parts.month || (refMonth === parts.month && refDay < parts.day)) {
+          years -= 1;
+        }
+        return years < 0 ? 0 : years;
+      }
+
       function isContextAlignedWithLatest(context) {
         const latest = appState.latestAssessmentContext;
         if (!context || !latest) return false;
 
         const trackedFields = [
           "subjectCode",
-          "age",
+          "dateOfBirth",
           "gender",
           "sleepHours",
           "foodIntake",
@@ -1325,7 +1359,13 @@
 
         const items = [
           ["Subject Code", formatContextValue(context.subjectCode, "-")],
-          ["Age", formatContextValue(context.age, "-")],
+          ["Date of Birth", formatDateMMDDYYYY(context.dateOfBirth, "-")],
+          [
+            "Age",
+            computeAgeFromDob(context.dateOfBirth) !== null
+              ? `${computeAgeFromDob(context.dateOfBirth)} years`
+              : "-",
+          ],
           ["Gender", formatContextValue(context.gender, "-")],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           ["Food Intake", formatContextValue(context.foodIntake)],
@@ -1362,7 +1402,7 @@
 
         const fields = [
           byId("subject-code")?.value,
-          byId("age")?.value,
+          byId("date-of-birth")?.value,
           byId("gender")?.value,
           byId("sleep-hours")?.value,
           byId("food-intake")?.value,
@@ -1412,7 +1452,7 @@
 
         return {
           subjectCode: byId("subject-code").value.trim(),
-          age: byId("age").value,
+          dateOfBirth: byId("date-of-birth").value,
           gender: byId("gender").value,
           sleepHours: byId("sleep-hours").value,
           foodIntake: byId("food-intake").value.trim(),
@@ -1432,7 +1472,13 @@
 
         const rows = [
           ["Subject Code", context.subjectCode || "-"],
-          ["Age", context.age || "-"],
+          ["Date of Birth", formatDateMMDDYYYY(context.dateOfBirth, "-")],
+          [
+            "Age",
+            computeAgeFromDob(context.dateOfBirth) !== null
+              ? `${computeAgeFromDob(context.dateOfBirth)} years`
+              : "-",
+          ],
           ["Gender", context.gender || "-"],
           ["Sleep Hours", context.sleepHours || "Not provided"],
           ["Food Intake", context.foodIntake || "Not provided"],
@@ -1503,19 +1549,30 @@
 
       function validateStepOne() {
         const subjectCode = byId("subject-code");
-        const age = byId("age");
+        const dateOfBirth = byId("date-of-birth");
         const gender = byId("gender");
         const error = byId("step-1-error");
 
         const subjectValid = Boolean(subjectCode && subjectCode.value.trim());
-        const ageValue = age ? Number(age.value) : NaN;
-        const ageValid = Number.isFinite(ageValue) && ageValue >= 1 && ageValue <= 120;
+        const dobValue = dateOfBirth ? dateOfBirth.value : "";
+        const dobParsed = parseIsoDate(dobValue);
+        const dobValid = Boolean(dobParsed);
         const genderValid = Boolean(gender && gender.value);
 
-        if (!subjectValid || !ageValid || !genderValid) {
-          error.textContent = "Enter subject code, age, and gender to continue.";
+        if (!subjectValid || !dobValid || !genderValid) {
+          error.textContent = "Enter subject code, date of birth, and gender to continue.";
           error.classList.remove("hidden");
           return false;
+        }
+
+        const today = new Date();
+        if (dobParsed) {
+          const dobDate = new Date(dobParsed.year, dobParsed.month - 1, dobParsed.day);
+          if (dobDate > today) {
+            error.textContent = "Date of birth cannot be in the future.";
+            error.classList.remove("hidden");
+            return false;
+          }
         }
 
         error.classList.add("hidden");
@@ -1788,10 +1845,7 @@
         // Each notice: { severity: "high"|"moderate", message: string }
         const notices = [];
         const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
-        const age =
-          context.age !== "" && context.age !== null && context.age !== undefined
-            ? Number(context.age)
-            : null;
+        const age = computeAgeFromDob(context.dateOfBirth);
 
         // Confidence < 60% — High
         if ((Number(confidenceScore) || 0) < 0.6) {
@@ -2488,7 +2542,7 @@
         const formData = new FormData();
         formData.append("file", appState.file);
         formData.append("subject_code", context.subjectCode);
-        formData.append("age", context.age);
+        formData.append("date_of_birth", context.dateOfBirth);
         formData.append("gender", context.gender);
         formData.append("clinician_name", context.clinicianName || "");
         formData.append("occupation", context.occupation || "");
@@ -2649,6 +2703,7 @@
             if (!subject || !subject.subject_code) return;
             appState.subjectLookup.set(subject.subject_code, {
               age: subject.age,
+              dateOfBirth: subject.date_of_birth,
               gender: subject.gender,
             });
             const option = document.createElement("option");
@@ -2707,21 +2762,21 @@
         subjectInput.addEventListener("input", () => {
           const selectedCode = subjectInput.value;
           const details = appState.subjectLookup.get(selectedCode);
-          const age = byId("age");
+          const dateOfBirth = byId("date-of-birth");
           const gender = byId("gender");
-          if (!age || !gender) return;
+          if (!dateOfBirth || !gender) return;
 
           if (details) {
-            if (details.age !== null && details.age !== undefined) {
-              age.value = details.age;
-              age.readOnly = true;
+            if (details.dateOfBirth) {
+              dateOfBirth.value = details.dateOfBirth;
+              dateOfBirth.readOnly = true;
             }
             if (details.gender) {
               gender.value = details.gender;
               gender.disabled = true;
             }
           } else {
-            age.readOnly = false;
+            dateOfBirth.readOnly = false;
             gender.disabled = false;
           }
 
@@ -2890,7 +2945,7 @@
 
         [
           "subject-code",
-          "age",
+          "date-of-birth",
           "gender",
           "sleep-hours",
           "food-intake",

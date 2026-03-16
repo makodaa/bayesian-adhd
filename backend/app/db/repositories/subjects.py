@@ -4,18 +4,23 @@ from ...core.logging_config import get_db_logger
 logger = get_db_logger(__name__)
 
 class SubjectsRepository(BaseRepository):
-    def create_subject(self, subject_code, age, sex):
+    def create_subject(self, subject_code, age, sex, date_of_birth=None):
         """Create a new subject and return its ID."""
-        logger.info(f"Creating subject: code={subject_code}, age={age}, sex={sex}")
+        logger.info(
+            "Creating subject: code=%s, age=%s, sex=%s",
+            subject_code,
+            age,
+            sex,
+        )
         query = """
-        INSERT INTO subjects(subject_code, age, gender)
-        VALUES (%s, %s, %s)
+        INSERT INTO subjects(subject_code, age, date_of_birth, gender)
+        VALUES (%s, %s, %s, %s)
         RETURNING id;
         """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, (subject_code, age, sex))
+                cursor.execute(query, (subject_code, age, date_of_birth, sex))
                 subject_id = cursor.fetchone()[0]
                 logger.info(f"Subject created successfully with ID: {subject_id}")
                 return subject_id
@@ -67,6 +72,7 @@ class SubjectsRepository(BaseRepository):
             s.id,
             s.subject_code,
             s.age,
+            s.date_of_birth,
             s.gender,
             s.created_at,
             r.id as result_id,

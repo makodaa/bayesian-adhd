@@ -1,55 +1,376 @@
 """PDF Report Generation Service for EEG Analysis Results."""
 
+from __future__ import annotations
+
+from datetime import date, datetime
 from io import BytesIO
-from datetime import datetime
+
+from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, mm
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    Image, HRFlowable, PageBreak
+    HRFlowable,
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
 )
-from reportlab.graphics.shapes import Drawing, Rect, String
-from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas as rl_canvas
-from ..core.logging_config import get_app_logger
-from .narrative_service import NarrativeService
+
 from ..config import APP_VERSION
+from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
 
-# Color palette - professional, subdued colors
-COLORS = {
-    'primary': colors.HexColor('#5a6c7d'),
-    'secondary': colors.HexColor('#6c9bd1'),
-    'text': colors.HexColor('#333333'),
-    'light_gray': colors.HexColor('#f5f7fa'),
-    'border': colors.HexColor('#e0e0e0'),
-    'warning': colors.HexColor('#f0ad4e'),
-    'success': colors.HexColor('#5cb85c'),
-}
-
-# Band power colors - muted versions
-BAND_COLORS = {
-    'delta': colors.HexColor('#7B1FA2'),  # Muted purple
-    'theta': colors.HexColor('#1976D2'),  # Muted blue
-    'alpha': colors.HexColor('#388E3C'),  # Muted green
-    'beta': colors.HexColor('#F57C00'),   # Muted orange
-    'gamma': colors.HexColor('#D32F2F'),  # Muted red
+DEFAULT_NORMATIVE_RANGES: dict[str, dict[str, float]] = {
+    # TODO: replace with actual normative percentiles
+    "delta": {"p25": 25.0, "p75": 55.0},
+    "theta": {"p25": 4.0, "p75": 8.0},
+    "alpha": {"p25": 8.0, "p75": 12.0},
+    "beta": {"p25": 10.0, "p75": 20.0},
+    "gamma": {"p25": 1.0, "p75": 5.0},
 }
 
 
-def make_footer_canvas(version: str):
-    """Factory that returns a FooterCanvas subclass configured with the given version string.
+def _format_date(value) -> str:
+    if value is None:
+        return "Not recorded"
+    if isinstance(value, datetime):
+        return value.strftime("%m/%d/%Y")
+    if isinstance(value, date):
+        return value.strftime("%m/%d/%Y")
+    try:
+        parsed = datetime.fromisoformat(str(value))
+        return parsed.strftime("%m/%d/%Y")
+    except ValueError:
+        return str(value)
 
-    ReportLab's multiBuild performs two passes: the first collects page count,
-    the second renders with that count available via self._doc.page.
-    We hook into showPage() to draw the footer on every page.
-    """
+
+def _format_datetime(value) -> str:
+    if value is None:
+        return "Not recorded"
+    if isinstance(value, datetime):
+        return value.strftime("%m/%d/%Y %H:%M")
+    try:
+        parsed = datetime.fromisoformat(str(value))
+        return parsed.strftime("%m/%d/%Y %H:%M")
+    except ValueError:
+        return str(value)
+
+
+def _display(value, fallback: str = "Not recorded") -> str:
+    if value is None:
+        return fallback
+    text = str(value).strip()
+    return text if text else fallback
+
+
+def _clean_percent(value: float | int | None) -> float:
+    if value is None:
+        return 0.0
+    return max(0.0, min(float(value), 100.0))
+
+
+def _map_class_label(predicted_class: str) -> str:
+    label = (predicted_class or "").strip()
+    mapping = {
+        "Inattentive (ADHD-I)": "ADHD - Inattentive Type",
+        "Combined / C (ADHD-C)": "ADHD - Combined Type",
+        "Hyperactive-Impulsive (ADHD-H)": "ADHD - Hyperactive/Impulsive Type",
+        "Not ADHD": "Non-ADHD",
+    }
+    if label in mapping:
+        return mapping[label]
+    if not label:
+        return "Inconclusive"
+    return label
+
+
+def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
+    for ratio in ratios:
+        if ratio.get("ratio_name") == ratio_name:
+            try:
+                return float(ratio.get("ratio_value", 0))
+            except (TypeError, ValueError):
+                return 0.0
+    return 0.0
+
+
+def generate_band_findings(
+    band_power: dict[str, float],
+    normative_ranges: dict[str, dict[str, float]] | None = None,
+) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    alpha = band_power.get("alpha", 0.0)
+    beta = band_power.get("beta", 0.0)
+    theta = band_power.get("theta", 0.0)
+    tbr = theta / beta if beta > 0 else 0.0
+
+    ranges = normative_ranges or DEFAULT_NORMATIVE_RANGES
+
+    def normative_clause(band_key: str, value: float) -> str:
+        band_norms = ranges.get(band_key)
+        if not band_norms:
+            return ""
+        p25 = band_norms.get("p25")
+        p75 = band_norms.get("p75")
+        if p25 is None or p75 is None:
+            return ""
+        if value < p25:
+            state = "Below"
+        elif value > p75:
+            state = "Above"
+        else:
+            state = "Within"
+        return (
+            f"{state} normative {band_key} range of {p25:.1f}-{p75:.1f}%."
+        )
+
+    def combine_clause(note: str, clause: str) -> str:
+        if clause and note:
+            return f"{clause} {note}"
+        return clause or note
+
+    if alpha > 12:
+        label = f"Elevated alpha power ({alpha:.2f}%)."
+        note = (
+            "May reflect enhanced relaxed wakefulness, reduced cognitive engagement, "
+            "or inattentive state consistent with some ADHD presentations."
+        )
+    elif alpha < 8:
+        label = f"Reduced alpha power ({alpha:.2f}%)."
+        note = (
+            "Reduced posterior alpha; may indicate heightened cortical arousal "
+            "or hyperactive/impulsive state."
+        )
+    else:
+        label = f"Alpha power within expected range ({alpha:.2f}%)."
+        note = "Posterior alpha rhythm is appropriate for age and vigilance state."
+    findings.append(
+        {
+            "label": label,
+            "properties": combine_clause(note, normative_clause("alpha", alpha)),
+        }
+    )
+
+    if beta > 20:
+        label = f"Elevated beta power ({beta:.2f}%)."
+        note = (
+            "Elevated fast-wave activity; may reflect heightened cortical arousal, "
+            "anxiety, or stimulant medication effect."
+        )
+    elif beta < 10:
+        label = f"Reduced beta power ({beta:.2f}%)."
+        note = (
+            "Reduced fast-frequency activity; may indicate hypo-arousal or "
+            "inattentive cortical state."
+        )
+    else:
+        label = f"Beta power within expected range ({beta:.2f}%)."
+        note = "Fast cortical rhythms are within expected range."
+    findings.append(
+        {
+            "label": label,
+            "properties": combine_clause(note, normative_clause("beta", beta)),
+        }
+    )
+
+    if theta > 8:
+        label = f"Elevated theta power ({theta:.2f}%)."
+        note = (
+            "Elevated theta is a common EEG correlate observed in ADHD populations; "
+            "diffuse excess theta may indicate cortical under-arousal or inattention."
+        )
+    elif theta < 4:
+        label = f"Reduced theta power ({theta:.2f}%)."
+        note = "Low theta power; consider vigilance state and age norms."
+    else:
+        label = f"Theta power within expected range ({theta:.2f}%)."
+        note = "Theta distribution is appropriate."
+    findings.append(
+        {
+            "label": label,
+            "properties": combine_clause(note, normative_clause("theta", theta)),
+        }
+    )
+
+    ab = alpha + beta
+    if ab > 25:
+        label = f"Cortical arousal pattern present (A+B: {ab:.2f}%)."
+        arousal = "EEG reflects an activated, alert state."
+    elif ab >= 15:
+        label = f"Cortical arousal mildly reduced (A+B: {ab:.2f}%)."
+        arousal = (
+            "Background reflects a transitional or mildly inattentive state."
+        )
+    else:
+        label = f"Cortical arousal markedly reduced (A+B: {ab:.2f}%)."
+        arousal = (
+            "Dominant slow-wave activity suggests hypo-arousal or pronounced "
+            "inattentive state."
+        )
+    findings.append(
+        {
+            "label": label,
+            "properties": arousal,
+        }
+    )
+
+    return findings
+
+
+def build_band_power_block(
+    band_power: dict[str, float],
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+) -> Table:
+    bands = [
+        ("Delta", "0.5-4 Hz", "delta"),
+        ("Theta", "4-8 Hz", "theta"),
+        ("Alpha", "8-13 Hz", "alpha"),
+        ("Beta", "13-30 Hz", "beta"),
+        ("Gamma", "30-100 Hz", "gamma"),
+    ]
+    bar_colors = {
+        "delta": "#111111",
+        "theta": "#444444",
+        "alpha": "#777777",
+        "beta": "#aaaaaa",
+        "gamma": "#cccccc",
+    }
+
+    left_content: list[object] = []
+    for band_name, freq_range, key in bands:
+        val = band_power.get(key, 0.0)
+        inline_text = (
+            f"{band_name} ({freq_range}) "
+            f"<font name=\"Helvetica\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+            f"Properties: {val:.2f}%</font>"
+        )
+        left_content.append(Paragraph(inline_text, styles["SubSubHeader"]))
+        left_content.append(Spacer(1, 1))
+
+    right_w = content_width * 0.55
+    left_w = content_width * 0.45
+    label_w = 32
+    pct_w = 35
+    bar_h = 10
+    bar_spacing = 6
+    chart_w = max(right_w - label_w - pct_w, 60)
+    total_h = len(bands) * (bar_h + bar_spacing)
+    max_val = max(band_power[k] for _, _, k in bands) if band_power else 1
+
+    drawing = Drawing(right_w, total_h)
+    labels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
+    for i, ((_, _, key), label) in enumerate(zip(bands, labels)):
+        val = band_power.get(key, 0.0)
+        bar_w = (val / max_val) * chart_w if max_val > 0 else 0
+        y = total_h - (i + 1) * (bar_h + bar_spacing) + bar_spacing
+
+        drawing.add(
+            String(0, y + 2, label, fontSize=6, fontName="Helvetica")
+        )
+        rect = Rect(label_w, y, bar_w, bar_h)
+        rect.fillColor = colors.HexColor(bar_colors[key])
+        rect.strokeColor = colors.HexColor(bar_colors[key])
+        rect.strokeWidth = 0
+        drawing.add(rect)
+        drawing.add(
+            String(
+                label_w + bar_w + 3,
+                y + 2,
+                f"{val:.1f}%",
+                fontSize=6.5,
+                fontName="Helvetica",
+            )
+        )
+
+    outer = Table([[left_content, drawing]], colWidths=[left_w, right_w])
+    outer.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return outer
+
+
+def build_disclaimer_box(
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+) -> Table:
+    disclaimer_text = (
+        "This report is generated by a computational EEG analysis tool and is intended "
+        "to support - not replace - clinical evaluation. The findings, classifications, "
+        "and comments presented here do not constitute a definitive medical diagnosis. "
+        "All results must be interpreted by a qualified healthcare professional in the "
+        "context of the patient's full clinical history and presentation."
+    )
+    return build_shaded_content_box(
+        disclaimer_text,
+        styles,
+        content_width,
+        style_key="DisclaimerBody",
+    )
+
+
+def build_shaded_content_box(
+    text: str,
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+    bold: bool = False,
+    style_key: str | None = None,
+    min_height: float | None = None,
+) -> Table:
+    resolved_key = style_key or ("ShadedBoxBold" if bold else "ShadedBoxText")
+    inner = [Paragraph(text, styles[resolved_key])]
+    table = Table([[inner]], colWidths=[content_width])
+    style_rules = [
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f0f0")),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdbdbd")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]
+    if min_height:
+        style_rules.append(("MINROWHEIGHT", (0, 0), (-1, -1), min_height))
+    table.setStyle(TableStyle(style_rules))
+    return table
+
+
+def _confidence_bar(confidence: float, width: float) -> Drawing:
+    height = 10
+    track = colors.HexColor("#c8dff5")
+    fill = colors.HexColor("#2a6099")
+    drawing = Drawing(width, height)
+    track_rect = Rect(0, 0, width, height)
+    track_rect.fillColor = track
+    track_rect.strokeColor = track
+    track_rect.strokeWidth = 0
+    drawing.add(track_rect)
+
+    fill_rect = Rect(0, 0, width * confidence, height)
+    fill_rect.fillColor = fill
+    fill_rect.strokeColor = fill
+    fill_rect.strokeWidth = 0
+    drawing.add(fill_rect)
+    return drawing
+
+
+def make_footer_canvas(footer_fields: list[str]):
     class FooterCanvas(rl_canvas.Canvas):
-        _version = version
+        _footer_fields = footer_fields
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -69,1123 +390,689 @@ def make_footer_canvas(version: str):
 
         def _draw_footer(self, page_num: int, total: int):
             self.saveState()
-            self.setFont('Helvetica', 7)
-            self.setFillColor(colors.gray)
-            # Split disclaimer across two lines to avoid overlap
-            self.drawString(
-                18 * mm, 16 * mm,
-                "This report is generated by an automated support tool and does not constitute a clinical diagnosis.",
-            )
-            self.drawString(
-                18 * mm, 11 * mm,
-                "All findings require interpretation by a qualified healthcare professional.",
-            )
-            self.setFont('Helvetica', 8)
-            right_text = f"Page {page_num} of {total} | v{self._version}"
-            self.drawRightString(192 * mm, 11 * mm, right_text)
+            self.setFont("Helvetica", 7)
+            self.setFillColor(colors.HexColor("#555555"))
+            margin = 18 * mm
+            page_width = A4[0]
+            fields = list(self._footer_fields)
+            fields.append(f"Page {page_num} / {total}")
+            slots = len(fields)
+            if slots == 0:
+                self.restoreState()
+                return
+            slot_w = (page_width - (2 * margin)) / slots
+            for idx, field in enumerate(fields):
+                x_start = margin + (idx * slot_w)
+                x_mid = x_start + (slot_w / 2)
+                x_end = x_start + slot_w
+                if idx == 0:
+                    self.drawString(x_start, 3, field)
+                elif idx == slots - 1:
+                    self.drawRightString(x_end, 3, field)
+                else:
+                    self.drawCentredString(x_mid, 3, field)
             self.restoreState()
 
     return FooterCanvas
 
 
 class PDFReportService:
-    """Generate professional clinical PDF reports for EEG analysis results."""
-    
+    """Generate clinical PDF reports for EEG analysis results."""
+
     def __init__(self):
-        self.styles = getSampleStyleSheet()
-        self._setup_custom_styles()
-        self._narrative_service = NarrativeService()
-    
-    def _setup_custom_styles(self):
-        """Setup custom paragraph styles for the report."""
-        # Title style - left aligned for professional look
-        self.styles.add(ParagraphStyle(
-            name='ReportTitle',
-            parent=self.styles['Heading1'],
-            fontSize=18,
-            textColor=colors.black,
-            spaceAfter=2,
-            spaceBefore=0,
-            alignment=0,  # Left align
-            leftIndent=0,
-        ))
-        
-        # Section header style - no left indent to align with text
-        self.styles.add(ParagraphStyle(
-            name='SectionHeader',
-            parent=self.styles['Heading2'],
-            fontSize=12,
-            textColor=colors.black,
-            spaceBefore=6,
-            spaceAfter=2,
-            leftIndent=0,
-            firstLineIndent=0,
-            bulletIndent=0,
-        ))
-        
-        # Subsection style
-        self.styles.add(ParagraphStyle(
-            name='Subsection',
-            parent=self.styles['Heading3'],
+        self.styles = self._build_styles()
+
+    def _build_styles(self) -> dict[str, ParagraphStyle]:
+        styles: dict[str, ParagraphStyle] = {}
+
+        styles["ReportTitle"] = ParagraphStyle(
+            name="ReportTitle",
+            fontName="Helvetica-Bold",
             fontSize=11,
             textColor=colors.black,
-            spaceBefore=4,
             spaceAfter=2,
+        )
+        styles["SectionHeader"] = ParagraphStyle(
+            name="SectionHeader",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
-            bulletIndent=0,
-        ))
-        
-        # Normal text with compact spacing
-        self.styles.add(ParagraphStyle(
-            name='ReportBody',
-            parent=self.styles['Normal'],
-            fontSize=10,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SectionHeaderTight"] = ParagraphStyle(
+            name="SectionHeaderTight",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=-6,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SubHeader"] = ParagraphStyle(
+            name="SubHeader",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=2,
+            spaceAfter=1,
+        )
+        styles["SubSubHeader"] = ParagraphStyle(
+            name="SubSubHeader",
+            fontName="Helvetica-BoldOblique",
+            fontSize=7.5,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
-            leading=12,
-            leftIndent=0,
-        ))
-        
-        # Disclaimer style
-        self.styles.add(ParagraphStyle(
-            name='Disclaimer',
-            parent=self.styles['Normal'],
-            fontSize=9,
+        )
+        styles["DetailLabel"] = ParagraphStyle(
+            name="DetailLabel",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
             textColor=colors.black,
-            spaceBefore=6,
-            spaceAfter=4,
-            leading=11,
             leftIndent=0,
-        ))
-        
-        # Classification result style
-        self.styles.add(ParagraphStyle(
-            name='Classification',
-            parent=self.styles['Normal'],
-            fontSize=12,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=0,
+            spaceAfter=1,
+        )
+        styles["DetailLabelTight"] = ParagraphStyle(
+            name="DetailLabelTight",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
             textColor=colors.black,
-            alignment=0,  # Left align
-            spaceBefore=6,
-            spaceAfter=6,
-            leftIndent=0,
-        ))
-        
-        # Footer style
-        self.styles.add(ParagraphStyle(
-            name='Footer',
-            parent=self.styles['Normal'],
-            fontSize=8,
-            textColor=colors.gray,
-            alignment=1,  # Center
-        ))
-    
-    def generate_report(self, result_data: dict, clinician_data: dict) -> bytes:
-        """
-        Generate a PDF report for the given result data.
-        
-        Args:
-            result_data: Dictionary containing full result details from 
-                        ResultsService.get_result_with_full_details()
-            clinician_data: Dictionary containing current clinician info
-        
-        Returns:
-            bytes: PDF file content
-        """
-        logger.info(f"Generating PDF report for result {result_data.get('result_id')}")
-        
+            leftIndent=-6,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=0,
+            spaceAfter=1,
+        )
+        styles["SubSubHeaderItalic"] = ParagraphStyle(
+            name="SubSubHeaderItalic",
+            fontName="Helvetica-Oblique",
+            fontSize=7.5,
+            textColor=colors.black,
+            spaceBefore=2,
+            spaceAfter=2,
+        )
+        styles["BodyText"] = ParagraphStyle(
+            name="BodyText",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            spaceAfter=2,
+        )
+        styles["BodyTextRight"] = ParagraphStyle(
+            name="BodyTextRight",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            alignment=2,
+            spaceAfter=2,
+        )
+        styles["CenteredBody"] = ParagraphStyle(
+            name="CenteredBody",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            alignment=1,
+            spaceAfter=2,
+        )
+        styles["IndentedBody"] = ParagraphStyle(
+            name="IndentedBody",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=12,
+            leading=7,
+            spaceAfter=2,
+        )
+        styles["FindingsBody"] = ParagraphStyle(
+            name="FindingsBody",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=12,
+            leading=8,
+            spaceAfter=2,
+        )
+        styles["ShadedBoxText"] = ParagraphStyle(
+            name="ShadedBoxText",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            spaceAfter=2,
+        )
+        styles["ShadedBoxBold"] = ParagraphStyle(
+            name="ShadedBoxBold",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            spaceAfter=2,
+        )
+        styles["NarrativeLabel"] = ParagraphStyle(
+            name="NarrativeLabel",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.HexColor("#1a3a5c"),
+            spaceAfter=2,
+        )
+        styles["DisclaimerHeader"] = ParagraphStyle(
+            name="DisclaimerHeader",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            spaceAfter=2,
+        )
+        styles["DisclaimerBody"] = ParagraphStyle(
+            name="DisclaimerBody",
+            fontName="Helvetica-Oblique",
+            fontSize=7.5,
+            textColor=colors.HexColor("#e67e22"),
+            leading=7,
+            spaceAfter=2,
+        )
+        styles["LogoPlaceholder"] = ParagraphStyle(
+            name="LogoPlaceholder",
+            fontName="Helvetica-Oblique",
+            fontSize=7,
+            textColor=colors.HexColor("#999999"),
+            alignment=1,
+        )
+        return styles
+
+    def generate_report(
+        self,
+        result_data: dict,
+        clinician_data: dict,
+        normative_ranges: dict[str, dict[str, float]] | None = None,
+    ) -> bytes:
+        logger.info("Generating PDF report for result %s", result_data.get("result_id"))
+
+        report_data = self._build_report_data(
+            result_data, clinician_data, normative_ranges
+        )
+
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
-            rightMargin=20*mm,
-            leftMargin=20*mm,
-            topMargin=20*mm,
-            bottomMargin=25*mm,
+            leftMargin=18 * mm,
+            rightMargin=18 * mm,
+            topMargin=18 * mm,
+            bottomMargin=25 * mm,
         )
-        
-        # Build story (list of flowable elements)
-        story = []
-        
-        # Build each section in spec-required order
-        story.extend(self._build_header_section(result_data))
-        story.extend(self._build_intended_use_section())
-        story.extend(self._build_disclaimer_section())
-        story.extend(self._build_subject_section(result_data))
-        story.extend(self._build_recording_section(result_data))
-        story.extend(self._build_data_quality_flags(result_data))
-        story.extend(self._build_classification_section(result_data))
-        story.extend(self._build_clinical_interpretation_section(result_data))
-        story.extend(self._build_narrative_section(result_data))
-        story.extend(self._build_filtered_eeg_visualization(result_data))
-        story.extend(self._build_band_powers_section(result_data))
-        story.extend(self._build_ratios_section(result_data))
-        story.extend(self._build_intervention_section(result_data))
-        story.extend(self._build_limitations_section())
-        story.extend(self._build_signatory_section(clinician_data))
-        
-        # Build PDF
-        doc.multiBuild(story, canvasmaker=make_footer_canvas(APP_VERSION))
-        
+
+        story: list = []
+        story.extend(self._build_header(report_data))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
+        story.append(Spacer(1, 4))
+        story.extend(self._build_referral_patient(report_data))
+        story.extend(self._build_recording_assessment(report_data))
+        story.extend(self._build_findings(report_data))
+        story.extend(self._build_model_classification(report_data))
+        story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
+        story.extend(self._build_signature_block(report_data))
+
+        footer_fields = report_data["footer_fields"]
+        doc.multiBuild(story, canvasmaker=make_footer_canvas(footer_fields))
+
         pdf_content = buffer.getvalue()
         buffer.close()
-        
-        logger.info(f"PDF report generated successfully, size: {len(pdf_content)} bytes")
+        logger.info("PDF report generated successfully, size: %s bytes", len(pdf_content))
         return pdf_content
-    
-    def _add_footer(self, canvas, doc):
-        """Legacy per-page footer callback (superseded by FooterCanvas/multiBuild)."""
-        canvas.saveState()
-        canvas.setFont('Helvetica', 8)
-        canvas.setFillColor(colors.gray)
-        page_num = canvas.getPageNumber()
-        text = f"Page {page_num}"
-        canvas.drawCentredString(A4[0]/2, 15*mm, text)
-        canvas.restoreState()
-    
-    def _build_header_section(self, result_data: dict) -> list:
-        """Build the report header section."""
-        elements = []
-        
-        # Title
-        elements.append(Paragraph("EEG Assessment Support Report", self.styles['ReportTitle']))
-        
-        # Assessment date with fallback
-        analysis_date = result_data.get('inferenced_at')
-        if analysis_date:
-            if isinstance(analysis_date, str):
-                date_str = analysis_date[:10]
-            else:
-                date_str = analysis_date.strftime('%Y-%m-%d')
-        else:
-            date_str = 'Not recorded'
-        
-        # Left-aligned report info as two-column table
-        info_data = [
-            ['Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M')],
-            ['Assessment Date:', date_str],
-            ['Reference:', f"R-{result_data.get('result_id', 'N/A')}"],
-            ['Tool:', 'EEG Assessment Tool - ADHD Classification Application'],
-            ['System Version:', APP_VERSION],
-        ]
-        
-        info_table = Table(info_data, colWidths=[40*mm, 130*mm])
-        info_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#666666')),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ]))
-        
-        elements.append(info_table)
-        elements.append(Spacer(1, 4))
-        elements.append(HRFlowable(width="100%", thickness=1, color=COLORS['border']))
-        elements.append(Spacer(1, 4))
-        
-        return elements
-    
-    def _build_intended_use_section(self) -> list:
-        """Build Section 5.2: Intended Use Statement."""
-        elements = []
-        elements.append(Paragraph("Intended Use", self.styles['SectionHeader']))
 
-        intended_use_text = (
-            "This report is produced by a clinical decision-support tool that analyzes "
-            "19-channel EEG recordings to assess whether recorded brain activity patterns are consistent "
-            "with ADHD subtypes in children. The tool is intended to be used by qualified clinicians "
-            "including developmental pediatricians, psychiatrists, neurologists, or trained EEG technicians "
-            "as one component of a broader clinical evaluation. It is not intended to serve as the "
-            "sole basis for diagnosis, treatment planning, or medication decisions. The classification "
-            "output must be interpreted alongside patient history, behavioral assessment, clinical "
-            "observation, and other diagnostic criteria appropriate to the clinician's professional "
-            "judgment."
-        )
+    def _build_report_data(
+        self,
+        result_data: dict,
+        clinician_data: dict,
+        normative_ranges: dict[str, dict[str, float]] | None,
+    ) -> dict:
+        inferred = result_data.get("inferenced_at")
+        report_date = _format_date(inferred)
 
-        elements.append(Paragraph(intended_use_text, self.styles['Disclaimer']))
-        elements.append(Spacer(1, 4))
-        return elements
-
-    def _build_disclaimer_section(self) -> list:
-        """Build Section 5.3: Prominent Automated Tool Disclaimer."""
-        elements = []
-
-        heading_style = ParagraphStyle(
-            name='_DisclaimerHeading',
-            parent=self.styles['Normal'],
-            fontSize=14,
-            fontName='Helvetica-Bold',
-            textColor=colors.black,
-            spaceBefore=0,
-            spaceAfter=4,
-            leading=16,
-        )
-
-        heading_para = Paragraph(
-            "DISCLAIMER",
-            heading_style,
-        )
-
-        body_text = (
-            "The classification result in this report was produced by an AI-based signal processing "
-            "tool. It does not constitute a definitive clinical diagnosis of ADHD or any other "
-            "condition. The findings must be reviewed and interpreted by a licensed healthcare "
-            "professional in the context of a complete clinical evaluation. This tool supports "
-            "clinical judgment but does not replace it."
-        )
-        body_para = Paragraph(body_text, self.styles['Disclaimer'])
-
-        inner_table = Table([[heading_para], [body_para]], colWidths=[150*mm])
-        inner_table.setStyle(TableStyle([
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ]))
-
-        outer_table = Table([[inner_table]], colWidths=[170*mm])
-        outer_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fff8e1')),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e6a817')),
-            ('LEFTPADDING', (0, 0), (-1, -1), 8),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ]))
-
-        elements.append(outer_table)
-        elements.append(Spacer(1, 4))
-        return elements
-    
-    def _build_subject_section(self, result_data: dict) -> list:
-        """Build subject information section."""
-        elements = []
-        elements.append(Paragraph("Subject Information", self.styles['SectionHeader']))
-
-        age = result_data.get('age')
-        age_str = f"{age} years" if age is not None else 'Not recorded'
-
-        data = [
-            ['Subject Code:', result_data.get('subject_code') or 'Not recorded'],
-            ['Age:', age_str],
-            ['Gender:', result_data.get('gender') or 'Not recorded'],
-        ]
-        
-        # Consistent table width: 170mm (50mm label + 120mm value)
-        table = Table(data, colWidths=[50*mm, 120*mm])
-        table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
-            ('TEXTCOLOR', (1, 0), (1, -1), colors.black),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        
-        elements.append(table)
-        elements.append(Spacer(1, 4))
-        
-        return elements
-    
-    def _build_recording_section(self, result_data: dict) -> list:
-        """Build Section 5.5: Recording Conditions & Technical Parameters."""
-        elements = []
-        elements.append(Paragraph("Recording Conditions &amp; Technical Parameters", self.styles['SectionHeader']))
-
-        # --- Environmental Context sub-section ---
-        elements.append(Paragraph("Environmental Context", self.styles['Subsection']))
-
-        caffeinated = result_data.get('caffeinated')
-        medicated = result_data.get('medicated')
-
-        env_data = [
-            ['File Name:', result_data.get('file_name') or 'Not recorded'],
-            ['Sleep Hours:', (f"{result_data.get('sleep_hours')} hours"
-                             if result_data.get('sleep_hours') is not None else 'Not recorded')],
-            ['Food Intake:', result_data.get('food_intake') or 'Not recorded'],
-            ['Caffeinated:', ('Yes' if caffeinated is True
-                              else ('No' if caffeinated is False else 'Not recorded'))],
-            ['Medicated:', ('Yes' if medicated is True
-                            else ('No' if medicated is False else 'Not recorded'))],
-        ]
-
-        if result_data.get('medication_intake'):
-            env_data.append(['Medication Details:', result_data.get('medication_intake')])
-
-        if result_data.get('notes'):
-            env_data.append(['Notes:', result_data.get('notes')])
-
-        env_table = Table(env_data, colWidths=[50*mm, 120*mm])
-        env_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        elements.append(env_table)
-        elements.append(Spacer(1, 4))
-
-        # --- Technical Parameters sub-section ---
-        elements.append(Paragraph("Technical Parameters", self.styles['Subsection']))
-
-        band_powers = result_data.get('band_powers', [])
-        if band_powers:
-            confirmed_channels = len(set(bp['electrode'] for bp in band_powers if bp.get('electrode')))
-            channels_str = f"{confirmed_channels} of 19"
-        else:
-            channels_str = 'Not confirmed'
-
-        tech_data = [
-            ['Montage:', '10-20 International, 19 channels'],
-            ['Confirmed Channels:', channels_str],
-            ['Preprocessing Applied:', 'ICA artifact removal; 0.5\u201340 Hz bandpass filter'],
-        ]
-
-        tech_table = Table(tech_data, colWidths=[50*mm, 120*mm])
-        tech_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        elements.append(tech_table)
-        elements.append(Spacer(1, 4))
-
-        return elements
-    
-    def _build_classification_section(self, result_data: dict) -> list:
-        """Build Section 5.7: Classification Result with label map and confidence display."""
-        elements = []
-        elements.append(PageBreak())
-        elements.append(Paragraph("Classification Result", self.styles['SectionHeader']))
-
-        CLASS_LABELS = {
-            'Inattentive (ADHD-I)':           'Consistent with ADHD - Inattentive Type',
-            'Combined / C (ADHD-C)':          'Consistent with ADHD - Combined Type',
-            'Hyperactive-Impulsive (ADHD-H)': 'Consistent with ADHD - Hyperactive/Impulsive Type',
-            'Not ADHD':                        'Findings Not Consistent with ADHD',
-        }
-
-        predicted_class = result_data.get('predicted_class', '')
-        display_label = CLASS_LABELS.get(
-            predicted_class,
-            'Inconclusive - Findings were insufficient to support a classification in any direction.'
-        )
-
-        confidence = result_data.get('confidence_score', 0)
-        confidence_pct = confidence if confidence > 1 else confidence * 100
-
-        # Classification label (bold, 14pt)
-        label_style = ParagraphStyle(
-            name='_ClassLabel',
-            parent=self.styles['Normal'],
-            fontSize=14,
-            fontName='Helvetica-Bold',
-            textColor=colors.black,
-            spaceBefore=4,
-            spaceAfter=4,
-        )
-        elements.append(Paragraph(display_label, label_style))
-
-        # Confidence score only — no tier label, no bar
-        elements.append(
-            Paragraph(
-                f"Confidence: {confidence_pct:.1f}%",
-                self.styles['ReportBody'],
+        clinician_name = " ".join(
+            filter(
+                None,
+                [
+                    clinician_data.get("first_name", ""),
+                    clinician_data.get("middle_name", ""),
+                    clinician_data.get("last_name", ""),
+                ],
             )
-        )
-        elements.append(Spacer(1, 8))
-        return elements
-
-    def _build_clinical_interpretation_section(self, result_data: dict) -> list:
-        """Build Section 5.8: Clinical Interpretation (three paragraphs in gray box)."""
-        elements = []
-        elements.append(Paragraph("Clinical Interpretation", self.styles['SectionHeader']))
-
-        CLASS_LABELS = {
-            'Inattentive (ADHD-I)':           'Consistent with ADHD - Inattentive Type',
-            'Combined / C (ADHD-C)':          'Consistent with ADHD - Combined Type',
-            'Hyperactive-Impulsive (ADHD-H)': 'Consistent with ADHD - Hyperactive/Impulsive Type',
-            'Not ADHD':                        'Findings Not Consistent with ADHD',
-        }
-
-        predicted_class = result_data.get('predicted_class', '')
-        confidence = result_data.get('confidence_score', 0)
-        confidence_pct = confidence if confidence > 1 else confidence * 100
-
-        # Paragraph 1 — classification meaning
-        CLASS_MEANING = {
-            'Inattentive (ADHD-I)': (
-                "The EEG profile associated with the Inattentive subtype typically features elevated "
-                "relative theta power and reduced beta power compared to normative references. These "
-                "patterns are commonly observed at the population level in inattentive-type ADHD "
-                "profiles; they represent a population-level association and are not individually "
-                "diagnostic."
-            ),
-            'Combined / C (ADHD-C)': (
-                "The EEG profile associated with the Combined subtype reflects broad spectral findings "
-                "across theta and beta bands, consistent with a mixed inattentive and "
-                "hyperactive/impulsive presentation. Hyperactive and impulsive behavioral correlates "
-                "are not directly assessable from EEG spectral analysis alone."
-            ),
-            'Hyperactive-Impulsive (ADHD-H)': (
-                "The EEG markers associated with the Hyperactive/Impulsive subtype are less consistently "
-                "differentiated in the published literature compared to the Inattentive profile. "
-                "Interpretation of this classification should account for that additional uncertainty."
-            ),
-            'Not ADHD': (
-                "The EEG recording did not exhibit the spectral markers typically associated with ADHD "
-                "profiles. The absence of these markers does not exclude ADHD by other clinical means; "
-                "diagnosis requires a comprehensive evaluation beyond EEG analysis."
-            ),
-        }
-        meaning_text = CLASS_MEANING.get(
-            predicted_class,
-            (
-                "The automated analysis was unable to produce a confident classification in any "
-                "direction. The most likely contributing factor is noted in the Data Quality Flags "
-                "section, if present. A repeat EEG assessment under controlled conditions is "
-                "recommended before classification-dependent decisions are made."
-            ),
+        ).strip()
+        clinician_occupation = _display(
+            clinician_data.get("occupation"), "Not recorded"
         )
 
-        # Paragraph 2 — confidence context
-        if confidence_pct >= 80:
-            confidence_text = (
-                "The model produced this result with high confidence (\u2265 80%), indicating strong "
-                "agreement between the recorded signal and patterns in the training data. This result "
-                "may be weighted more heavily within the broader clinical assessment, while remaining "
-                "one input among several."
-            )
-        elif confidence_pct >= 60:
-            confidence_text = (
-                "The model produced this result with moderate confidence (60\u201379%). The "
-                "classification direction is supported but not strongly differentiated; the clinician "
-                "should apply standard clinical judgment in weighting this result."
-            )
-        else:
-            confidence_text = (
-                "The model confidence is below 60%, indicating that the signal did not strongly match "
-                "any single class in the training data. This result should be treated with substantial "
-                "caution and should not be a primary basis for clinical decisions."
-            )
+        subject_code = _display(result_data.get("subject_code"))
+        recording_id = _display(result_data.get("recording_id"))
+        result_id = _display(result_data.get("result_id"))
 
-        # Paragraph 3 — static reminder
-        static_text = (
-            "This finding is one input into a comprehensive clinical evaluation and must be interpreted "
-            "alongside behavioral history, standardized assessment instruments, clinical observation, "
-            "and professional judgment."
-        )
-
-        para1 = Paragraph(meaning_text, self.styles['ReportBody'])
-        para2 = Paragraph(confidence_text, self.styles['ReportBody'])
-        para3 = Paragraph(static_text, self.styles['ReportBody'])
-
-        elements.append(para1)
-        elements.append(Spacer(1, 4))
-        elements.append(para2)
-        elements.append(Spacer(1, 4))
-        elements.append(para3)
-        elements.append(Spacer(1, 8))
-        return elements
-
-    def _build_narrative_section(self, result_data: dict) -> list:
-        """Build the arousal and attention regulation narrative section."""
-        elements = []
-        elements.append(Paragraph("Arousal & Attention Profile", self.styles['SectionHeader']))
-
-        # Derive average relative band powers from stored band_powers rows
-        band_powers = result_data.get('band_powers', [])
+        band_powers = result_data.get("band_powers", [])
         avg_relative: dict[str, list[float]] = {}
-        for bp in band_powers:
-            band = str(bp.get('frequency_band', '')).lower()
-            power = bp.get('relative_power', 0)
-            avg_relative.setdefault(band, []).append(float(power))
+        for row in band_powers:
+            band = str(row.get("frequency_band", "")).lower()
+            if band not in ("delta", "theta", "alpha", "beta", "gamma"):
+                continue
+            try:
+                avg_relative.setdefault(band, []).append(float(row.get("relative_power", 0)))
+            except (TypeError, ValueError):
+                avg_relative.setdefault(band, []).append(0.0)
 
-        avg_relative_power = {
-            band: sum(vals) / len(vals)
-            for band, vals in avg_relative.items()
-        }
+        band_power = {}
+        for band in ("delta", "theta", "alpha", "beta", "gamma"):
+            values = avg_relative.get(band) or [0.0]
+            band_power[band] = (sum(values) / len(values)) * 100
 
-        # Build band_ratios dict from stored ratios rows
-        ratios = result_data.get('ratios', [])
-        band_ratios = {
-            str(r.get('ratio_name', '')): float(r.get('ratio_value', 0))
-            for r in ratios
-        }
+        ratios = result_data.get("ratios", [])
+        tbr = _extract_ratio(ratios, "theta_beta_ratio")
+        if tbr == 0.0 and band_power.get("beta"):
+            tbr = band_power.get("theta", 0.0) / band_power.get("beta", 1.0)
 
-        predicted_class = result_data.get('predicted_class', 'Unknown')
-        confidence = result_data.get('confidence_score', 0)
-        confidence_norm = confidence / 100 if confidence > 1 else confidence
+        predicted_class = result_data.get("predicted_class", "")
+        label = _map_class_label(predicted_class)
+        confidence = result_data.get("confidence_score", 0.0) or 0.0
+        confidence_pct = confidence * 100 if confidence <= 1 else confidence
 
-        if not avg_relative_power or not band_ratios:
-            elements.append(
-                Paragraph(
-                    "Insufficient spectral data to generate an arousal and attention profile.",
-                    self.styles['ReportBody'],
-                )
-            )
-            elements.append(Spacer(1, 8))
-            return elements
-
-        narrative = self._narrative_service.generate_arousal_narrative(
-            predicted_class=predicted_class,
-            confidence_score=confidence_norm,
-            avg_relative_power=avg_relative_power,
-            band_ratios=band_ratios,
+        summary_findings = (
+            "Relative band power summary: "
+            f"Delta {band_power['delta']:.2f}%, Theta {band_power['theta']:.2f}%, "
+            f"Alpha {band_power['alpha']:.2f}%, Beta {band_power['beta']:.2f}%, "
+            f"Gamma {band_power['gamma']:.2f}%. Theta/Beta Ratio {tbr:.2f}."
         )
-
-        # Render as plain paragraph
-        narrative_para = Paragraph(narrative, self.styles['ReportBody'])
-        elements.append(narrative_para)
-        elements.append(Spacer(1, 8))
-        return elements
-
-    def _build_band_powers_section(self, result_data: dict) -> list:
-        """Build Section 5.9: Relative Band Power Analysis with print-safe shade differentiation."""
-        elements = []
-        elements.append(PageBreak())
-        elements.append(Paragraph("Relative Band Power Analysis", self.styles['SectionHeader']))
-
-        BAND_SHADES = {
-            'delta': colors.HexColor('#111111'),
-            'theta': colors.HexColor('#444444'),
-            'alpha': colors.HexColor('#777777'),
-            'beta':  colors.HexColor('#aaaaaa'),
-            'gamma': colors.HexColor('#cccccc'),
-        }
-
-        band_powers = result_data.get('band_powers', [])
-        if not band_powers:
-            elements.append(Paragraph("No band power data available.", self.styles['ReportBody']))
-            return elements
-
-        # Calculate average band powers across electrodes
-        avg_powers: dict[str, list[float]] = {}
-        for bp in band_powers:
-            band = bp.get('frequency_band', '').lower()
-            power = bp.get('relative_power', 0)
-            avg_powers.setdefault(band, []).append(float(power))
-
-        for band in avg_powers:
-            avg_powers[band] = sum(avg_powers[band]) / len(avg_powers[band])  # type: ignore[assignment]
-
-        band_order = ['delta', 'theta', 'alpha', 'beta', 'gamma']
-        band_labels = ['Delta (0.5-4 Hz)', 'Theta (4-8 Hz)', 'Alpha (8-13 Hz)',
-                       'Beta (13-30 Hz)', 'Gamma (30-100 Hz)']
-
-        chart_data = []
-        labels = []
-        chart_bands = []
-
-        for band, label in zip(band_order, band_labels):
-            if band in avg_powers:
-                chart_data.append(avg_powers[band] * 100)  # type: ignore[operator]
-                labels.append(label)
-                chart_bands.append(band)
-
-        if chart_data:
-            # Chart title
-            elements.append(Paragraph(
-                "Averaged Relative Band Power Across All Channels",
-                self.styles['Subsection'],
-            ))
-
-            chart_height = len(chart_data) * 22
-            drawing = Drawing(170 * mm, chart_height + 20)
-
-            chart = HorizontalBarChart()
-            chart.x = 50 * mm  # type: ignore[assignment]
-            chart.y = 10
-            chart.width = 110 * mm  # type: ignore[assignment]
-            chart.height = chart_height
-
-            # Data — reversed for top-to-bottom display
-            chart.data = [list(reversed(chart_data))]
-
-            # Apply per-band shade colors (reversed order matches chart display)
-            reversed_bands = list(reversed(chart_bands))
-            for i, band in enumerate(reversed_bands):
-                shade = BAND_SHADES.get(band, colors.HexColor('#4a4a4a'))
-                chart.bars[(0, i)].fillColor = shade
-                chart.bars[(0, i)].strokeColor = colors.black
-                chart.bars[(0, i)].strokeWidth = 0.5
-
-            chart.categoryAxis.categoryNames = list(reversed(labels))
-            chart.categoryAxis.labels.fontName = 'Helvetica'
-            chart.categoryAxis.labels.fontSize = 9
-            chart.categoryAxis.labels.dx = -5
-            chart.categoryAxis.labels.textAnchor = 'end'
-            chart.categoryAxis.strokeWidth = 0.5
-            chart.categoryAxis.strokeColor = colors.black
-            chart.categoryAxis.visibleTicks = 0
-
-            max_val = max(chart_data)
-            chart.valueAxis.valueMin = 0
-            chart.valueAxis.valueMax = max_val * 1.2
-            chart.valueAxis.valueStep = max_val / 4
-            chart.valueAxis.labels.fontName = 'Helvetica'
-            chart.valueAxis.labels.fontSize = 8
-            chart.valueAxis.labelTextFormat = '%.0f%%'
-            chart.valueAxis.strokeWidth = 0.5
-            chart.valueAxis.strokeColor = colors.black
-            chart.valueAxis.visibleGrid = True
-            chart.valueAxis.gridStrokeColor = colors.HexColor('#e0e0e0')
-            chart.valueAxis.gridStrokeWidth = 0.5
-
-            chart.barWidth = 16
-            chart.barSpacing = 0
-            chart.groupSpacing = 0
-
-            drawing.add(chart)
-
-            # Value labels at end of each bar
-            for i, val in enumerate(reversed(chart_data)):
-                bar_y = 10 + (i * (chart_height / len(chart_data))) + (chart_height / len(chart_data) / 2) - 3
-                bar_x = chart.x + (val / (max_val * 1.2)) * chart.width + 4
-                val_label = String(bar_x, bar_y, f'{val:.1f}%')
-                val_label.fontName = 'Helvetica'
-                val_label.fontSize = 8
-                val_label.fillColor = colors.black
-                drawing.add(val_label)
-
-            elements.append(drawing)
-            elements.append(Spacer(1, 10))
-
-            # Summary table
-            freq_ranges = {
-                'delta': '0.5-4 Hz',
-                'theta': '4-8 Hz',
-                'alpha': '8-13 Hz',
-                'beta':  '13-30 Hz',
-                'gamma': '30-100 Hz',
-            }
-
-            summary_data = [['Band', 'Frequency Range', 'Relative Power']]
-            for band in band_order:
-                if band in avg_powers:
-                    pct = avg_powers[band] * 100  # type: ignore[operator]
-                    summary_data.append([
-                        band.capitalize(),
-                        freq_ranges.get(band, ''),
-                        f"{pct:.2f}%",
-                    ])
-
-            summary_table = Table(summary_data, colWidths=[50*mm, 70*mm, 50*mm])
-            summary_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-            ]))
-            elements.append(summary_table)
-
-        elements.append(Spacer(1, 8))
-        return elements
-    
-    def _build_ratios_section(self, result_data: dict) -> list:
-        """Build Section 5.10: Clinical Ratios with Clinical Note column and TBR annotation."""
-        elements = []
-        elements.append(Paragraph("Clinical Ratios", self.styles['SectionHeader']))
-
-        RATIO_NOTES = {
-            'theta_beta_ratio':  'Elevated TBR may support inattention-type profiles; not independently diagnostic.',
-            'theta_alpha_ratio': 'Reflects relative dominance of theta over alpha; contextual significance varies.',
-            'alpha_theta_ratio': 'Inverse of theta/alpha ratio; higher values indicate relatively greater alpha activity.',
-        }
-
-        cell_style = ParagraphStyle(
-            name='_RatioCell',
-            parent=self.styles['Normal'],
-            fontSize=9,
-            leading=11,
-            textColor=colors.black,
+        diagnostic_significance = (
+            f"Model classification: {label} ({confidence_pct:.1f}% confidence). "
+            "Clinical correlation is required."
         )
-        header_style = ParagraphStyle(
-            name='_RatioHeader',
-            parent=self.styles['Normal'],
-            fontSize=9,
-            leading=11,
-            fontName='Helvetica-Bold',
-            textColor=colors.black,
-        )
+        clinical_comments = _display(result_data.get("notes"), "Not recorded")
 
-        ratios = result_data.get('ratios', [])
-        if not ratios:
-            elements.append(Paragraph("No ratio data available.", self.styles['ReportBody']))
-            return elements
-
-        # Three-column table: Ratio Name | Value | Clinical Note
-        data = [
-            [
-                Paragraph('Ratio Name', header_style),
-                Paragraph('Value', header_style),
-                Paragraph('Clinical Note', header_style),
-            ]
+        footer_fields = [
+            f"Subject Code: {subject_code}",
+            f"Recording ID: {recording_id}",
+            report_date,
         ]
 
-        for ratio in ratios:
-            ratio_name = ratio.get('ratio_name', '')
-            name_display = ratio_name.replace('_', ' ').title()
-            value = ratio.get('ratio_value', 0)
-            note = RATIO_NOTES.get(ratio_name, '')
-            data.append([
-                Paragraph(name_display, cell_style),
-                Paragraph(f"{value:.3f}", cell_style),
-                Paragraph(note, cell_style),
-            ])
+        return {
+            "unit_name": "EEG Assessment Unit",
+            "institution_name": "BayesianADHD",
+            "report_date": report_date,
+            "logo_path": None,
+            "referral_name": "Not recorded",
+            "referral_institution": "Not recorded",
+            "referral_address": ["Not recorded"],
+            "patient_name": None,
+            "patient_id": subject_code,
+            "patient_address": None,
+            "patient_dob": _format_date(result_data.get("date_of_birth")),
+            "patient_age_at_study": (
+                f"{result_data.get('age')} years"
+                if result_data.get("age") is not None
+                else "Not recorded"
+            ),
+            "gender": _display(result_data.get("gender")),
+            "study_id": result_id,
+            "local_study_id": recording_id,
+            "technician": "Not recorded",
+            "start_datetime": "Not recorded",
+            "stop_datetime": "Not recorded",
+            "duration_minutes": "Not recorded",
+            "recorded_minutes": "Not recorded",
+            "eeg_type": "Standard EEG",
+            "indication": "ADHD assessment",
+            "medication": _display(result_data.get("medication_intake"), "None"),
+            "alertness": "Not recorded",
+            "sensor_group": "10-20 International, 19 channels",
+            "band_power": band_power,
+            "normative_ranges": normative_ranges or DEFAULT_NORMATIVE_RANGES,
+            "model_classification": {
+                "label": label,
+                "confidence": confidence if confidence <= 1 else confidence / 100,
+                "theta_beta_ratio": tbr,
+                "model_version": f"ADHDNet v{APP_VERSION}",
+                "notes": "",
+            },
+            "summary_findings": summary_findings,
+            "diagnostic_significance": diagnostic_significance,
+            "clinical_comments": clinical_comments,
+            "technician_name": "Not recorded",
+            "clinician_name": clinician_name or "Not recorded",
+            "clinician_occupation": clinician_occupation,
+            "supervising_physician": "Not recorded",
+            "footer_fields": footer_fields,
+        }
 
-        table = Table(data, colWidths=[55*mm, 20*mm, 95*mm])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING', (0, 0), (-1, -1), 8),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ]))
+    def _build_header(self, report_data: dict) -> list:
+        elements: list = []
+        left_block = [
+            Paragraph(
+                "Electroencephalogram (EEG) Report", self.styles["ReportTitle"]
+            ),
+            Paragraph(_display(report_data["institution_name"]), self.styles["BodyText"]),
+        ]
 
+        logo = report_data.get("logo_path")
+        if logo:
+            try:
+                reader = ImageReader(logo)
+                iw, ih = reader.getSize()
+                max_h = 40
+                scale = max_h / ih
+                img = Image(logo, width=iw * scale, height=ih * scale)
+                center_block = [img]
+            except Exception:
+                center_block = [Spacer(1, 40)]
+        else:
+            center_block = [Spacer(1, 40)]
+
+        right_block = [
+            Paragraph(
+                f"Date: {report_data['report_date']}", self.styles["BodyTextRight"]
+            )
+        ]
+
+        table = Table(
+            [[left_block, center_block, right_block]],
+            colWidths=[doc_width() * 0.5, doc_width() * 0.2, doc_width() * 0.3],
+        )
+        table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("ALIGN", (2, 0), (2, 0), "RIGHT"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
         elements.append(table)
-        elements.append(Spacer(1, 8))
-
+        elements.append(Spacer(1, 2))
         return elements
 
-    def _build_intervention_section(self, result_data: dict) -> list:
-        """Build Section 5.11: General Clinical Considerations."""
-        elements = []
-        elements.append(Paragraph("General Clinical Considerations", self.styles['SectionHeader']))
+    def _build_referral_patient(self, report_data: dict) -> list:
+        elements: list = []
 
-        preamble = (
-            "The following considerations are general observations appropriate to the assessed "
-            "classification. They are not personalized treatment recommendations and do not account "
-            "for the subject\u2019s individual history, comorbidities, or current care plan. All "
-            "clinical decisions remain the responsibility of the treating clinician."
+        referral_lines = [
+            Paragraph("REFERRAL FROM", self.styles["SectionHeader"]),
+            Paragraph(f"Name: {_display(report_data['referral_name'])}", self.styles["BodyText"]),
+            Paragraph(
+                f"Institution: {_display(report_data['referral_institution'])}",
+                self.styles["BodyText"],
+            ),
+        ]
+        for line in report_data.get("referral_address", []) or ["Not recorded"]:
+            referral_lines.append(Paragraph(_display(line), self.styles["BodyText"]))
+
+        patient_lines = [
+            Paragraph("SUBJECT INFORMATION", self.styles["SectionHeader"]),
+            Paragraph(
+                f"Subject Code: {_display(report_data['patient_id'])}",
+                self.styles["BodyText"],
+            ),
+            Paragraph(
+                f"Age at Assessment: {_display(report_data['patient_age_at_study'])}",
+                self.styles["BodyText"],
+            ),
+            Paragraph(
+                f"Gender: {_display(report_data.get('gender'))}",
+                self.styles["BodyText"],
+            ),
+        ]
+
+        table = Table([[referral_lines, patient_lines]], colWidths=[doc_width() / 2, doc_width() / 2])
+        table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("LEFTPADDING", (1, 0), (1, 0), 6),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("LINEBEFORE", (1, 0), (1, 0), 0.5, colors.black),
+                ]
+            )
         )
-        elements.append(Paragraph(f"<i>{preamble}</i>", self.styles['ReportBody']))
-        elements.append(Spacer(1, 6))
+        elements.append(table)
+        elements.append(Spacer(1, 2))
+        return elements
 
-        INTERVENTION_BULLETS: dict[str, list[str]] = {
-            'Inattentive (ADHD-I)': [
-                'Referral for comprehensive neuropsychological evaluation',
-                'Behavioral assessment by a licensed psychologist',
-                'School and learning support consultation',
-                'Administration of standardized inattention rating scales (e.g., Conners, BRIEF)',
-            ],
-            'Combined / C (ADHD-C)': [
-                'All considerations listed for the Inattentive type',
-                'Additional behavioral observation targeting hyperactivity and impulsivity',
-                'Parent and teacher behavioral rating scales',
-            ],
-            'Hyperactive-Impulsive (ADHD-H)': [
-                'Behavioral observation protocol',
-                'Executive function assessment',
-                'Occupational therapy evaluation if fine motor concerns are present',
-            ],
-            'Not ADHD': [
-                'Consider alternative etiologies for presenting concerns',
-                'Differential evaluation for anxiety, learning disabilities, or other neurodevelopmental conditions',
-            ],
-        }
+    def _build_recording_assessment(self, report_data: dict) -> list:
+        elements: list = []
 
-        predicted_class = result_data.get('predicted_class', '')
-        bullets = INTERVENTION_BULLETS.get(
-            predicted_class,
+        elements.append(
+            Paragraph("ASSESSMENT INFORMATION", self.styles["SectionHeaderTight"])
+        )
+        elements.append(Spacer(1, 1))
+
+        bar_rows = [
             [
-                'Repeat EEG assessment under improved recording conditions',
-                'Comprehensive clinical evaluation recommended before classification-dependent decisions are made',
+                f"Assessment ID: {report_data['study_id']}   "
+                f"Recording ID: {report_data['local_study_id']}   "
+                f"Technician: {report_data['technician']}"
             ],
-        )
-
-        for bullet_text in bullets:
-            elements.append(
-                Paragraph(f"<bullet>&bull;</bullet> {bullet_text}", self.styles['ReportBody'])
-            )
-
-        elements.append(Spacer(1, 8))
-        return elements
-
-    def _build_data_quality_flags(self, result_data: dict) -> list:
-        """Build Section 5.6: Data Quality Flags (amber box, conditional)."""
-        flags = []
-
-        # 1. Sleep deprivation
-        sleep_hours = result_data.get('sleep_hours')
-        if sleep_hours is not None and float(sleep_hours) <= 5:
-            flags.append(
-                "Sleep deprivation reported (\u2264 5 hours). Sleep loss is associated with increased "
-                "slow-wave EEG activity and may inflate theta-band power readings."
-            )
-
-        # 2. Caffeine
-        if result_data.get('caffeinated') is True:
-            flags.append(
-                "Caffeine intake reported prior to recording. Caffeine may reduce slow-wave activity "
-                "and affect spectral band measurements."
-            )
-
-        # 3. Medication
-        if result_data.get('medicated') is True:
-            flags.append(
-                "Subject was medicated at time of recording. Certain medications (e.g., stimulants, "
-                "antihistamines) are known to affect EEG spectral profiles. Review medication details "
-                "in the Recording Conditions section."
-            )
-
-        # 4. Low confidence
-        confidence = result_data.get('confidence_score', 0)
-        confidence_pct = confidence if confidence > 1 else confidence * 100
-        if confidence_pct < 60:
-            flags.append(
-                "Model confidence is below 60%. The classification result should be treated with "
-                "substantial caution and weighted less heavily in the overall clinical assessment."
-            )
-
-        # 5. Missing demographics
-        if not result_data.get('age') or not result_data.get('gender'):
-            flags.append(
-                "One or more subject demographic fields were not recorded. This may limit the "
-                "contextual interpretability of the result."
-            )
-
-        # 6. Channel count < 19
-        band_powers = result_data.get('band_powers', [])
-        if band_powers:
-            confirmed_channels = len(set(bp['electrode'] for bp in band_powers if bp.get('electrode')))
-            if confirmed_channels < 19:
-                flags.append(
-                    "Fewer than 19 channels were confirmed in the recording. Signal coverage may be incomplete."
-                )
-
-        if not flags:
-            return []
-
-        elements = []
-        heading_style = ParagraphStyle(
-            name='_DQFlagHeading',
-            parent=self.styles['Normal'],
-            fontSize=11,
-            fontName='Helvetica-Bold',
-            textColor=colors.black,
-            spaceBefore=0,
-            spaceAfter=6,
-        )
-        heading_para = Paragraph("\u26a0 Data Quality Considerations", heading_style)
-
-        bullet_paras = [heading_para]
-        for flag_text in flags:
-            bullet_paras.append(
-                Paragraph(f"<bullet>&bull;</bullet> {flag_text}", self.styles['ReportBody'])
-            )
-
-        inner_table = Table([[p] for p in bullet_paras], colWidths=[150*mm])
-        inner_table.setStyle(TableStyle([
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ]))
-
-        outer_table = Table([[inner_table]], colWidths=[170*mm])
-        outer_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fff8e1')),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e6a817')),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-        ]))
-
-        elements.append(outer_table)
-        elements.append(Spacer(1, 8))
-        return elements
-    
-    def _build_signatory_section(self, clinician_data: dict) -> list:
-        """Build Section 5.14: Signatory Block."""
-        elements = []
-        elements.append(Spacer(1, 20))
-        elements.append(HRFlowable(width="100%", thickness=1, color=COLORS['border']))
-        elements.append(Spacer(1, 15))
-
-        # Build clinician name
-        first_name = clinician_data.get('first_name', '')
-        middle_name = clinician_data.get('middle_name', '')
-        last_name = clinician_data.get('last_name', '')
-        occupation = clinician_data.get('occupation', '')
-
-        full_name = ' '.join(filter(None, [first_name, middle_name, last_name]))
-        if not full_name:
-            full_name = 'Not recorded'
-
-        clinician_info = full_name
-        if occupation:
-            clinician_info += f", {occupation}"
-
-        # Two-column signatory table with expanded right column
-        sig_data = [
-            ['Prepared by:', 'Reviewed and Acknowledged by:'],
-            [clinician_info, 'Name:          ___________________________'],
-            [f"Date: {datetime.now().strftime('%Y-%m-%d')}", 'Designation:   ___________________________'],
-            ['', 'Signature:     ___________________________'],
-            ['', 'Date:          ___________________________'],
+            [
+                f"Start: {report_data['start_datetime']}   "
+                f"Stop: {report_data['stop_datetime']}   "
+                f"Duration: {report_data['duration_minutes']} minutes   "
+                f"Recorded: {report_data['recorded_minutes']} minutes"
+            ],
         ]
 
-        sig_table = Table(sig_data, colWidths=[85*mm, 85*mm])
-        sig_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('TEXTCOLOR', (0, 0), (-1, 0), COLORS['primary']),
-            ('TEXTCOLOR', (0, 1), (-1, -1), COLORS['text']),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-
-        elements.append(sig_table)
-
-        # Acknowledgment note
-        ack_note = (
-            "Acknowledgment by a clinician indicates that the findings of this automated report "
-            "have been reviewed in the context of a complete clinical evaluation and that any "
-            "clinical decisions made are based on comprehensive professional judgment."
-        )
-        elements.append(Spacer(1, 10))
-        elements.append(Paragraph(f"<i>{ack_note}</i>", self.styles['ReportBody']))
-
-        return elements
-
-    def _build_limitations_section(self) -> list:
-        """Build Section 5.13: System Limitations and Scope of Use."""
-        elements = []
-        elements.append(PageBreak())
-        elements.append(Paragraph("System Limitations and Scope of Use", self.styles['SectionHeader']))
-
-        limitations = [
-            (
-                "This report does not constitute a clinical diagnosis.",
-                "This application is a decision-support tool. All classification outputs must "
-                "be interpreted by a qualified healthcare professional.",
-            ),
-            (
-                "The model was trained on a specific EEG dataset.",
-                "Performance may vary across different EEG hardware, electrode configurations, "
-                "recording environments, and subject populations not represented in the training data.",
-            ),
-            (
-                "Confidence scores reflect model certainty, not clinical certainty.",
-                "A high confidence score indicates agreement between the input signal and patterns "
-                "in the training data; it does not guarantee the clinical accuracy of the classification.",
-            ),
-            (
-                "Environmental and physiological factors affect EEG signal quality.",
-                "Sleep deprivation, caffeine, medication, and subject cooperation can alter spectral "
-                "measurements independent of any ADHD-related neurophysiology.",
-            ),
-            (
-                "The tool does not assess comorbidities.",
-                "Conditions that may co-occur with ADHD, including anxiety disorders, learning "
-                "disabilities, sleep disorders, and mood disorders, may produce overlapping EEG "
-                "signatures. This tool does not screen for or distinguish comorbid conditions.",
-            ),
-            (
-                "The tool does not provide medication guidance.",
-                "Nothing in this report should be interpreted as guidance for, or against, "
-                "pharmacological intervention of any kind.",
-            ),
-            (
-                "EEG findings are population-level associations, not individual biomarkers.",
-                "Theta/beta ratio elevation and related spectral markers are observed at the population "
-                "level in ADHD research; their presence or absence in an individual is neither "
-                "necessary nor sufficient for diagnosis.",
-            ),
-            (
-                "Repeat assessments are not directly comparable.",
-                "The tool does not evaluate whether a subject's EEG profile has improved "
-                "or worsened over time. Longitudinal interpretation requires independent "
-                "clinical judgment.",
-            ),
-        ]
-
-        lim_style = ParagraphStyle(
-            name='_LimitationItem',
-            parent=self.styles['ReportBody'],
-            spaceBefore=4,
-            spaceAfter=2,
-        )
-
-        for n, (title, body) in enumerate(limitations, start=1):
-            elements.append(Paragraph(f"<b>{n}. {title}</b> {body}", lim_style))
-
-        elements.append(Spacer(1, 8))
-        return elements
-
-    def _build_filtered_eeg_visualization(self, result_data: dict) -> list:
-        """Embed only the filtered EEG visualization inline after the Arousal & Attention Profile."""
-        import base64
-
-        elements = []
-        eeg_viz = result_data.get('eeg_visualizations', {})
-        if not eeg_viz:
-            return elements
-
-        data_uri = eeg_viz.get('filtered')
-        if not data_uri:
-            return elements
-
-        try:
-            if ',' in data_uri:
-                img_b64 = data_uri.split(',', 1)[1]
-            else:
-                img_b64 = data_uri
-
-            img_bytes = base64.b64decode(img_b64)
-            img_buf = BytesIO(img_bytes)
-
-            elements.append(Paragraph("Filtered EEG Signal (0.5-40 Hz)", self.styles['Subsection']))
-
-            reader = ImageReader(img_buf)
-            iw, ih = reader.getSize()
-            max_width = 170 * mm
-            max_height = 110 * mm
-            scale = min(max_width / iw, max_height / ih)
-            display_w = iw * scale
-            display_h = ih * scale
-
-            img_buf.seek(0)
-            img_flowable = Image(img_buf, width=display_w, height=display_h)
-            elements.append(img_flowable)
-            elements.append(Spacer(1, 8))
-
-        except Exception as exc:
-            logger.warning(
-                f"Failed to embed filtered EEG visualization in PDF: {exc}",
-                exc_info=True,
+        bar_table = Table(bar_rows, colWidths=[doc_width()])
+        bar_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#e8e8e8")),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]
             )
+        )
+        elements.append(bar_table)
+        elements.append(Spacer(1, 4))
+
+        details = [
+            ["Medication at referral", _display(report_data["medication"])],
+            ["Alertness", _display(report_data["alertness"])],
+            ["Sensor group", _display(report_data["sensor_group"])],
+        ]
+        details_table = Table(details, colWidths=[45 * mm, doc_width() - 45 * mm])
+        details_table.setStyle(
+            TableStyle(
+                [
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ]
+            )
+        )
+        elements.append(details_table)
+
+        elements.append(
+            Paragraph("Relative Band Powers", self.styles["DetailLabelTight"])
+        )
+        elements.append(Spacer(1, 1))
+        band_block = build_band_power_block(
+            report_data["band_power"], self.styles, doc_width()
+        )
+        band_block.hAlign = "LEFT"
+        band_wrapper = Table([[band_block]], colWidths=[doc_width()])
+        band_wrapper.setStyle(
+            TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
+        elements.append(band_wrapper)
+        elements.append(Spacer(1, 3))
+        return elements
+
+    def _build_findings(self, report_data: dict) -> list:
+        elements: list = []
+        elements.append(Paragraph("FINDINGS", self.styles["SectionHeaderTight"]))
+        elements.append(Spacer(1, 1))
+
+        elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
+        for finding in generate_band_findings(
+            report_data["band_power"], report_data.get("normative_ranges")
+        ):
+            elements.append(Paragraph(finding["label"], self.styles["SubSubHeader"]))
             elements.append(
                 Paragraph(
-                    "<i>Could not render filtered EEG image.</i>",
-                    self.styles['ReportBody'],
+                    finding["properties"],
+                    self.styles["FindingsBody"],
                 )
             )
+            elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 1))
 
         return elements
 
-    def _build_eeg_visualizations_section(self, result_data: dict) -> list:
-        """Kept for compatibility; no longer used in story order (replaced by _build_filtered_eeg_visualization)."""
-        return []
+    def _build_model_classification(self, report_data: dict) -> list:
+        model = report_data["model_classification"]
+        confidence = model["confidence"]
+        confidence_pct = confidence * 100
+
+        elements: list = []
+        elements.append(Paragraph("Model Classification", self.styles["SubHeader"]))
+        elements.append(Spacer(1, 1))
+
+        confidence_statement = self._format_confidence_statement(confidence, confidence_pct)
+        classification_statement = (
+            "The spatiotemporal model found the recording to have features supportive of "
+            f"{model['label']}. {confidence_statement}"
+        )
+        elements.append(
+            Paragraph(classification_statement, self.styles["FindingsBody"])
+        )
+        elements.append(Spacer(1, 3))
+        return elements
+
+    @staticmethod
+    def _format_confidence_statement(confidence: float, confidence_pct: float) -> str:
+        if confidence >= 0.8:
+            tier = "High confidence"
+        elif confidence >= 0.6:
+            tier = "Moderate confidence"
+        else:
+            tier = "Low confidence"
+        return f"{tier} ({confidence_pct:.1f}%)."
+
+    def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
+        left_column = [
+            Spacer(1, 6),
+            Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["summary_findings"], self.styles, width / 2 - 6
+            ),
+            Spacer(1, 6),
+            Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["diagnostic_significance"],
+                self.styles,
+                width / 2 - 6,
+                bold=True,
+            ),
+            Spacer(1, 6),
+            Paragraph("CLINICAL COMMENTS", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["clinical_comments"],
+                self.styles,
+                width / 2 - 6,
+                min_height=26,
+            ),
+            Spacer(1, 6),
+        ]
+
+        right_column = [
+            Spacer(1, 6),
+            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
+            build_disclaimer_box(self.styles, width / 2 - 6),
+            Spacer(1, 6),
+        ]
+
+        table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
+        table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
+        return table
+
+    def _build_signature_block(self, report_data: dict) -> list:
+        elements: list = []
+        signature_line = "________________________"
+        clinician_name = report_data.get("clinician_name", "Not recorded")
+        clinician_occupation = report_data.get("clinician_occupation", "")
+        clinician_display = clinician_name
+        clinician_role = (
+            clinician_occupation
+            if clinician_occupation and clinician_occupation != "Not recorded"
+            else "Clinician"
+        )
+        rows = [
+            [signature_line, signature_line, signature_line],
+            [
+                report_data["technician_name"],
+                Paragraph(clinician_display, self.styles["CenteredBody"]),
+                report_data["supervising_physician"],
+            ],
+            ["Technician", clinician_role, "Supervising clinician"],
+        ]
+        table = Table(rows, colWidths=[doc_width() / 3] * 3)
+        table.setStyle(
+            TableStyle(
+                [
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica"),
+                    ("FONTNAME", (0, 2), (-1, 2), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, 0), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 2),
+                    ("TOPPADDING", (0, 1), (-1, 1), 1),
+                    ("BOTTOMPADDING", (0, 1), (-1, 1), 1),
+                    ("TOPPADDING", (0, 2), (-1, 2), 1),
+                    ("BOTTOMPADDING", (0, 2), (-1, 2), 1),
+                ]
+            )
+        )
+        elements.append(table)
+        return elements
+
+
+def doc_width() -> float:
+    return A4[0] - (18 * mm) * 2

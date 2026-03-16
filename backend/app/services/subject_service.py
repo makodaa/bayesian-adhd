@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from ..db.repositories.subjects import SubjectsRepository
 from ..core.logging_config import get_app_logger
@@ -10,17 +11,29 @@ class SubjectService:
     def __init__(self, subjects_repo: SubjectsRepository):
         self.subjects_repo = subjects_repo
 
-    def create_subject(self, subject_code:int, age: int, sex:str) -> int:
+    def create_subject(
+        self,
+        subject_code: str,
+        age: int,
+        sex: str,
+        date_of_birth: date | None = None,
+    ) -> int:
         """Create a new subject"""
         logger.info(f"SubjectService: creating subject {subject_code}")
-        return self.subjects_repo.create_subject(subject_code, age, sex)
+        return self.subjects_repo.create_subject(subject_code, age, sex, date_of_birth)
     
     def get_subject_by_code(self, subject_code: str) -> Optional[dict]:
         """Get subject by subject code."""
         logger.debug(f"SubjectService: fetching subject by code {subject_code}")
         return self.subjects_repo.get_by_subject_code(subject_code)
     
-    def get_or_create_subject(self, subject_code: str, age: int, sex: str) -> int:
+    def get_or_create_subject(
+        self,
+        subject_code: str,
+        age: int,
+        sex: str,
+        date_of_birth: date | None = None,
+    ) -> int:
         """Get existing subject by code or create a new one."""
         logger.info(f"SubjectService: getting or creating subject {subject_code}")
         existing = self.get_subject_by_code(subject_code)
@@ -29,7 +42,7 @@ class SubjectService:
             return existing['id']
         else:
             logger.info(f"Creating new subject {subject_code}")
-            return self.create_subject(subject_code, age, sex)
+            return self.create_subject(subject_code, age, sex, date_of_birth)
     
     def get_subject(self, subject_id:int) -> Optional[dict]:
         """Get subject by ID."""
@@ -46,4 +59,3 @@ class SubjectService:
         logger.debug(f"SubjectService: fetching recordings for subject {subject_id}")
         # This will be handled by RecordingService
         raise NotImplementedError("Use RecordingService.get_recordings_by_subject instead")
-

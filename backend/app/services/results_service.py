@@ -39,6 +39,7 @@ class ResultsService:
             s.id as subject_id,
             s.subject_code,
             s.age,
+            s.date_of_birth,
             s.gender,
             c.first_name,
             c.last_name
