@@ -434,7 +434,7 @@ class PDFReportService:
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
-            leading=9.5,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["IndentedBody"] = ParagraphStyle(
@@ -443,7 +443,7 @@ class PDFReportService:
             fontSize=7.5,
             textColor=colors.black,
             leftIndent=12,
-            leading=9.5,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["ShadedBoxText"] = ParagraphStyle(
@@ -451,7 +451,7 @@ class PDFReportService:
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
-            leading=9.5,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["ShadedBoxBold"] = ParagraphStyle(
@@ -459,7 +459,7 @@ class PDFReportService:
             fontName="Helvetica-Bold",
             fontSize=7.5,
             textColor=colors.black,
-            leading=9.5,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["NarrativeLabel"] = ParagraphStyle(
@@ -481,7 +481,7 @@ class PDFReportService:
             fontName="Helvetica-Oblique",
             fontSize=7,
             textColor=colors.HexColor("#e67e22"),
-            leading=9,
+            leading=8,
             spaceAfter=2,
         )
         styles["LogoPlaceholder"] = ParagraphStyle(
