@@ -415,6 +415,17 @@ class PDFReportService:
             spaceBefore=2,
             spaceAfter=2,
         )
+        styles["DetailLabel"] = ParagraphStyle(
+            name="DetailLabel",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=0,
+            spaceAfter=1,
+        )
         styles["SubSubHeaderItalic"] = ParagraphStyle(
             name="SubSubHeaderItalic",
             fontName="Helvetica-Oblique",
@@ -790,10 +801,9 @@ class PDFReportService:
             )
         )
         elements.append(details_table)
-        elements.append(Spacer(1, 2))
 
-        elements.append(Paragraph("Relative Band Powers", self.styles["SectionHeaderTight"]))
-        elements.append(Spacer(1, 2))
+        elements.append(Paragraph("Relative Band Powers", self.styles["DetailLabel"]))
+        elements.append(Spacer(1, 1))
         band_block = build_band_power_block(
             report_data["band_power"], self.styles, doc_width()
         )
