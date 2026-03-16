@@ -610,9 +610,9 @@ class PDFReportService:
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
         story.extend(self._build_model_classification(report_data))
-        story.append(Spacer(1, 3))
-        story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
         story.append(Spacer(1, 6))
+        story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
+        story.append(Spacer(1, 4))
         story.extend(self._build_signature_block(report_data))
 
         footer_text = report_data["footer_text"]
@@ -1048,11 +1048,11 @@ class PDFReportService:
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("TOPPADDING", (0, 0), (-1, 0), 2),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 1),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 2),
                     ("TOPPADDING", (0, 1), (-1, 1), 1),
                     ("BOTTOMPADDING", (0, 1), (-1, 1), 1),
                     ("TOPPADDING", (0, 2), (-1, 2), 1),
-                    ("BOTTOMPADDING", (0, 2), (-1, 2), 2),
+                    ("BOTTOMPADDING", (0, 2), (-1, 2), 1),
                 ]
             )
         )
