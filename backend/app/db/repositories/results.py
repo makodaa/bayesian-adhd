@@ -1,3 +1,5 @@
+from psycopg2.extras import Json
+
 from .base import BaseRepository
 from ...core.logging_config import get_db_logger
 
@@ -26,6 +28,11 @@ class ResultsRepository(BaseRepository):
         RETURNING id;
         """
         try:
+            summary_payload = (
+                Json(preprocessing_summary)
+                if preprocessing_summary is not None
+                else None
+            )
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
@@ -35,7 +42,7 @@ class ResultsRepository(BaseRepository):
                         clinician_id,
                         classification,
                         confidence_score,
-                        preprocessing_summary,
+                        summary_payload,
                     ),
                 )
                 result_id = cursor.fetchone()[0]
