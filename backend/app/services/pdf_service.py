@@ -435,7 +435,7 @@ class PDFReportService:
         styles["SectionHeader"] = ParagraphStyle(
             name="SectionHeader",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -446,7 +446,7 @@ class PDFReportService:
         styles["SectionHeaderTight"] = ParagraphStyle(
             name="SectionHeaderTight",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=-6,
             firstLineIndent=0,
@@ -457,7 +457,7 @@ class PDFReportService:
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -468,7 +468,7 @@ class PDFReportService:
         styles["SubSubHeader"] = ParagraphStyle(
             name="SubSubHeader",
             fontName="Helvetica-BoldOblique",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -476,7 +476,7 @@ class PDFReportService:
         styles["DetailLabel"] = ParagraphStyle(
             name="DetailLabel",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -487,7 +487,7 @@ class PDFReportService:
         styles["DetailLabelTight"] = ParagraphStyle(
             name="DetailLabelTight",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=-6,
             firstLineIndent=0,
@@ -498,7 +498,7 @@ class PDFReportService:
         styles["SubSubHeaderItalic"] = ParagraphStyle(
             name="SubSubHeaderItalic",
             fontName="Helvetica-Oblique",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -506,7 +506,7 @@ class PDFReportService:
         styles["BodyText"] = ParagraphStyle(
             name="BodyText",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -514,7 +514,7 @@ class PDFReportService:
         styles["BodyTextRight"] = ParagraphStyle(
             name="BodyTextRight",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leading=7,
             alignment=2,
@@ -523,7 +523,7 @@ class PDFReportService:
         styles["CenteredBody"] = ParagraphStyle(
             name="CenteredBody",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leading=7,
             alignment=1,
@@ -532,7 +532,7 @@ class PDFReportService:
         styles["IndentedBody"] = ParagraphStyle(
             name="IndentedBody",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=12,
             leading=7,
@@ -541,7 +541,7 @@ class PDFReportService:
         styles["FindingsBody"] = ParagraphStyle(
             name="FindingsBody",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leftIndent=12,
             leading=8,
@@ -550,7 +550,7 @@ class PDFReportService:
         styles["ShadedBoxText"] = ParagraphStyle(
             name="ShadedBoxText",
             fontName="Helvetica",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -558,7 +558,7 @@ class PDFReportService:
         styles["ShadedBoxBold"] = ParagraphStyle(
             name="ShadedBoxBold",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             leading=7,
             spaceAfter=2,
@@ -566,21 +566,21 @@ class PDFReportService:
         styles["NarrativeLabel"] = ParagraphStyle(
             name="NarrativeLabel",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.HexColor("#1a3a5c"),
             spaceAfter=2,
         )
         styles["DisclaimerHeader"] = ParagraphStyle(
             name="DisclaimerHeader",
             fontName="Helvetica-Bold",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.black,
             spaceAfter=2,
         )
         styles["DisclaimerBody"] = ParagraphStyle(
             name="DisclaimerBody",
             fontName="Helvetica-Oblique",
-            fontSize=8,
+            fontSize=7.5,
             textColor=colors.HexColor("#e67e22"),
             leading=7,
             spaceAfter=2,
@@ -726,7 +726,7 @@ class PDFReportService:
             "gender": _display(result_data.get("gender")),
             "study_id": result_id,
             "local_study_id": recording_id,
-            "technician": clinician_name or "Not recorded",
+            "technician": "Not recorded",
             "start_datetime": "Not recorded",
             "stop_datetime": "Not recorded",
             "duration_minutes": "Not recorded",
@@ -758,8 +758,9 @@ class PDFReportService:
     def _build_header(self, report_data: dict) -> list:
         elements: list = []
         left_block = [
-            Paragraph("EEG REPORT", self.styles["ReportTitle"]),
-            Paragraph(_display(report_data["unit_name"]), self.styles["BodyText"]),
+            Paragraph(
+                "Electroencephalogram (EEG) Report", self.styles["ReportTitle"]
+            ),
             Paragraph(_display(report_data["institution_name"]), self.styles["BodyText"]),
         ]
 
@@ -795,7 +796,7 @@ class PDFReportService:
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                     ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
                 ]
             )
         )
@@ -824,11 +825,7 @@ class PDFReportService:
                 self.styles["BodyText"],
             ),
             Paragraph(
-                f"Date of Birth: {_display(report_data['patient_dob'])}",
-                self.styles["BodyText"],
-            ),
-            Paragraph(
-                f"Age at study time: {_display(report_data['patient_age_at_study'])}",
+                f"Age at Assessment: {_display(report_data['patient_age_at_study'])}",
                 self.styles["BodyText"],
             ),
             Paragraph(
