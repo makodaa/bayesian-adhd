@@ -842,27 +842,13 @@ class PDFReportService:
         elements.append(Spacer(1, 4))
 
         confidence_statement = self._format_confidence_statement(confidence, confidence_pct)
-
-        elements.append(Paragraph("Classification", self.styles["SubSubHeader"]))
-        elements.append(Paragraph(model["label"], self.styles["IndentedBody"]))
-        elements.append(Spacer(1, 4))
-
-        elements.append(Paragraph("Confidence", self.styles["SubSubHeader"]))
-        elements.append(Paragraph(confidence_statement, self.styles["IndentedBody"]))
-        elements.append(Spacer(1, 4))
-
-        elements.append(Paragraph("Theta/Beta Ratio", self.styles["SubSubHeader"]))
-        elements.append(
-            Paragraph(f"{model['theta_beta_ratio']:.2f}", self.styles["IndentedBody"])
+        classification_statement = (
+            "The spatiotemporal model found the recording to have features supportive of "
+            f"{model['label']}. {confidence_statement}"
         )
-        elements.append(Spacer(1, 4))
-
-        elements.append(Paragraph("Model Version", self.styles["SubSubHeader"]))
-        elements.append(Paragraph(model["model_version"], self.styles["IndentedBody"]))
-        if model.get("notes"):
-            elements.append(Spacer(1, 4))
-            elements.append(Paragraph("Notes", self.styles["SubSubHeader"]))
-            elements.append(Paragraph(model["notes"], self.styles["IndentedBody"]))
+        elements.append(
+            Paragraph(classification_statement, self.styles["IndentedBody"])
+        )
         elements.append(Spacer(1, 6))
         return elements
 
