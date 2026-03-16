@@ -2,6 +2,7 @@ CREATE TABLE subjects (
     id SERIAL PRIMARY KEY,
     subject_code VARCHAR(50) UNIQUE NOT NULL,
     age INTEGER CHECK (age >= 1 AND age <= 120),
+    date_of_birth DATE,
     gender VARCHAR(20) CHECK (gender IN ('Male', 'Female', 'Other', 'Prefer not to say')),
     created_at TIMESTAMP DEFAULT NOW()
 );
