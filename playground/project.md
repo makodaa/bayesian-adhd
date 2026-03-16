@@ -7,7 +7,7 @@
 ## 1. Application Identity
 
 **Full Name:** Bayesian ADHD — EEG-Based ADHD Classification System  
-**Short Name:** BayesADHD  
+**Short Name:** BaeysianADHD  
 **Tagline:** *Objective EEG insights for informed clinical decisions.*  
 **Audience:** Clinicians — developmental pediatricians, psychiatrists, neurologists, and trained EEG technicians working in Philippine clinical settings.  
 **Nature:** A clinical *support* tool. Not a standalone diagnostic instrument. The application's language, interface copy, and report framing must consistently reinforce this distinction.
@@ -102,7 +102,7 @@ The Results View is organized into a vertical stack of collapsible sections:
 ## 3. Intended Use Patterns
 
 ### 3.1 Primary Use Case — In-Clinic EEG Review
-A clinician has conducted an EEG session with a child and exported the recording as CSV. They open BayesADHD on a desktop workstation at their clinic, navigate to the subject's record (or create one if new), open the assessment drawer, upload the file, enter the session metadata from their intake notes, and submit. Within two to three minutes, they have a structured report to reference during their consultation or to attach to the child's file.
+A clinician has conducted an EEG session with a child and exported the recording as CSV. They open BaeysianADHD on a desktop workstation at their clinic, navigate to the subject's record (or create one if new), open the assessment drawer, upload the file, enter the session metadata from their intake notes, and submit. Within two to three minutes, they have a structured report to reference during their consultation or to attach to the child's file.
 
 ### 3.2 Secondary Use Case — Retrospective Review
 A clinician reviews a subject's history across multiple assessments over several months. The Subject detail page shows a timeline of all past classifications with confidence scores, allowing the clinician to observe trends in EEG-based indicators over time. This supports follow-up consultations and monitoring of treatment effects, without the system making any claims about treatment efficacy.

@@ -1,4 +1,4 @@
-# Bayesian ADHD (BayesADHD) — Design & Layout Specification
+# Bayesian ADHD (BaeysianADHD) — Design & Layout Specification
 
 ## 1. Application Architecture & Layout
 
