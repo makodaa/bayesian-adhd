@@ -100,80 +100,87 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
     tbr = theta / beta if beta > 0 else 0.0
 
     if alpha > 12:
-        label = f"Increased Alpha activity ({alpha:.2f}%)"
-        note = ""
+        label = f"Elevated alpha power ({alpha:.2f}%)."
+        note = (
+            "May reflect enhanced relaxed wakefulness, reduced cognitive engagement, "
+            "or inattentive state consistent with some ADHD presentations."
+        )
     elif alpha < 8:
-        label = f"Decreased Alpha activity ({alpha:.2f}%)"
-        note = ""
+        label = f"Reduced alpha power ({alpha:.2f}%)."
+        note = (
+            "Reduced posterior alpha; may indicate heightened cortical arousal "
+            "or hyperactive/impulsive state."
+        )
     else:
-        label = f"Alpha activity within normal limits ({alpha:.2f}%)"
-        note = ""
-    alpha_properties = label if not note else f"{label}. {note}"
+        label = f"Alpha power within expected range ({alpha:.2f}%)."
+        note = "Posterior alpha rhythm is appropriate for age and vigilance state."
     findings.append(
         {
-            "label": "Alpha (8-13 Hz)",
-            "properties": alpha_properties,
+            "label": label,
+            "properties": note,
         }
     )
 
     if beta > 20:
-        label = f"Increased Beta activity ({beta:.2f}%)"
+        label = f"Elevated beta power ({beta:.2f}%)."
         note = (
             "Elevated fast-wave activity; may reflect heightened cortical arousal, "
             "anxiety, or stimulant medication effect."
         )
     elif beta < 10:
-        label = f"Decreased Beta activity ({beta:.2f}%)"
+        label = f"Reduced beta power ({beta:.2f}%)."
         note = (
             "Reduced fast-frequency activity; may indicate hypo-arousal or "
             "inattentive cortical state."
         )
     else:
-        label = f"Beta activity within normal limits ({beta:.2f}%)"
+        label = f"Beta power within expected range ({beta:.2f}%)."
         note = "Fast cortical rhythms are within expected range."
     findings.append(
         {
-            "label": "Beta (13-30 Hz)",
-            "properties": f"{label}. {note}",
+            "label": label,
+            "properties": note,
         }
     )
 
     if theta > 8:
-        label = f"Increased Theta activity ({theta:.2f}%)"
+        label = f"Elevated theta power ({theta:.2f}%)."
         note = (
             "Elevated theta is a common EEG correlate observed in ADHD populations; "
             "diffuse excess theta may indicate cortical under-arousal or inattention."
         )
     elif theta < 4:
-        label = f"Decreased Theta activity ({theta:.2f}%)"
+        label = f"Reduced theta power ({theta:.2f}%)."
         note = "Low theta power; consider vigilance state and age norms."
     else:
-        label = f"Theta activity within normal limits ({theta:.2f}%)"
+        label = f"Theta power within expected range ({theta:.2f}%)."
         note = "Theta distribution is appropriate."
     findings.append(
         {
-            "label": "Theta (4-8 Hz)",
-            "properties": f"{label}. {note}",
+            "label": label,
+            "properties": note,
         }
     )
 
     ab = alpha + beta
     if ab > 25:
-        arousal = "Cortical arousal pattern present; EEG reflects an activated, alert state."
+        label = f"Cortical arousal pattern present (A+B: {ab:.2f}%)."
+        arousal = "EEG reflects an activated, alert state."
     elif ab >= 15:
+        label = f"Cortical arousal mildly reduced (A+B: {ab:.2f}%)."
         arousal = (
-            "Cortical arousal mildly reduced; background reflects a transitional "
-            "or mildly inattentive state."
+            "Background reflects a transitional or mildly inattentive state."
         )
     else:
+        label = f"Cortical arousal markedly reduced (A+B: {ab:.2f}%)."
         arousal = (
-            "Cortical arousal markedly reduced; dominant slow-wave activity suggests "
-            "hypo-arousal or pronounced inattentive state."
+            "Dominant slow-wave activity suggests hypo-arousal or pronounced "
+            "inattentive state."
         )
     findings.append(
         {
-            "label": "Cortical Arousal",
-            "properties": f"{arousal} (Combined Alpha+Beta: {ab:.2f}%)",
+            "label": label,
+            "properties": arousal,
         }
     )
 
@@ -421,6 +428,17 @@ class PDFReportService:
             fontSize=7.5,
             textColor=colors.black,
             leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=0,
+            spaceAfter=1,
+        )
+        styles["DetailLabelTight"] = ParagraphStyle(
+            name="DetailLabelTight",
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=colors.black,
+            leftIndent=-6,
             firstLineIndent=0,
             alignment=0,
             spaceBefore=0,
@@ -802,7 +820,9 @@ class PDFReportService:
         )
         elements.append(details_table)
 
-        elements.append(Paragraph("Relative Band Powers", self.styles["DetailLabel"]))
+        elements.append(
+            Paragraph("Relative Band Powers", self.styles["DetailLabelTight"])
+        )
         elements.append(Spacer(1, 1))
         band_block = build_band_power_block(
             report_data["band_power"], self.styles, doc_width()
@@ -833,7 +853,7 @@ class PDFReportService:
             elements.append(Paragraph(finding["label"], self.styles["SubSubHeader"]))
             elements.append(
                 Paragraph(
-                    f"Properties: {finding['properties']}",
+                    finding["properties"],
                     self.styles["IndentedBody"],
                 )
             )
