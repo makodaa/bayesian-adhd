@@ -33,7 +33,8 @@ from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
 from .services.file_service import FileService
 from .services.input_validation_service import (
-    validate_age,
+    compute_age_from_dob,
+    validate_date_of_birth,
     validate_gender,
     validate_sleep_hours,
     validate_subject_code,
@@ -535,7 +536,7 @@ def predict():
     try:
         # Extract form data
         subject_code = request.form.get("subject_code")
-        age = request.form.get("age")
+        date_of_birth_raw = request.form.get("date_of_birth")
         gender = request.form.get("gender")
 
         # Unused variables
@@ -551,7 +552,8 @@ def predict():
 
         # Validate required subject data
         subject_code = validate_subject_code(subject_code)
-        age_int = validate_age(age)
+        date_of_birth = validate_date_of_birth(date_of_birth_raw)
+        age_int = compute_age_from_dob(date_of_birth)
         gender = validate_gender(gender)
 
         # Validate optional text fields (500-char cap)
@@ -595,7 +597,7 @@ def predict():
             f"Getting or creating subject: {subject_code}, age={age_int}, gender={gender}"
         )
         subject_id = subject_service.get_or_create_subject(
-            subject_code, age_int, gender
+            subject_code, age_int, gender, date_of_birth
         )
 
         # Create recording with environmental data
