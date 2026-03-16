@@ -543,6 +543,9 @@ class PDFReportService:
                 ],
             )
         ).strip()
+        clinician_occupation = _display(
+            clinician_data.get("occupation"), "Not recorded"
+        )
 
         subject_code = _display(result_data.get("subject_code"))
         recording_id = _display(result_data.get("recording_id"))
@@ -632,8 +635,9 @@ class PDFReportService:
             "summary_findings": summary_findings,
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
-            "technician_name": clinician_name or "Not recorded",
-            "physician_name": "Not recorded",
+            "technician_name": "Not recorded",
+            "clinician_name": clinician_name or "Not recorded",
+            "clinician_occupation": clinician_occupation,
             "supervising_physician": "Not recorded",
             "footer_text": footer_text,
         }
@@ -904,19 +908,29 @@ class PDFReportService:
 
     def _build_signature_block(self, report_data: dict) -> list:
         elements: list = []
+        signature_line = "________________________"
+        clinician_name = report_data.get("clinician_name", "Not recorded")
+        clinician_occupation = report_data.get("clinician_occupation", "")
+        clinician_display = (
+            f"{clinician_name}<br/>{clinician_occupation}"
+            if clinician_occupation and clinician_occupation != "Not recorded"
+            else clinician_name
+        )
         rows = [
+            [signature_line, signature_line, signature_line],
             [
                 report_data["technician_name"],
-                report_data["physician_name"],
+                Paragraph(clinician_display, self.styles["BodyText"]),
                 report_data["supervising_physician"],
             ],
-            ["Technician", "Physician (signed)", "Supervising physician"],
+            ["Technician", "Clinician", "Supervising clinician"],
         ]
         table = Table(rows, colWidths=[doc_width() / 3] * 3)
         table.setStyle(
             TableStyle(
                 [
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica"),
+                    ("FONTNAME", (0, 2), (-1, 2), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 7.5),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("TOPPADDING", (0, 0), (-1, -1), 4),
