@@ -709,6 +709,9 @@ class PDFReportService:
     def _build_recording_assessment(self, report_data: dict) -> list:
         elements: list = []
 
+        elements.append(Paragraph("Recording/Assessment", self.styles["SectionHeader"]))
+        elements.append(Spacer(1, 2))
+
         bar_rows = [
             [
                 f"Assessment ID: {report_data['study_id']}   "
