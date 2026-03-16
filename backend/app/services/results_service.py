@@ -15,14 +15,22 @@ class ResultsService:
         logger.debug(f"ResultsService: fetching result {result_id}")
         return self.results_repo.get_by_id(result_id)
     
-    def create_result(self, recording_id: int, classification: str, confidence_score: float, clinician_id: int | None = None) -> int:
+    def create_result(
+        self,
+        recording_id: int,
+        classification: str,
+        confidence_score: float,
+        clinician_id: int | None = None,
+        preprocessing_summary: dict | None = None,
+    ) -> int:
         """Create a new result entry."""
         logger.info(f"ResultsService: creating result for recording {recording_id}")
         return self.results_repo.create_result(
             recording_id=recording_id,
             classification=classification,
             confidence_score=confidence_score,
-            clinician_id=clinician_id
+            clinician_id=clinician_id,
+            preprocessing_summary=preprocessing_summary,
         )
     
     def get_all_results_with_details(self):
