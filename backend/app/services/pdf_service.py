@@ -224,67 +224,65 @@ def build_band_power_block(
         "gamma": "#cccccc",
     }
 
-    label_col_w = 110
-    value_col_w = 45
-    bar_col_w = max(content_width - label_col_w - value_col_w, 120)
-
-    bar_h = 10
-    bar_row_h = 18
-    max_val = max(band_power[k] for _, _, k in bands) if band_power else 1
-
-    header: list[object] = [
-        Paragraph("Band", styles["SubSubHeader"]),
-        Paragraph("Relative Power", styles["SubSubHeader"]),
-        Paragraph("", styles["BodyText"]),
-    ]
-
-    rows: list[list[object]] = [header]
+    left_content: list[object] = []
     for band_name, freq_range, key in bands:
         val = band_power.get(key, 0.0)
-        bar_w = (val / max_val) * bar_col_w if max_val > 0 else 0
+        left_content.append(
+            Paragraph(f"{band_name} ({freq_range})", styles["SubSubHeader"])
+        )
+        left_content.append(
+            Paragraph(f"Properties: {val:.2f}%", styles["IndentedBody"])
+        )
+        left_content.append(Spacer(1, 4))
 
-        d = Drawing(bar_col_w, bar_row_h)
-        rect = Rect(0, (bar_row_h - bar_h) / 2, bar_w, bar_h)
+    right_w = content_width * 0.55
+    left_w = content_width * 0.45
+    label_w = 20
+    pct_w = 35
+    bar_h = 10
+    bar_spacing = 6
+    chart_w = max(right_w - label_w - pct_w, 60)
+    total_h = len(bands) * (bar_h + bar_spacing)
+    max_val = max(band_power[k] for _, _, k in bands) if band_power else 1
+
+    drawing = Drawing(right_w, total_h)
+    initials = ["D", "T", "A", "B", "G"]
+    for i, ((_, _, key), initial) in enumerate(zip(bands, initials)):
+        val = band_power.get(key, 0.0)
+        bar_w = (val / max_val) * chart_w if max_val > 0 else 0
+        y = total_h - (i + 1) * (bar_h + bar_spacing) + bar_spacing
+
+        drawing.add(
+            String(0, y + 2, initial, fontSize=6, fontName="Helvetica")
+        )
+        rect = Rect(label_w, y, bar_w, bar_h)
         rect.fillColor = colors.HexColor(bar_colors[key])
         rect.strokeColor = colors.HexColor(bar_colors[key])
         rect.strokeWidth = 0
-        d.add(rect)
-
-        label_text = f"<b>{band_name}</b> ({freq_range})"
-        rows.append(
-            [
-                Paragraph(label_text, styles["BodyText"]),
-                Paragraph(f"{val:.2f}%", styles["BodyText"]),
-                d,
-            ]
+        drawing.add(rect)
+        drawing.add(
+            String(
+                label_w + bar_w + 3,
+                y + 2,
+                f"{val:.1f}%",
+                fontSize=6.5,
+                fontName="Helvetica",
+            )
         )
 
-    table = Table(rows, colWidths=[label_col_w, value_col_w, bar_col_w])
-    table.setStyle(
+    outer = Table([[left_content, drawing]], colWidths=[left_w, right_w])
+    outer.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e0e0e0")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 7.5),
-                ("FONTSIZE", (0, 1), (-1, -1), 7.5),
-                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-                (
-                    "ROWBACKGROUNDS",
-                    (0, 1),
-                    (-1, -1),
-                    [colors.HexColor("#ffffff"), colors.HexColor("#f7f7f7")],
-                ),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("RIGHTPADDING", (1, 0), (1, -1), 6),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdbdbd")),
-                ("LINEBELOW", (0, 0), (-1, 0), 0.5, colors.HexColor("#bdbdbd")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
             ]
         )
     )
-    return table
+    return outer
 
 
 def build_disclaimer_box(
