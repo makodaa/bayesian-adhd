@@ -205,10 +205,11 @@ def build_band_power_block(
         val = band_power.get(key, 0.0)
         inline_text = (
             f"{band_name} ({freq_range}) "
-            f"<font name=\"Helvetica\">&nbsp;&nbsp;&nbsp;Properties: {val:.2f}%</font>"
+            f"<font name=\"Helvetica\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+            f"Properties: {val:.2f}%</font>"
         )
         left_content.append(Paragraph(inline_text, styles["SubSubHeader"]))
-        left_content.append(Spacer(1, 2))
+        left_content.append(Spacer(1, 1))
 
     right_w = content_width * 0.55
     left_w = content_width * 0.45
@@ -379,6 +380,8 @@ class PDFReportService:
             fontSize=8,
             textColor=colors.black,
             leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
             spaceBefore=6,
             spaceAfter=2,
         )
@@ -493,7 +496,7 @@ class PDFReportService:
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
         story.extend(self._build_model_classification(report_data))
-        story.append(Spacer(1, 2))
+        story.append(Spacer(1, 1))
         story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
         story.append(Spacer(1, 6))
         story.extend(self._build_signature_block(report_data))
@@ -712,7 +715,7 @@ class PDFReportService:
             )
         )
         elements.append(table)
-        elements.append(Spacer(1, 3))
+        elements.append(Spacer(1, 2))
         return elements
 
     def _build_recording_assessment(self, report_data: dict) -> list:
@@ -753,8 +756,6 @@ class PDFReportService:
         elements.append(Spacer(1, 4))
 
         details = [
-            ["EEG type", _display(report_data["eeg_type"])],
-            ["Indication for EEG", _display(report_data["indication"])],
             ["Medication at referral", _display(report_data["medication"])],
             ["Alertness", _display(report_data["alertness"])],
             ["Sensor group", _display(report_data["sensor_group"])],
@@ -773,25 +774,33 @@ class PDFReportService:
             )
         )
         elements.append(details_table)
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 2))
+
+        elements.append(Paragraph("Relative Band Powers", self.styles["SubHeader"]))
+        elements.append(Spacer(1, 2))
+        band_block = build_band_power_block(
+            report_data["band_power"], self.styles, doc_width()
+        )
+        band_block.hAlign = "LEFT"
+        band_wrapper = Table([[band_block]], colWidths=[doc_width()])
+        band_wrapper.setStyle(
+            TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
+        elements.append(band_wrapper)
+        elements.append(Spacer(1, 3))
         return elements
 
     def _build_findings(self, report_data: dict) -> list:
         elements: list = []
         elements.append(Paragraph("FINDINGS", self.styles["SectionHeader"]))
         elements.append(Spacer(1, 1))
-
-        elements.append(
-            Paragraph("Relative Band Powers", self.styles["SubSubHeader"])
-        )
-        elements.append(Spacer(1, 2))
-
-        band_block = build_band_power_block(
-            report_data["band_power"], self.styles, doc_width()
-        )
-        band_block.hAlign = "LEFT"
-        elements.append(band_block)
-        elements.append(Spacer(1, 3))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
         for finding in generate_band_findings(report_data["band_power"]):
@@ -813,8 +822,8 @@ class PDFReportService:
         confidence_pct = confidence * 100
 
         elements: list = []
-        elements.append(Paragraph("Model Classification", self.styles["SectionHeader"]))
-        elements.append(Spacer(1, 4))
+        elements.append(Paragraph("Model Classification", self.styles["SubHeader"]))
+        elements.append(Spacer(1, 2))
 
         confidence_statement = self._format_confidence_statement(confidence, confidence_pct)
         classification_statement = (
