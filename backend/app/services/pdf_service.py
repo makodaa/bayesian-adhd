@@ -227,17 +227,16 @@ def build_band_power_block(
     left_content: list[object] = []
     for band_name, freq_range, key in bands:
         val = band_power.get(key, 0.0)
-        left_content.append(
-            Paragraph(f"{band_name} ({freq_range})", styles["SubSubHeader"])
+        inline_text = (
+            f"{band_name} ({freq_range}) "
+            f"<font name=\"Helvetica\">Properties: {val:.2f}%</font>"
         )
-        left_content.append(
-            Paragraph(f"Properties: {val:.2f}%", styles["IndentedBody"])
-        )
+        left_content.append(Paragraph(inline_text, styles["SubSubHeader"]))
         left_content.append(Spacer(1, 4))
 
     right_w = content_width * 0.55
     left_w = content_width * 0.45
-    label_w = 20
+    label_w = 32
     pct_w = 35
     bar_h = 10
     bar_spacing = 6
@@ -246,14 +245,14 @@ def build_band_power_block(
     max_val = max(band_power[k] for _, _, k in bands) if band_power else 1
 
     drawing = Drawing(right_w, total_h)
-    initials = ["D", "T", "A", "B", "G"]
-    for i, ((_, _, key), initial) in enumerate(zip(bands, initials)):
+    labels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
+    for i, ((_, _, key), label) in enumerate(zip(bands, labels)):
         val = band_power.get(key, 0.0)
         bar_w = (val / max_val) * chart_w if max_val > 0 else 0
         y = total_h - (i + 1) * (bar_h + bar_spacing) + bar_spacing
 
         drawing.add(
-            String(0, y + 2, initial, fontSize=6, fontName="Helvetica")
+            String(0, y + 2, label, fontSize=6, fontName="Helvetica")
         )
         rect = Rect(label_w, y, bar_w, bar_h)
         rect.fillColor = colors.HexColor(bar_colors[key])
