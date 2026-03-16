@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from io import BytesIO
 
-from reportlab.graphics.shapes import Drawing, Line, Rect, String
+from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -204,53 +204,58 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
     return findings
 
 
-def build_band_power_chart(band_power: dict[str, float], width: float, height: float) -> Drawing:
-    bands = [
-        "Delta (0.5-4 Hz)",
-        "Theta (4-8 Hz)",
-        "Alpha (8-13 Hz)",
-        "Beta (13-30 Hz)",
-        "Gamma (30-100 Hz)",
-    ]
+def build_band_sparkline(band_power: dict[str, float]) -> Drawing:
     keys = ["delta", "theta", "alpha", "beta", "gamma"]
+    labels = ["D", "T", "A", "B", "G"]
     colors_map = ["#111111", "#444444", "#777777", "#aaaaaa", "#cccccc"]
     values = [_clean_percent(band_power.get(k, 0.0)) for k in keys]
 
-    bar_h = 10
-    bar_spacing = 6
-    label_w = 130
-    chart_w = width - label_w - 40
-    y_start = height - 10
-    axis_max = 80
+    bar_w = 16
+    gap = 4
+    max_h = 40
+    total_w = 120
+    total_h = max_h + 16
+    max_val = max(values) if max(values) > 0 else 1
+    total_bars_w = len(keys) * bar_w + (len(keys) - 1) * gap
+    start_x = (total_w - total_bars_w) / 2
 
-    d = Drawing(width, height)
-    for i, (band, val, color) in enumerate(zip(bands, values, colors_map)):
-        y = y_start - i * (bar_h + bar_spacing)
-        bar_w = (min(val, axis_max) / axis_max) * chart_w
-        d.add(String(0, y + 2, band, fontSize=6.5, fontName="Helvetica"))
-        rect = Rect(label_w, y, bar_w, bar_h)
+    d = Drawing(total_w, total_h)
+    for i, (val, label, color) in enumerate(zip(values, labels, colors_map)):
+        x = start_x + i * (bar_w + gap)
+        bar_h = (val / max_val) * max_h
+        y = 12
+        rect = Rect(x, y, bar_w, bar_h)
         rect.fillColor = colors.HexColor(color)
         rect.strokeColor = colors.HexColor(color)
         rect.strokeWidth = 0
         d.add(rect)
         d.add(
             String(
-                label_w + bar_w + 3,
-                y + 2,
-                f"{val:.1f}%",
-                fontSize=6.5,
+                x + bar_w / 2,
+                2,
+                label,
+                fontSize=6,
                 fontName="Helvetica",
+                textAnchor="middle",
             )
         )
-
-    axis_y = 0
-    d.add(Line(label_w, axis_y, width - 40, axis_y, strokeWidth=0.5))
-    for tick in (0, 17, 34, 51, 68):
-        x = label_w + (tick / axis_max) * chart_w
-        d.add(Line(x, axis_y, x, axis_y - 3, strokeWidth=0.5))
-        d.add(String(x - 6, axis_y - 12, f"{tick}%", fontSize=6, fontName="Helvetica"))
-
     return d
+
+
+def get_dominant_band(band_power: dict[str, float]) -> tuple[str, float]:
+    labels = {
+        "delta": "Delta",
+        "theta": "Theta",
+        "alpha": "Alpha",
+        "beta": "Beta",
+        "gamma": "Gamma",
+    }
+    if not band_power:
+        return "Delta", 0.0
+    dominant_key, dominant_value = max(
+        band_power.items(), key=lambda item: item[1]
+    )
+    return labels[dominant_key], dominant_value
 
 
 def build_disclaimer_box(
@@ -384,7 +389,7 @@ class PDFReportService:
         )
         styles["SubSubHeader"] = ParagraphStyle(
             name="SubSubHeader",
-            fontName="Helvetica-Bold",
+            fontName="Helvetica-BoldOblique",
             fontSize=7,
             textColor=colors.black,
             spaceBefore=2,
@@ -411,7 +416,7 @@ class PDFReportService:
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
-            leftIndent=10,
+            leftIndent=12,
             leading=9.5,
             spaceAfter=2,
         )
@@ -773,22 +778,63 @@ class PDFReportService:
         elements.append(
             Paragraph("Relative Band Power Analysis", self.styles["SubHeader"])
         )
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.black))
         elements.append(
             Paragraph(
                 "Averaged Relative Band Power Across All Channels",
-                self.styles["SubSubHeaderItalic"],
+                self.styles["SubSubHeader"],
             )
         )
         elements.append(Spacer(1, 4))
 
-        chart = build_band_power_chart(report_data["band_power"], doc_width() * 0.6, 90)
-        elements.append(chart)
-        elements.append(Spacer(1, 6))
+        group_width = doc_width() * 0.55
+        sparkline_width = 120
+        gutter = 8
+        table_cell_width = group_width - sparkline_width
+        band_table_width = max(table_cell_width - gutter, 120)
 
-        elements.append(self._build_band_power_table(report_data["band_power"]))
+        sparkline = build_band_sparkline(report_data["band_power"])
+        band_table = self._build_band_power_table(
+            report_data["band_power"], band_table_width
+        )
+        wrapper = Table(
+            [[sparkline, band_table]],
+            colWidths=[sparkline_width, table_cell_width],
+        )
+        wrapper.hAlign = "LEFT"
+        wrapper.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (0, 0), 12),
+                    ("RIGHTPADDING", (0, 0), (0, 0), 0),
+                    ("LEFTPADDING", (1, 0), (1, 0), gutter),
+                    ("RIGHTPADDING", (1, 0), (1, 0), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
+        elements.append(wrapper)
+        elements.append(
+            Paragraph(
+                "Band profile shown left. Exact values in table.",
+                self.styles["IndentedBody"],
+            )
+        )
+        dominant_label, dominant_value = get_dominant_band(report_data["band_power"])
+        elements.append(
+            Paragraph(
+                "Properties: "
+                f"{dominant_label} dominant spectrum ({dominant_value:.2f}%). "
+                "See spectral findings below for per-band interpretation.",
+                self.styles["IndentedBody"],
+            )
+        )
         elements.append(Spacer(1, 6))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.black))
         for finding in generate_band_findings(report_data["band_power"]):
             elements.append(Paragraph(finding["label"], self.styles["SubSubHeader"]))
             elements.append(
@@ -802,7 +848,7 @@ class PDFReportService:
 
         return elements
 
-    def _build_band_power_table(self, band_power: dict) -> Table:
+    def _build_band_power_table(self, band_power: dict, table_width: float) -> Table:
         freq_ranges = {
             "delta": "0.5-4 Hz",
             "theta": "4-8 Hz",
@@ -819,7 +865,10 @@ class PDFReportService:
                     f"{band_power.get(band, 0.0):.2f}%",
                 ]
             )
-        table = Table(rows, colWidths=[35 * mm, 45 * mm, 35 * mm])
+        band_col = table_width * 0.28
+        range_col = table_width * 0.42
+        power_col = table_width * 0.30
+        table = Table(rows, colWidths=[band_col, range_col, power_col])
         table.setStyle(
             TableStyle(
                 [
@@ -830,7 +879,7 @@ class PDFReportService:
                     ("ALIGN", (2, 1), (2, -1), "RIGHT"),
                     ("BACKGROUND", (0, 1), (-1, -1), colors.white),
                     ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f7f7f7")]),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#bdbdbd")),
                 ]
             )
         )
