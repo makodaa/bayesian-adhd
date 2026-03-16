@@ -101,23 +101,18 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
 
     if alpha > 12:
         label = f"Increased Alpha activity ({alpha:.2f}%)"
-        note = (
-            "May reflect enhanced relaxed wakefulness, reduced cognitive engagement, "
-            "or inattentive state consistent with some ADHD presentations."
-        )
+        note = ""
     elif alpha < 8:
         label = f"Decreased Alpha activity ({alpha:.2f}%)"
-        note = (
-            "Reduced posterior alpha; may indicate heightened cortical arousal "
-            "or hyperactive/impulsive state."
-        )
+        note = ""
     else:
         label = f"Alpha activity within normal limits ({alpha:.2f}%)"
-        note = "Posterior alpha rhythm is appropriate for age and vigilance state."
+        note = ""
+    alpha_properties = label if not note else f"{label}. {note}"
     findings.append(
         {
             "label": "Alpha (8-13 Hz)",
-            "properties": f"{label}. {note}",
+            "properties": alpha_properties,
         }
     )
 
@@ -159,25 +154,6 @@ def generate_band_findings(band_power: dict[str, float]) -> list[dict[str, str]]
         {
             "label": "Theta (4-8 Hz)",
             "properties": f"{label}. {note}",
-        }
-    )
-
-    if tbr > 3.0:
-        tbr_label = f"Elevated Theta/Beta Ratio ({tbr:.2f})"
-        tbr_note = (
-            "TBR elevation has been associated with ADHD in research literature; "
-            "interpret alongside clinical presentation."
-        )
-    elif tbr >= 2.0:
-        tbr_label = f"Theta/Beta Ratio borderline elevated ({tbr:.2f})"
-        tbr_note = "Mildly elevated; monitor in clinical context."
-    else:
-        tbr_label = f"Theta/Beta Ratio within normal limits ({tbr:.2f})"
-        tbr_note = "Theta/Beta ratio does not indicate excessive slow-wave dominance."
-    findings.append(
-        {
-            "label": "Theta/Beta Ratio",
-            "properties": f"{tbr_label}. {tbr_note}",
         }
     )
 
@@ -434,7 +410,7 @@ class PDFReportService:
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
-            leading=8.5,
+            leading=7,
             spaceAfter=2,
         )
         styles["IndentedBody"] = ParagraphStyle(
@@ -443,7 +419,7 @@ class PDFReportService:
             fontSize=7.5,
             textColor=colors.black,
             leftIndent=12,
-            leading=8.5,
+            leading=7,
             spaceAfter=2,
         )
         styles["ShadedBoxText"] = ParagraphStyle(
@@ -451,7 +427,7 @@ class PDFReportService:
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
-            leading=8.5,
+            leading=7,
             spaceAfter=2,
         )
         styles["ShadedBoxBold"] = ParagraphStyle(
@@ -459,7 +435,7 @@ class PDFReportService:
             fontName="Helvetica-Bold",
             fontSize=7.5,
             textColor=colors.black,
-            leading=8.5,
+            leading=7,
             spaceAfter=2,
         )
         styles["NarrativeLabel"] = ParagraphStyle(
@@ -481,7 +457,7 @@ class PDFReportService:
             fontName="Helvetica-Oblique",
             fontSize=7,
             textColor=colors.HexColor("#e67e22"),
-            leading=8,
+            leading=7,
             spaceAfter=2,
         )
         styles["LogoPlaceholder"] = ParagraphStyle(
@@ -802,25 +778,19 @@ class PDFReportService:
     def _build_findings(self, report_data: dict) -> list:
         elements: list = []
         elements.append(Paragraph("FINDINGS", self.styles["SectionHeader"]))
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 2))
 
         elements.append(
-            Paragraph("Relative Band Power Analysis", self.styles["SubHeader"])
+            Paragraph("Relative Band Powers", self.styles["SubSubHeader"])
         )
-        elements.append(
-            Paragraph(
-                "Averaged Relative Band Power Across All Channels",
-                self.styles["SubSubHeader"],
-            )
-        )
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 2))
 
         band_block = build_band_power_block(
             report_data["band_power"], self.styles, doc_width()
         )
         band_block.hAlign = "LEFT"
         elements.append(band_block)
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, 3))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
         for finding in generate_band_findings(report_data["band_power"]):
@@ -831,8 +801,8 @@ class PDFReportService:
                     self.styles["IndentedBody"],
                 )
             )
-            elements.append(Spacer(1, 4))
-        elements.append(Spacer(1, 2))
+            elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 1))
 
         return elements
 
