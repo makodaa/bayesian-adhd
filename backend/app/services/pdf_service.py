@@ -205,10 +205,10 @@ def build_band_power_block(
         val = band_power.get(key, 0.0)
         inline_text = (
             f"{band_name} ({freq_range}) "
-            f"<font name=\"Helvetica\">Properties: {val:.2f}%</font>"
+            f"<font name=\"Helvetica\">&nbsp;&nbsp;&nbsp;Properties: {val:.2f}%</font>"
         )
         left_content.append(Paragraph(inline_text, styles["SubSubHeader"]))
-        left_content.append(Spacer(1, 4))
+        left_content.append(Spacer(1, 2))
 
     right_w = content_width * 0.55
     left_w = content_width * 0.45
@@ -378,6 +378,7 @@ class PDFReportService:
             fontName="Helvetica-Bold",
             fontSize=8,
             textColor=colors.black,
+            leftIndent=0,
             spaceBefore=6,
             spaceAfter=2,
         )
@@ -492,7 +493,7 @@ class PDFReportService:
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
         story.extend(self._build_model_classification(report_data))
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 2))
         story.append(self._build_summary_disclaimer_columns(report_data, doc.width))
         story.append(Spacer(1, 6))
         story.extend(self._build_signature_block(report_data))
@@ -711,14 +712,14 @@ class PDFReportService:
             )
         )
         elements.append(table)
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, 3))
         return elements
 
     def _build_recording_assessment(self, report_data: dict) -> list:
         elements: list = []
 
-        elements.append(Paragraph("Recording/Assessment", self.styles["SectionHeader"]))
-        elements.append(Spacer(1, 2))
+        elements.append(Paragraph("ASSESSMENT INFORMATION", self.styles["SectionHeader"]))
+        elements.append(Spacer(1, 1))
 
         bar_rows = [
             [
@@ -772,13 +773,13 @@ class PDFReportService:
             )
         )
         elements.append(details_table)
-        elements.append(Spacer(1, 8))
+        elements.append(Spacer(1, 4))
         return elements
 
     def _build_findings(self, report_data: dict) -> list:
         elements: list = []
         elements.append(Paragraph("FINDINGS", self.styles["SectionHeader"]))
-        elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 1))
 
         elements.append(
             Paragraph("Relative Band Powers", self.styles["SubSubHeader"])
@@ -823,7 +824,7 @@ class PDFReportService:
         elements.append(
             Paragraph(classification_statement, self.styles["IndentedBody"])
         )
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, 2))
         return elements
 
     @staticmethod
