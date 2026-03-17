@@ -717,7 +717,7 @@ class PDFReportService:
             "patient_name": None,
             "patient_id": subject_code,
             "patient_address": None,
-            "patient_dob": _format_date(result_data.get("date_of_birth")),
+            "patient_dob": "Not recorded",
             "patient_age_at_study": (
                 f"{result_data.get('age')} years"
                 if result_data.get("age") is not None
@@ -726,15 +726,14 @@ class PDFReportService:
             "gender": _display(result_data.get("gender")),
             "study_id": result_id,
             "local_study_id": recording_id,
-            "technician": "Not recorded",
-            "start_datetime": "Not recorded",
-            "stop_datetime": "Not recorded",
-            "duration_minutes": "Not recorded",
-            "recorded_minutes": "Not recorded",
-            "eeg_type": "Standard EEG",
-            "indication": "ADHD assessment",
-            "medication": _display(result_data.get("medication_intake"), "None"),
-            "alertness": "Not recorded",
+            "technician": _display(result_data.get("technician_name")),
+            "duration_minutes": _display(result_data.get("duration_minutes")),
+            "recorded_minutes": _display(result_data.get("recorded_minutes")),
+            "medication": _display(result_data.get("medication"), "None"),
+            "sleep_hours": _display(result_data.get("sleep_hours")),
+            "coffee_hours_ago": _display(result_data.get("coffee_hours_ago")),
+            "drugs_hours_ago": _display(result_data.get("drugs_hours_ago")),
+            "meal_hours_ago": _display(result_data.get("meal_hours_ago")),
             "sensor_group": "10-20 International, 19 channels",
             "band_power": band_power,
             "normative_ranges": normative_ranges or DEFAULT_NORMATIVE_RANGES,
@@ -748,7 +747,7 @@ class PDFReportService:
             "summary_findings": summary_findings,
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
-            "technician_name": "Not recorded",
+            "technician_name": _display(result_data.get("technician_name")),
             "clinician_name": clinician_name or "Not recorded",
             "clinician_occupation": clinician_occupation,
             "supervising_physician": "Not recorded",
@@ -867,10 +866,8 @@ class PDFReportService:
                 f"Technician: {report_data['technician']}"
             ],
             [
-                f"Start: {report_data['start_datetime']}   "
-                f"Stop: {report_data['stop_datetime']}   "
-                f"Duration: {report_data['duration_minutes']} minutes   "
-                f"Recorded: {report_data['recorded_minutes']} minutes"
+                f"Recorded minutes: {report_data['recorded_minutes']}   "
+                f"Duration minutes: {report_data['duration_minutes']}"
             ],
         ]
 
@@ -892,8 +889,11 @@ class PDFReportService:
         elements.append(Spacer(1, 4))
 
         details = [
-            ["Medication at referral", _display(report_data["medication"])],
-            ["Alertness", _display(report_data["alertness"])],
+            ["Medication", _display(report_data["medication"])],
+            ["Sleep (hours)", _display(report_data["sleep_hours"])],
+            ["Coffee (hours ago)", _display(report_data["coffee_hours_ago"])],
+            ["Drugs (hours ago)", _display(report_data["drugs_hours_ago"])],
+            ["Meal (hours ago)", _display(report_data["meal_hours_ago"])],
             ["Sensor group", _display(report_data["sensor_group"])],
         ]
         details_table = Table(details, colWidths=[45 * mm, doc_width() - 45 * mm])

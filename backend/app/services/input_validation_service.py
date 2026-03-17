@@ -130,6 +130,33 @@ def validate_sleep_hours(value: str | float | None) -> float | None:
     return hours
 
 
+def validate_required_sleep_hours(value: str | float | None) -> float:
+    """Parse and range-check required sleep hours.
+
+    Raises ``ValueError`` if the value is missing, non-numeric, or out of range 0–99.99.
+    """
+    hours = validate_sleep_hours(value)
+    if hours is None:
+        raise ValueError("Sleep hours are required.")
+    return hours
+
+
+def validate_hours_ago(value: str | float | None, field_label: str) -> float:
+    """Parse and range-check a required hours-ago field.
+
+    Raises ``ValueError`` if the value is missing, non-numeric, or out of range 0–99.99.
+    """
+    if value is None or value == "":
+        raise ValueError(f"{field_label} is required.")
+    try:
+        hours = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_label} must be a number.")
+    if not (0 <= hours <= 99.99):
+        raise ValueError(f"{field_label} must be between 0 and 99.99.")
+    return hours
+
+
 def validate_text_field(
     value: str | None,
     field_label: str = "This field",
