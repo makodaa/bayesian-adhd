@@ -558,22 +558,22 @@ a:focus-visible {
 }
 
 .btn-primary-app {
-  background: var(--brand-600);
+  background: linear-gradient(180deg, var(--brand-900) 0%, #173f50 100%);
   color: #f6fbfd;
 }
 
 .btn-primary-app:hover:not(:disabled) {
-  background: var(--brand-700);
+  background: #102f3c;
 }
 
 .btn-secondary-app {
-  background: #f4f9fb;
-  color: var(--brand-700);
-  border: 1px solid var(--border-soft);
+  background: #ffffff;
+  color: var(--text-900);
+  border: 1px solid #cddae2;
 }
 
 .btn-secondary-app:hover:not(:disabled) {
-  background: #eaf2f6;
+  background: #f3f7fa;
 }
 
 .btn-primary-app:disabled,
