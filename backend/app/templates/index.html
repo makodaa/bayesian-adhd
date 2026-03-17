@@ -270,9 +270,6 @@
                     Start a new assessment to view classification, data quality notes, spectral
                     analysis, and export actions.
                   </p>
-                  <button id="empty-start-btn" type="button" class="btn-primary-app">
-                    Start Assessment
-                  </button>
                 </div>
 
                 <div id="results-content" class="results-content hidden">
@@ -2917,7 +2914,6 @@
         });
 
         byId("open-assessment-btn")?.addEventListener("click", openAssessmentDrawer);
-        byId("empty-start-btn")?.addEventListener("click", openAssessmentDrawer);
         byId("close-assessment-btn")?.addEventListener("click", () => closeAssessmentDrawer());
         byId("assessment-backdrop")?.addEventListener("click", () => closeAssessmentDrawer());
 
