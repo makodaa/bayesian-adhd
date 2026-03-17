@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Generator, Literal
 
 import mne
@@ -190,15 +191,19 @@ class EEGService:
 
         return rel_powers
 
-    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict, list[dict]]:
+    def classify(self, df: pd.DataFrame) -> tuple[str, float, dict, list[dict], dict]:
         """Classify EEG data for ADHD probability.
 
         Returns:
-            (classification, confidence, band_data, window_predictions)
+            (classification, confidence, band_data, window_predictions, preprocessing_summary)
             where window_predictions is a list of dicts with per-window results.
         """
         logger.info(f"Starting EEG classification on {len(df)} samples")
         logger.info(f"DataFrame columns: {df.columns.tolist()}")
+
+        raw_row_count = len(df)
+        raw_column_count = len(df.columns)
+        missing_fields = self._infer_missing_fields(df)
 
         # Check if columns are numeric (0-18 or 1-19) and rename them to electrode names
         if list(df.columns) == [str(i) for i in range(19)]:
@@ -240,6 +245,8 @@ class EEGService:
         df = df[ELECTRODE_CHANNELS]
         df = self.apply_filter(df, 0.5, 30)
         df = self.apply_ica_cleaning_to_dataset(df)
+
+        cleaned_row_count = len(df)
 
         n_samples = len(df)
 
@@ -321,6 +328,14 @@ class EEGService:
         )
         full_ndarray = full_ndarray[..., np.newaxis]
 
+        preprocessing_summary = self._build_preprocessing_summary(
+            raw_row_count=raw_row_count,
+            cleaned_row_count=cleaned_row_count,
+            feature_count=numeric_df.shape[1],
+            raw_column_count=raw_column_count,
+            missing_fields=missing_fields,
+        )
+
         logger.info("Running model inference")
         with torch.no_grad():
             tensor = torch.tensor(full_ndarray, dtype=torch.float32).permute(0, 3, 1, 2)
@@ -379,14 +394,16 @@ class EEGService:
             logger.info(
                 f"Classification result: {overall_name} with {conf * 100:.2f}% confidence"
             )
-            return overall_name, conf, band_data, window_predictions
+            return overall_name, conf, band_data, window_predictions, preprocessing_summary
 
     def classify_and_save(
         self, recording_id: int, df: pd.DataFrame, clinician_id: int = None
     ) -> dict:
         """Classify EEG data and save results to database."""
         logger.info(f"Starting classify and save for recording {recording_id}")
-        classification, confidence, band_data, window_predictions = self.classify(df)
+        classification, confidence, band_data, window_predictions, preprocessing_summary = (
+            self.classify(df)
+        )
 
         logger.info(
             f"Saving classification result to database: {classification} ({confidence * 100:.2f}%)"
@@ -396,6 +413,7 @@ class EEGService:
             classification=classification,
             confidence_score=confidence,
             clinician_id=clinician_id,
+            preprocessing_summary=preprocessing_summary,
         )
 
         logger.info(
@@ -408,4 +426,85 @@ class EEGService:
             "confidence_score": confidence,
             "clinician_id": clinician_id,
             "window_predictions": window_predictions,
+            "preprocessing_summary": preprocessing_summary,
         }
+
+    @staticmethod
+    def _build_preprocessing_summary(
+        raw_row_count: int,
+        cleaned_row_count: int,
+        feature_count: int,
+        raw_column_count: int,
+        missing_fields: int,
+    ) -> dict[str, float | int | str]:
+        removed = max(raw_row_count - cleaned_row_count, 0)
+        usable_pct = (
+            (cleaned_row_count / raw_row_count) * 100
+            if raw_row_count > 0
+            else 0.0
+        )
+        missing_fields = max(missing_fields, 0)
+        channel_count = max(19 - missing_fields, 0)
+        steps = [
+            {
+                "name": "Recording Intake & Validation",
+                "statement": (
+                    f"Validated {raw_row_count} samples from {channel_count} channels."
+                ),
+            },
+            {
+                "name": "Channel Alignment & Structuring",
+                "statement": "Aligned recording to 19-channel 10-20 layout.",
+            },
+            {
+                "name": "Signal Cleaning & Conditioning",
+                "statement": (
+                    f"Cleaned recording to {cleaned_row_count} usable samples."
+                ),
+            },
+            {
+                "name": "Feature Extraction",
+                "statement": (
+                    f"Found {feature_count} usable features in recording."
+                ),
+            },
+            {
+                "name": "Final Readiness Check",
+                "statement": (
+                    f"Prepared {cleaned_row_count} samples for model input."
+                ),
+            },
+        ]
+        return {
+            "files_received": 1,
+            "records_accepted": cleaned_row_count,
+            "rows_removed": removed,
+            "missing_fields": missing_fields,
+            "usable_data_pct": round(usable_pct, 1),
+            "feature_count": feature_count,
+            "steps": steps,
+        }
+
+    @staticmethod
+    def _infer_missing_fields(df: pd.DataFrame) -> int:
+        col_names = list(df.columns)
+        try:
+            header_numbers = [int(c) for c in col_names]
+            is_0_to_18 = (
+                len(header_numbers) == 19
+                and all(header_numbers[i] == i for i in range(19))
+            )
+            is_1_to_19 = (
+                len(header_numbers) == 19
+                and all(header_numbers[i] == i + 1 for i in range(19))
+            )
+        except (ValueError, TypeError):
+            is_0_to_18 = False
+            is_1_to_19 = False
+
+        if is_0_to_18 or is_1_to_19:
+            return 0
+
+        col_names_lower = {c.lower() for c in col_names}
+        missing = [ch for ch in ELECTRODE_CHANNELS if ch.lower() not in col_names_lower]
+        return len(missing)

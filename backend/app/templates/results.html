@@ -821,6 +821,28 @@
             </ul>
           </section>`;
 
+        const prep = data.preprocessing_summary || {};
+        const prepSteps = Array.isArray(prep.steps) ? prep.steps : [];
+        const prepRows = prepSteps.length
+          ? prepSteps.map((step) => [step.name, step.statement])
+          : [["Status", "Step detail not recorded for this assessment"]];
+
+        const prepSection = `
+          <section class="detail-section prep-section">
+            <h3>Preprocessing Summary</h3>
+            <ul class="detail-list">
+              ${prepRows
+                .map(
+                  ([label, value]) => `
+                <li class="detail-item">
+                  <span class="detail-label">${escapeHtml(label)}</span>
+                  <span class="detail-value">${escapeHtml(String(value))}</span>
+                </li>`,
+                )
+                .join("")}
+            </ul>
+          </section>`;
+
         // Band power section
         const averageBandPowers = {};
         if (data.band_powers && data.band_powers.length > 0) {
@@ -965,12 +987,14 @@
         body.innerHTML =
           classificationSection +
           subjectSection +
+          prepSection +
           bandSection +
           narrativeSection +
           ratioSection +
           notesSection +
           eegVizSection +
           topoSection;
+
 
         // Setup topo toggle
         document.querySelectorAll("[data-topo]").forEach((btn) => {

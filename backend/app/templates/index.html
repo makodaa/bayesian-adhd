@@ -244,7 +244,26 @@
               <p id="subject-summary-helper" class="helper-copy">
                 Run an assessment to populate the subject summary for quick review.
               </p>
-              <div id="subject-summary-body" class="subject-summary-grid"></div>
+              <ul id="subject-summary-body" class="detail-list"></ul>
+            </div>
+          </section>
+
+          <section class="section-shell section-shell--top-level" id="prep-checklist-section">
+            <button
+              type="button"
+              class="section-toggle priority-toggle"
+              data-collapsible-toggle
+              data-target="prep-checklist-content"
+              aria-expanded="false"
+            >
+              <span>Preprocessing Summary</span>
+              <span class="toggle-symbol" aria-hidden="true"></span>
+            </button>
+            <div id="prep-checklist-content" class="section-content" data-collapsible-content>
+              <p id="prep-checklist-helper" class="helper-copy">
+                Run an assessment to generate the preprocessing checklist.
+              </p>
+              <ul id="prep-checklist-body" class="detail-list"></ul>
             </div>
           </section>
 
@@ -270,9 +289,6 @@
                     Start a new assessment to view classification, data quality notes, spectral
                     analysis, and export actions.
                   </p>
-                  <button id="empty-start-btn" type="button" class="btn-primary-app">
-                    Start Assessment
-                  </button>
                 </div>
 
                 <div id="results-content" class="results-content hidden">
@@ -1344,7 +1360,7 @@
           helper.textContent =
             "Run an assessment to populate the subject summary for quick review.";
           body.innerHTML =
-            "<p class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</p>";
+            "<li class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</li>";
           return;
         }
 
@@ -1389,10 +1405,48 @@
         body.innerHTML = items
           .map(
             ([label, value]) => `
-                    <div class="subject-summary-item">
-                        <span class="subject-summary-label">${escapeHtml(label)}</span>
-                        <span class="subject-summary-value">${escapeHtml(value)}</span>
-                    </div>
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(value)}</span>
+                    </li>
+                `,
+          )
+          .join("");
+      }
+
+      function renderPrepChecklist(result = null) {
+        const helper = byId("prep-checklist-helper");
+        const body = byId("prep-checklist-body");
+        if (!helper || !body) return;
+
+        const prep = (result && result.preprocessing_summary) || null;
+        if (!prep) {
+          helper.textContent =
+            "Run an assessment to generate the preprocessing checklist.";
+          body.innerHTML =
+            "<li class='subject-summary-empty'>No preprocessing summary recorded yet.</li>";
+          return;
+        }
+
+        const steps = Array.isArray(prep.steps) ? prep.steps : [];
+        helper.textContent = "Step-by-step preprocessing overview.";
+        const items = steps
+          .map((step) => [step.name, step.statement])
+          .filter(([, v]) => v != null && v !== "");
+
+        if (items.length === 0) {
+          body.innerHTML =
+            "<li class='subject-summary-empty'>Preprocessing steps were not recorded.</li>";
+          return;
+        }
+
+        body.innerHTML = items
+          .map(
+            ([label, value]) => `
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(String(value))}</span>
+                    </li>
                 `,
           )
           .join("");
@@ -1439,10 +1493,12 @@
           const draftContext = collectAssessmentContext();
           const alignedWithLatest = !appState.file && isContextAlignedWithLatest(draftContext);
           renderSubjectSummary(draftContext, alignedWithLatest ? appState.latestResult : null);
+          renderPrepChecklist(alignedWithLatest ? appState.latestResult : null);
           return;
         }
 
         renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
+        renderPrepChecklist(appState.latestResult);
       }
 
       function collectAssessmentContext() {
@@ -1644,6 +1700,7 @@
       function applyAssessmentPriorityDisclosure() {
         setCollapsibleState("workflow-content", false);
         setCollapsibleState("subject-summary-content", false);
+        setCollapsibleState("prep-checklist-content", false);
         setCollapsibleState("clinical-assessment-content", true);
       }
 
@@ -2679,6 +2736,11 @@
           renderDataQualityNotice(context, result.confidence_score || 0);
           renderInterventionSuggestions(result.classification || "Unknown");
           renderSubjectSummary(context, result);
+          renderPrepChecklist(result);
+
+          if (appState.latestResultId) {
+            hydratePrepSummary(appState.latestResultId);
+          }
 
           setHidden("results-empty-state", true);
           setHidden("results-content", false);
@@ -2716,6 +2778,22 @@
             error.message || "An unexpected error occurred while running assessment.",
             "error",
           );
+        }
+      }
+
+      async function hydratePrepSummary(resultId) {
+        try {
+          const response = await fetch(`/api/results/${resultId}`);
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!data || !data.preprocessing_summary) return;
+          appState.latestResult = {
+            ...(appState.latestResult || {}),
+            preprocessing_summary: data.preprocessing_summary,
+          };
+          renderPrepChecklist(appState.latestResult);
+        } catch (error) {
+          console.warn("Failed to hydrate preprocessing summary", error);
         }
       }
 
@@ -2792,7 +2870,7 @@
         const subjectInput = byId("subject-code");
         if (!subjectInput) return;
 
-        subjectInput.addEventListener("input", () => {
+        const applyAutofill = () => {
           const selectedCode = subjectInput.value;
           const details = appState.subjectLookup.get(selectedCode);
           const dateOfBirth = byId("date-of-birth");
@@ -2802,19 +2880,20 @@
           if (details) {
             if (details.dateOfBirth) {
               dateOfBirth.value = details.dateOfBirth;
-              dateOfBirth.readOnly = true;
+              dateOfBirth.dispatchEvent(new Event("input", { bubbles: true }));
+              dateOfBirth.dispatchEvent(new Event("change", { bubbles: true }));
             }
             if (details.gender) {
               gender.value = details.gender;
-              gender.disabled = true;
+              gender.dispatchEvent(new Event("change", { bubbles: true }));
             }
-          } else {
-            dateOfBirth.readOnly = false;
-            gender.disabled = false;
           }
 
           updateDraftIndicator();
-        });
+        };
+
+        subjectInput.addEventListener("input", applyAutofill);
+        subjectInput.addEventListener("change", applyAutofill);
       }
 
       function setupUploadInteractions() {
