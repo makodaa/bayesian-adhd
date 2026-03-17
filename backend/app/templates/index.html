@@ -1285,6 +1285,13 @@
         return normalized ? normalized : fallback;
       }
 
+      function formatHoursSince(value, fallback = "Not provided") {
+        if (value === null || value === undefined) return fallback;
+        const numeric = Number(value);
+        if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
+        return formatContextValue(value, fallback);
+      }
+
       function formatBooleanContext(value) {
         if (value === "true" || value === true) return "Yes";
         if (value === "false" || value === false) return "No";
@@ -1392,11 +1399,11 @@
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           [
             "Time since caffeine intake (hours)",
-            formatContextValue(context.coffeeHoursAgo),
+            formatHoursSince(context.coffeeHoursAgo),
           ],
           [
             "Time since drug intake (hours)",
-            formatContextValue(context.drugsHoursAgo),
+            formatHoursSince(context.drugsHoursAgo),
           ],
           [
             "Time since last meal (hours)",
@@ -1554,11 +1561,11 @@
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           [
             "Time since caffeine intake (hours)",
-            formatContextValue(context.coffeeHoursAgo),
+            formatHoursSince(context.coffeeHoursAgo),
           ],
           [
             "Time since drug intake (hours)",
-            formatContextValue(context.drugsHoursAgo),
+            formatHoursSince(context.drugsHoursAgo),
           ],
           [
             "Time since last meal (hours)",

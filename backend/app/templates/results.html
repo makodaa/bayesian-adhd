@@ -334,6 +334,13 @@
         return `${mm}/${dd}/${parts.year}`;
       }
 
+      function formatHoursSince(value) {
+        if (value === null || value === undefined) return null;
+        const numeric = Number(value);
+        if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
+        return String(value);
+      }
+
       function showToast(message, variant = "error") {
         const container = byId("toast-container");
         if (!container) return;
@@ -787,11 +794,11 @@
           ["Sleep Hours", data.sleep_hours != null ? String(data.sleep_hours) + " h" : null],
           [
             "Coffee (hours ago)",
-            data.coffee_hours_ago != null ? String(data.coffee_hours_ago) : null,
+            formatHoursSince(data.coffee_hours_ago),
           ],
           [
             "Drugs (hours ago)",
-            data.drugs_hours_ago != null ? String(data.drugs_hours_ago) : null,
+            formatHoursSince(data.drugs_hours_ago),
           ],
           [
             "Meal (hours ago)",
