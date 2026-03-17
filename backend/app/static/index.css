@@ -1205,7 +1205,15 @@
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.95rem 1rem 1rem;
+  padding: 0.95rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#analysis-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .drawer-step {
@@ -1464,13 +1472,14 @@
 .drawer-actions {
   position: sticky;
   bottom: 0;
-  margin-top: 0.2rem;
+  margin: 0.2rem -1rem 0;
   background: #f8fbfc;
   border-top: 1px solid #dbe6ec;
-  padding-top: 0.75rem;
+  padding: 0.75rem 1rem 0.75rem;
   display: flex;
   justify-content: space-between;
   gap: 0.45rem;
+  margin-top: auto;
 }
 
 /* ─── Processing panel ───────────────────────────────────────────────────── */
