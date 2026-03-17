@@ -36,6 +36,7 @@
   --shadow-shell: 0 2px 8px rgba(20, 50, 63, 0.07);
   --shadow-soft: 0 4px 12px rgba(20, 50, 63, 0.08);
   --focus-ring: 0 0 0 3px rgba(43, 113, 140, 0.35);
+  --detail-row-border: #eaf0f5;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -141,6 +142,42 @@ a:focus-visible {
 .sidebar-backdrop.open {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ─── Detail lists ───────────────────────────────────────────────────────── */
+
+.detail-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.86rem;
+  color: var(--text-700);
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--detail-row-border);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-label {
+  color: var(--text-500);
+}
+
+.detail-value {
+  color: var(--text-900);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
 }
 
 /* ─── App shell + sidebar ────────────────────────────────────────────────── */
