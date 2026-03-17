@@ -636,45 +636,30 @@
         );
       }
 
-      function _narrAttentionSentence(isAdhd, tbr, classification, confPct) {
+      function _narrAttentionSentence(isAdhd, tbr) {
         const elevated = tbr > _NARR_TBR_HYPO;
         if (isAdhd && elevated) {
           return (
-            `Combined with a ${classification} classification at ${confPct}% confidence, ` +
-            "this profile is consistent with reduced attentional gating and impaired " +
-            "frontally mediated inhibitory control, patterns commonly observed in ADHD."
+            "This profile is consistent with reduced attentional gating and impaired " +
+            "frontally mediated inhibitory control."
           );
         }
         if (isAdhd && !elevated) {
           return (
-            `The ${classification} classification (${confPct}% confidence) was reached ` +
-            "despite a theta/beta ratio that does not fall in the typically elevated range; " +
+            "The theta/beta ratio does not fall in the typically elevated range; " +
             "other spectral and temporal features may have contributed to this classification."
           );
         }
         if (!isAdhd && elevated) {
           return (
-            `Although the recording was classified as ${classification} at ${confPct}% confidence, ` +
-            "the elevated theta/beta ratio warrants clinical consideration, as this pattern can " +
-            "occasionally appear in the context of other neurodevelopmental or attentional presentations."
+            "The elevated theta/beta ratio warrants clinical consideration, as this pattern can " +
+            "occasionally appear in other neurodevelopmental or attentional presentations."
           );
         }
         return (
-          `Consistent with the ${classification} classification (${confPct}% confidence), ` +
-          "the attention regulation markers in this recording do not indicate the spectral " +
+          "The attention regulation markers in this recording do not indicate the spectral " +
           "patterns typically associated with ADHD-related cortical dysregulation."
         );
-      }
-
-      function _narrConfidenceSentence(confidence) {
-        const pct = (confidence * 100).toFixed(1);
-        if (confidence >= 0.80) {
-          return `Model confidence is high (${pct}%), supporting a stronger weighting of these findings within a broader clinical assessment.`;
-        }
-        if (confidence >= 0.60) {
-          return `Model confidence is moderate (${pct}%); these findings should be corroborated with additional clinical and behavioral data before drawing conclusions.`;
-        }
-        return `Model confidence is low (${pct}%), and these findings should be interpreted with considerable caution; additional testing is strongly recommended.`;
       }
 
       /**
@@ -707,8 +692,6 @@
         const theta = Number(avgRel.theta) || 0;
         const beta  = Number(avgRel.beta)  || 0;
         const alpha = Number(avgRel.alpha) || 0;
-        const conf  = Number(data.confidence_score) || 0;
-        const confPct = (conf * 100).toFixed(1);
         const cls   = data.predicted_class || "Unknown";
         const isAdhd = cls.toLowerCase().includes("adhd") && !cls.toLowerCase().includes("non-adhd");
 
@@ -719,15 +702,9 @@
           `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
         );
         const s2 = _narrArousalSentence(theta, beta, tbr);
-        const s3 = _narrAttentionSentence(isAdhd, tbr, cls, confPct);
-        const s4 = _narrConfidenceSentence(conf);
-        const s5 = (
-          "These findings are intended to support clinical decision-making " +
-          "and should not be interpreted in isolation from clinical history, " +
-          "behavioral evaluation, and qualified professional judgment."
-        );
+        const s3 = _narrAttentionSentence(isAdhd, tbr);
 
-        return [s1, s2, s3, s4, s5].join(" ");
+        return [s1, s2, s3].join(" ");
       }
 
       const BAND_COLORS = {

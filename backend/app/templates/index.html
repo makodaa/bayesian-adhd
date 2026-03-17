@@ -1801,62 +1801,34 @@
         );
       }
 
-      function _narrativeAttentionSentence(isAdhd, tbr, classification, confPct) {
+      function _narrativeAttentionSentence(isAdhd, tbr) {
         const elevatedTbr = tbr > _TBR_HYPO;
         if (isAdhd && elevatedTbr) {
           return (
-            `Combined with a ${classification} classification at ` +
-            `${confPct}% confidence, this profile is consistent with ` +
-            "reduced attentional gating and impaired frontally mediated " +
-            "inhibitory control, patterns commonly observed in ADHD."
+            "This profile is consistent with reduced attentional gating and " +
+            "impaired frontally mediated inhibitory control."
           );
         }
         if (isAdhd && !elevatedTbr) {
           return (
-            `The ${classification} classification (${confPct}% confidence) ` +
-            "was reached despite a theta/beta ratio that does not fall in the " +
-            "typically elevated range; other spectral and temporal features " +
-            "may have contributed to this classification."
+            "The theta/beta ratio does not fall in the typically elevated range; " +
+            "other spectral and temporal features may have contributed to this classification."
           );
         }
         if (!isAdhd && elevatedTbr) {
           return (
-            `Although the recording was classified as ${classification} ` +
-            `at ${confPct}% confidence, the elevated theta/beta ratio ` +
-            "warrants clinical consideration, as this pattern can occasionally " +
-            "appear in the context of other neurodevelopmental or attentional presentations."
+            "The elevated theta/beta ratio warrants clinical consideration, as this " +
+            "pattern can occasionally appear in other neurodevelopmental or attentional presentations."
           );
         }
         return (
-          `Consistent with the ${classification} classification ` +
-          `(${confPct}% confidence), the attention regulation markers ` +
-          "in this recording do not indicate the spectral patterns typically " +
-          "associated with ADHD-related cortical dysregulation."
-        );
-      }
-
-      function _narrativeConfidenceSentence(confidence) {
-        const confPct = (confidence * 100).toFixed(1);
-        if (confidence >= 0.80) {
-          return (
-            `Model confidence is high (${confPct}%), supporting ` +
-            "a stronger weighting of these findings within a broader clinical assessment."
-          );
-        }
-        if (confidence >= 0.60) {
-          return (
-            `Model confidence is moderate (${confPct}%); these findings ` +
-            "should be corroborated with additional clinical and behavioral data before drawing conclusions."
-          );
-        }
-        return (
-          `Model confidence is low (${confPct}%), and these findings ` +
-          "should be interpreted with considerable caution; additional testing is strongly recommended."
+          "The attention regulation markers in this recording do not indicate " +
+          "spectral patterns typically associated with ADHD-related cortical dysregulation."
         );
       }
 
       /**
-       * Generate a 3–5 sentence arousal & attention narrative.
+       * Generate a 3-sentence arousal & attention narrative.
        *
        * @param {string} classification  - predicted_class label
        * @param {number} confidence      - confidence score in [0,1]
@@ -1873,7 +1845,6 @@
         const thetaPct = (theta * 100).toFixed(1);
         const betaPct  = (beta  * 100).toFixed(1);
         const alphaPct = (alpha * 100).toFixed(1);
-        const confPct  = (confidence * 100).toFixed(1);
 
         const isAdhd = String(classification).toLowerCase().includes("adhd") &&
                        !String(classification).toLowerCase().includes("non-adhd");
@@ -1885,15 +1856,9 @@
           `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
         );
         const s2 = _narrativeArousalSentence(theta, beta, tbr);
-        const s3 = _narrativeAttentionSentence(isAdhd, tbr, classification, confPct);
-        const s4 = _narrativeConfidenceSentence(confidence);
-        const s5 = (
-          "These findings are intended to support clinical decision-making " +
-          "and should not be interpreted in isolation from clinical history, " +
-          "behavioral evaluation, and qualified professional judgment."
-        );
+        const s3 = _narrativeAttentionSentence(isAdhd, tbr);
 
-        return [s1, s2, s3, s4, s5].join(" ");
+        return [s1, s2, s3].join(" ");
       }
 
       function renderNarrativeCard(classification, confidence, bandData) {
@@ -1911,14 +1876,12 @@
       function clinicalImpressionText(classification, confidence) {
         const confidencePercent = (confidence * 100).toFixed(1);
         const isNonAdhd = String(classification).toLowerCase().includes("non-adhd");
-        const disclaimer =
-          "This application provides automated clinical decision support and is not a definitive diagnostic tool. Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.";
 
         if (isNonAdhd) {
-          return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures at ${confidencePercent}% confidence. This finding should be interpreted with clinical history, behavioral evaluation, and longitudinal follow-up as needed. ${disclaimer}`;
+          return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures (${confidencePercent}% confidence).`;
         }
 
-        return `The EEG pattern is consistent with ${classification} at ${confidencePercent}% confidence. This output is a decision-support signal and should be interpreted alongside clinical interviews, developmental history, and other assessment tools. ${disclaimer}`;
+        return `The EEG pattern is consistent with ${classification} (${confidencePercent}% confidence).`;
       }
 
       function displayPrediction(classification, confidenceScore) {
