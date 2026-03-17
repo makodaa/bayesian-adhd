@@ -96,56 +96,39 @@ Three possible outputs depending on TBR and band values:
 Note: hypoarousal is checked first. A recording can only be labelled
 hyperarousal if it does not also meet the hypoarousal criteria.
 
-### 3.4 Sentence 3 — Attention Regulation Linked to Classification
+### 3.4 Sentence 3 — Attention Regulation
 
 Four branches based on the cross of `is_adhd` (bool) and `elevated_tbr`
-(TBR > 3.0):
+(TBR > 3.0). Classification label and confidence percentage are not
+repeated here; they are already displayed in the Classification section.
 
-| `is_adhd` | `elevated_tbr` | Template |
+| `is_adhd` | `elevated_tbr` | Output |
 |---|---|---|
-| True | True | "Combined with a `{class}` classification at `{conf}`% confidence, this profile is consistent with reduced attentional gating and impaired frontally mediated inhibitory control, patterns commonly observed in ADHD." |
-| True | False | "The `{class}` classification (`{conf}`% confidence) was reached despite a theta/beta ratio that does not fall in the typically elevated range; other spectral and temporal features may have contributed to this classification." |
-| False | True | "Although the recording was classified as `{class}` at `{conf}`% confidence, the elevated theta/beta ratio warrants clinical consideration, as this pattern can occasionally appear in the context of other neurodevelopmental or attentional presentations." |
-| False | False | "Consistent with the `{class}` classification (`{conf}`% confidence), the attention regulation markers in this recording do not indicate the spectral patterns typically associated with ADHD-related cortical dysregulation." |
+| True | True | "This profile is consistent with reduced attentional gating and impaired frontally mediated inhibitory control." |
+| True | False | "The theta/beta ratio does not fall in the typically elevated range; other spectral and temporal features may have contributed to this classification." |
+| False | True | "The elevated theta/beta ratio warrants clinical consideration, as this pattern can occasionally appear in other neurodevelopmental or attentional presentations." |
+| False | False | "The attention regulation markers in this recording do not indicate spectral patterns typically associated with ADHD-related cortical dysregulation." |
 
-### 3.5 Sentence 4 — Confidence Qualifier
-
-Three tiers, matching the existing confidence thresholds used throughout
-the application (`getConfidenceState` in JS, `_confidence_tier` in Python):
-
-| Tier | Range | Output |
-|---|---|---|
-| High | ≥ 80% | "Model confidence is high (`{conf}`%), supporting a stronger weighting of these findings within a broader clinical assessment." |
-| Moderate | 60–79% | "Model confidence is moderate (`{conf}`%); these findings should be corroborated with additional clinical and behavioral data before drawing conclusions." |
-| Low | < 60% | "Model confidence is low (`{conf}`%), and these findings should be interpreted with considerable caution; additional testing is strongly recommended." |
-
-### 3.6 Sentence 5 — Closing Disclaimer
-
-Fixed text, always appended:
-
-> *"These findings are intended to support clinical decision-making and
-> should not be interpreted in isolation from clinical history, behavioral
-> evaluation, and qualified professional judgment."*
+Sentences 4 (confidence qualifier) and 5 (closing disclaimer) have been
+removed. Confidence is displayed explicitly in the Classification section,
+and disclaimer text is covered by the dedicated Notes & Disclaimers block.
 
 ---
 
 ## 4. Files Changed
 
-### 4.1 New file — `backend/app/services/narrative_service.py`
+### 4.1 `backend/app/services/narrative_service.py`
 
 Canonical source of truth for all narrative decision logic. Contains
-`NarrativeService` with one public method and four private static helpers.
+`NarrativeService` with one public method and two private static helpers.
 
 ```
 NarrativeService
 ├── generate_arousal_narrative(predicted_class, confidence_score,
 │       avg_relative_power, band_ratios) → str
 ├── _is_adhd(predicted_class) → bool
-├── _confidence_tier(confidence_score) → str
 ├── _arousal_sentence(theta, beta, tbr) → str
-├── _attention_sentence(is_adhd, tbr, predicted_class,
-│       conf_tier, conf_pct) → str
-└── _confidence_sentence(conf_tier, conf_pct) → str
+└── _attention_sentence(is_adhd, tbr) → str
 ```
 
 **Signature of `generate_arousal_narrative`:**
@@ -161,8 +144,7 @@ def generate_arousal_narrative(
 ```
 
 Input values for `avg_relative_power` should be fractional (0–1), not
-percentages. The method normalises `confidence_score` if it appears to be
-a percentage (> 1).
+percentages.
 
 ---
 
@@ -258,15 +240,14 @@ padding, and heading style as the Classification Summary card above it.
 
 #### JavaScript additions (inserted before `clinicalImpressionText`)
 
-Six functions added, all prefixed to avoid naming collisions with the
+Four functions added, all prefixed to avoid naming collisions with the
 shared `results.html` implementations:
 
 | Function | Purpose |
 |---|---|
 | `_narrativeArousalSentence(theta, beta, tbr)` | Returns sentence 2 (arousal characterisation) |
-| `_narrativeAttentionSentence(isAdhd, tbr, classification, confPct)` | Returns sentence 3 (attention regulation) |
-| `_narrativeConfidenceSentence(confidence)` | Returns sentence 4 (confidence qualifier) |
-| `generateNarrative(classification, confidence, avgRelPower, bandRatios)` | Assembles all 5 sentences into a full paragraph |
+| `_narrativeAttentionSentence(isAdhd, tbr)` | Returns sentence 3 (attention regulation) |
+| `generateNarrative(classification, confidence, avgRelPower, bandRatios)` | Assembles all 3 sentences into a full paragraph |
 | `renderNarrativeCard(classification, confidence, bandData)` | Extracts `average_relative_power` and `band_ratios` from the `band_analysis` response object, calls `generateNarrative`, writes the result to `#narrative-text` |
 
 Threshold constants used by these functions:
@@ -314,14 +295,13 @@ Intervention Suggestions      ← existing (order 10)
 
 #### JavaScript additions (inserted before `const BAND_COLORS`)
 
-Seven functions added with the `_narr` prefix to avoid conflicts:
+Five functions added with the `_narr` prefix to avoid conflicts:
 
 | Function | Purpose |
 |---|---|
 | `_narrArousalSentence(theta, beta, tbr)` | Returns sentence 2 |
-| `_narrAttentionSentence(isAdhd, tbr, classification, confPct)` | Returns sentence 3 |
-| `_narrConfidenceSentence(confidence)` | Returns sentence 4 |
-| `buildResultNarrative(data)` | Receives the full result object from `/api/results/<id>`, computes average relative power from the raw `band_powers` rows, extracts TBR from the `ratios` array, assembles and returns the full 5-sentence paragraph, or `null` if band data is absent |
+| `_narrAttentionSentence(isAdhd, tbr)` | Returns sentence 3 |
+| `buildResultNarrative(data)` | Receives the full result object from `/api/results/<id>`, computes average relative power from the raw `band_powers` rows, extracts TBR from the `ratios` array, assembles and returns the full 3-sentence paragraph, or `null` if band data is absent |
 
 `buildResultNarrative` is the results-drawer equivalent of
 `renderNarrativeCard` in `index.html`. It operates directly on the
@@ -387,15 +367,9 @@ Inputs: `predicted_class = "ADHD Inattentive (ADHD-I)"`,
 > beta power of 18.0%, relative alpha power of 22.0%, and a theta/beta
 > ratio (TBR) of 4.10. The elevated theta activity and theta/beta ratio
 > are consistent with a cortical hypoarousal pattern, suggesting reduced
-> frontal activation and decreased inhibitory tone. Combined with a ADHD
-> Inattentive (ADHD-I) classification at 85.0% confidence, this profile
-> is consistent with reduced attentional gating and impaired frontally
-> mediated inhibitory control, patterns commonly observed in ADHD. Model
-> confidence is high (85.0%), supporting a stronger weighting of these
-> findings within a broader clinical assessment. These findings are
-> intended to support clinical decision-making and should not be
-> interpreted in isolation from clinical history, behavioral evaluation,
-> and qualified professional judgment.
+> frontal activation and decreased inhibitory tone. This profile is
+> consistent with reduced attentional gating and impaired frontally
+> mediated inhibitory control.
 
 ### 5.2 Non-ADHD — Normal TBR — Moderate Confidence
 
@@ -406,15 +380,9 @@ Inputs: `predicted_class = "Non-ADHD"`, `confidence = 0.72`,
 > beta power of 22.0%, relative alpha power of 30.0%, and a theta/beta
 > ratio (TBR) of 1.80. The theta/beta ratio and band power distribution
 > do not clearly indicate cortical arousal dysregulation within this
-> recording. Consistent with the Non-ADHD classification (72.0%
-> confidence), the attention regulation markers in this recording do not
-> indicate the spectral patterns typically associated with ADHD-related
-> cortical dysregulation. Model confidence is moderate (72.0%); these
-> findings should be corroborated with additional clinical and behavioral
-> data before drawing conclusions. These findings are intended to support
-> clinical decision-making and should not be interpreted in isolation from
-> clinical history, behavioral evaluation, and qualified professional
-> judgment.
+> recording. The attention regulation markers in this recording do not
+> indicate spectral patterns typically associated with ADHD-related
+> cortical dysregulation.
 
 ### 5.3 Non-ADHD — Elevated TBR Mismatch — Moderate Confidence
 
@@ -425,16 +393,10 @@ Inputs: `predicted_class = "Non-ADHD"`, `confidence = 0.65`,
 > beta power of 16.0%, relative alpha power of 24.0%, and a theta/beta
 > ratio (TBR) of 3.50. The elevated theta activity and theta/beta ratio
 > are consistent with a cortical hypoarousal pattern, suggesting reduced
-> frontal activation and decreased inhibitory tone. Although the recording
-> was classified as Non-ADHD at 65.0% confidence, the elevated theta/beta
-> ratio warrants clinical consideration, as this pattern can occasionally
-> appear in the context of other neurodevelopmental or attentional
-> presentations. Model confidence is moderate (65.0%); these findings
-> should be corroborated with additional clinical and behavioral data
-> before drawing conclusions. These findings are intended to support
-> clinical decision-making and should not be interpreted in isolation from
-> clinical history, behavioral evaluation, and qualified professional
-> judgment.
+> frontal activation and decreased inhibitory tone. The elevated
+> theta/beta ratio warrants clinical consideration, as this pattern can
+> occasionally appear in other neurodevelopmental or attentional
+> presentations.
 
 ### 5.4 ADHD Hyperactive-Impulsive — Low TBR — Low Confidence
 
@@ -447,15 +409,9 @@ Inputs: `predicted_class = "Hyperactive-Impulsive (ADHD-H)"`,
 > ratio (TBR) of 1.20. The relatively high beta power and low theta/beta
 > ratio suggest a cortical hyperarousal or heightened activation pattern,
 > which may be associated with anxiety, hypervigilance, or stimulant
-> effects. The Hyperactive-Impulsive (ADHD-H) classification (55.0%
-> confidence) was reached despite a theta/beta ratio that does not fall in
-> the typically elevated range; other spectral and temporal features may
-> have contributed to this classification. Model confidence is low
-> (55.0%), and these findings should be interpreted with considerable
-> caution; additional testing is strongly recommended. These findings are
-> intended to support clinical decision-making and should not be
-> interpreted in isolation from clinical history, behavioral evaluation,
-> and qualified professional judgment.
+> effects. The theta/beta ratio does not fall in the typically elevated
+> range; other spectral and temporal features may have contributed to this
+> classification.
 
 ---
 
@@ -517,8 +473,3 @@ All numeric thresholds are centralised. To change a threshold:
    (`_NARR_TBR_HYPO`, `_NARR_TBR_HYPER`, `_NARR_THETA_HYPO`,
    `_NARR_BETA_HYPER`).
 4. Update the example outputs in this document if materially affected.
-
-Confidence tier boundaries (`_CONF_HIGH = 0.80`, `_CONF_MODERATE = 0.60`)
-are shared with the existing `getConfidenceState` function in both
-templates. Any change to confidence tiers should be applied consistently
-across all three locations.
