@@ -248,6 +248,25 @@
             </div>
           </section>
 
+          <section class="section-shell section-shell--top-level" id="prep-checklist-section">
+            <button
+              type="button"
+              class="section-toggle priority-toggle"
+              data-collapsible-toggle
+              data-target="prep-checklist-content"
+              aria-expanded="false"
+            >
+              <span>Recording Prep Checklist</span>
+              <span class="toggle-symbol" aria-hidden="true"></span>
+            </button>
+            <div id="prep-checklist-content" class="section-content" data-collapsible-content>
+              <p id="prep-checklist-helper" class="helper-copy">
+                Run an assessment to generate the preprocessing checklist.
+              </p>
+              <div id="prep-checklist-body" class="subject-summary-grid"></div>
+            </div>
+          </section>
+
           <section
             class="section-shell section-shell--top-level results-shell"
             id="assessment-findings"
@@ -1398,6 +1417,43 @@
           .join("");
       }
 
+      function renderPrepChecklist(result = null) {
+        const helper = byId("prep-checklist-helper");
+        const body = byId("prep-checklist-body");
+        if (!helper || !body) return;
+
+        const prep = (result && result.preprocessing_summary) || null;
+        if (!prep) {
+          helper.textContent =
+            "Run an assessment to generate the preprocessing checklist.";
+          body.innerHTML =
+            "<p class='subject-summary-empty'>No preprocessing summary recorded yet.</p>";
+          return;
+        }
+
+        helper.textContent = "Minimal preprocessing checkpoints from the latest assessment.";
+        const items = [
+          ["Files", prep.files_received],
+          ["Accepted", prep.records_accepted],
+          ["Missing fields", prep.missing_fields],
+          ["Rows removed", prep.rows_removed],
+          ["Usable data", prep.usable_data_pct != null ? `${prep.usable_data_pct}%` : null],
+          ["Features", prep.feature_count],
+          ["Run ID", prep.run_id],
+        ].filter(([, v]) => v != null && v !== "");
+
+        body.innerHTML = items
+          .map(
+            ([label, value]) => `
+                    <div class="subject-summary-item">
+                        <span class="subject-summary-label">${escapeHtml(label)}</span>
+                        <span class="subject-summary-value">${escapeHtml(String(value))}</span>
+                    </div>
+                `,
+          )
+          .join("");
+      }
+
       function updateDraftIndicator() {
         const indicator = byId("draft-indicator");
         if (!indicator) return;
@@ -1439,10 +1495,12 @@
           const draftContext = collectAssessmentContext();
           const alignedWithLatest = !appState.file && isContextAlignedWithLatest(draftContext);
           renderSubjectSummary(draftContext, alignedWithLatest ? appState.latestResult : null);
+          renderPrepChecklist(alignedWithLatest ? appState.latestResult : null);
           return;
         }
 
         renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
+        renderPrepChecklist(appState.latestResult);
       }
 
       function collectAssessmentContext() {
@@ -1644,6 +1702,7 @@
       function applyAssessmentPriorityDisclosure() {
         setCollapsibleState("workflow-content", false);
         setCollapsibleState("subject-summary-content", false);
+        setCollapsibleState("prep-checklist-content", false);
         setCollapsibleState("clinical-assessment-content", true);
       }
 
@@ -2679,6 +2738,7 @@
           renderDataQualityNotice(context, result.confidence_score || 0);
           renderInterventionSuggestions(result.classification || "Unknown");
           renderSubjectSummary(context, result);
+          renderPrepChecklist(result);
 
           setHidden("results-empty-state", true);
           setHidden("results-content", false);
@@ -2792,7 +2852,7 @@
         const subjectInput = byId("subject-code");
         if (!subjectInput) return;
 
-        subjectInput.addEventListener("input", () => {
+        const applyAutofill = () => {
           const selectedCode = subjectInput.value;
           const details = appState.subjectLookup.get(selectedCode);
           const dateOfBirth = byId("date-of-birth");
@@ -2802,19 +2862,20 @@
           if (details) {
             if (details.dateOfBirth) {
               dateOfBirth.value = details.dateOfBirth;
-              dateOfBirth.readOnly = true;
+              dateOfBirth.dispatchEvent(new Event("input", { bubbles: true }));
+              dateOfBirth.dispatchEvent(new Event("change", { bubbles: true }));
             }
             if (details.gender) {
               gender.value = details.gender;
-              gender.disabled = true;
+              gender.dispatchEvent(new Event("change", { bubbles: true }));
             }
-          } else {
-            dateOfBirth.readOnly = false;
-            gender.disabled = false;
           }
 
           updateDraftIndicator();
-        });
+        };
+
+        subjectInput.addEventListener("input", applyAutofill);
+        subjectInput.addEventListener("change", applyAutofill);
       }
 
       function setupUploadInteractions() {

@@ -800,6 +800,9 @@ def get_subjects():
         for subject in subjects:
             recordings = recording_service.get_recordings_by_subject(subject["id"])
             subject["recording_count"] = len(recordings)
+            dob = subject.get("date_of_birth")
+            if dob:
+                subject["date_of_birth"] = dob.isoformat()
         return jsonify(subjects), 200
     except Exception as e:
         logger.error(f"Error fetching subjects: {e}", exc_info=True)
@@ -813,6 +816,9 @@ def get_subject(subject_id):
         subject = subject_service.get_subject(subject_id)
         if not subject:
             return jsonify({"error": "Subject not found"}), 404
+        dob = subject.get("date_of_birth")
+        if dob:
+            subject["date_of_birth"] = dob.isoformat()
         recordings = recording_service.get_recordings_by_subject(subject_id)
         subject["recordings"] = recordings
         return jsonify(subject), 200

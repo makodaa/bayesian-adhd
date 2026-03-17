@@ -831,26 +831,24 @@
           ["Features", prep.feature_count],
           ["Run ID", prep.run_id],
         ].filter(([, v]) => v != null && v !== "");
+        const prepRows = prepItems.length
+          ? prepItems
+          : [["Status", "Not available for this assessment"]];
 
         const prepSection = `
           <section class="detail-section prep-section">
-            <div class="prep-header" role="button" tabindex="0">
-              <h3>Recording Prep Checklist</h3>
-              <span class="prep-chevron">&#9654;</span>
-            </div>
-            <div class="prep-body collapsed">
-              <ul class="detail-list">
-                ${prepItems
-                  .map(
-                    ([label, value]) => `
-                  <li class="detail-item">
-                    <span class="detail-label">${escapeHtml(label)}</span>
-                    <span class="detail-value">${escapeHtml(String(value))}</span>
-                  </li>`,
-                  )
-                  .join("")}
-              </ul>
-            </div>
+            <h3>Recording Prep Checklist</h3>
+            <ul class="detail-list">
+              ${prepRows
+                .map(
+                  ([label, value]) => `
+                <li class="detail-item">
+                  <span class="detail-label">${escapeHtml(label)}</span>
+                  <span class="detail-value">${escapeHtml(String(value))}</span>
+                </li>`,
+                )
+                .join("")}
+            </ul>
           </section>`;
 
         // Band power section
@@ -1005,26 +1003,6 @@
           eegVizSection +
           topoSection;
 
-        const prepHeader = body.querySelector(".prep-header");
-        const prepBody = body.querySelector(".prep-body");
-        if (prepHeader && prepBody) {
-          const togglePrep = () => {
-            prepBody.classList.toggle("collapsed");
-            const chevron = prepHeader.querySelector(".prep-chevron");
-            if (chevron) {
-              chevron.innerHTML = prepBody.classList.contains("collapsed")
-                ? "&#9654;"
-                : "&#9660;";
-            }
-          };
-          prepHeader.addEventListener("click", togglePrep);
-          prepHeader.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              togglePrep();
-            }
-          });
-        }
 
         // Setup topo toggle
         document.querySelectorAll("[data-topo]").forEach((btn) => {

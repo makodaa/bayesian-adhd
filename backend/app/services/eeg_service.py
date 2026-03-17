@@ -203,6 +203,7 @@ class EEGService:
 
         raw_row_count = len(df)
         raw_column_count = len(df.columns)
+        missing_fields = self._infer_missing_fields(df)
 
         # Check if columns are numeric (0-18 or 1-19) and rename them to electrode names
         if list(df.columns) == [str(i) for i in range(19)]:
@@ -332,6 +333,7 @@ class EEGService:
             cleaned_row_count=cleaned_row_count,
             feature_count=numeric_df.shape[1],
             raw_column_count=raw_column_count,
+            missing_fields=missing_fields,
         )
 
         logger.info("Running model inference")
@@ -433,6 +435,7 @@ class EEGService:
         cleaned_row_count: int,
         feature_count: int,
         raw_column_count: int,
+        missing_fields: int,
     ) -> dict[str, float | int | str]:
         removed = max(raw_row_count - cleaned_row_count, 0)
         usable_pct = (
@@ -440,7 +443,7 @@ class EEGService:
             if raw_row_count > 0
             else 0.0
         )
-        missing_fields = max(19 - raw_column_count, 0)
+        missing_fields = max(missing_fields, 0)
         run_id = datetime.utcnow().strftime("prep-%Y%m%d%H%M%S")
         return {
             "files_received": 1,
@@ -451,3 +454,27 @@ class EEGService:
             "feature_count": feature_count,
             "run_id": run_id,
         }
+
+    @staticmethod
+    def _infer_missing_fields(df: pd.DataFrame) -> int:
+        col_names = list(df.columns)
+        try:
+            header_numbers = [int(c) for c in col_names]
+            is_0_to_18 = (
+                len(header_numbers) == 19
+                and all(header_numbers[i] == i for i in range(19))
+            )
+            is_1_to_19 = (
+                len(header_numbers) == 19
+                and all(header_numbers[i] == i + 1 for i in range(19))
+            )
+        except (ValueError, TypeError):
+            is_0_to_18 = False
+            is_1_to_19 = False
+
+        if is_0_to_18 or is_1_to_19:
+            return 0
+
+        col_names_lower = {c.lower() for c in col_names}
+        missing = [ch for ch in ELECTRODE_CHANNELS if ch.lower() not in col_names_lower]
+        return len(missing)
