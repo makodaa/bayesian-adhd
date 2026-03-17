@@ -77,6 +77,7 @@ class ResultsService:
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
+            r.preprocessing_summary,
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
