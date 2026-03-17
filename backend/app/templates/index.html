@@ -244,7 +244,7 @@
               <p id="subject-summary-helper" class="helper-copy">
                 Run an assessment to populate the subject summary for quick review.
               </p>
-              <div id="subject-summary-body" class="subject-summary-grid"></div>
+              <ul id="subject-summary-body" class="detail-list"></ul>
             </div>
           </section>
 
@@ -263,7 +263,7 @@
               <p id="prep-checklist-helper" class="helper-copy">
                 Run an assessment to generate the preprocessing checklist.
               </p>
-              <div id="prep-checklist-body" class="subject-summary-grid"></div>
+              <ul id="prep-checklist-body" class="detail-list"></ul>
             </div>
           </section>
 
@@ -1363,7 +1363,7 @@
           helper.textContent =
             "Run an assessment to populate the subject summary for quick review.";
           body.innerHTML =
-            "<p class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</p>";
+            "<li class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</li>";
           return;
         }
 
@@ -1408,10 +1408,10 @@
         body.innerHTML = items
           .map(
             ([label, value]) => `
-                    <div class="subject-summary-item">
-                        <span class="subject-summary-label">${escapeHtml(label)}</span>
-                        <span class="subject-summary-value">${escapeHtml(value)}</span>
-                    </div>
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(value)}</span>
+                    </li>
                 `,
           )
           .join("");
@@ -1427,7 +1427,7 @@
           helper.textContent =
             "Run an assessment to generate the preprocessing checklist.";
           body.innerHTML =
-            "<p class='subject-summary-empty'>No preprocessing summary recorded yet.</p>";
+            "<li class='subject-summary-empty'>No preprocessing summary recorded yet.</li>";
           return;
         }
 
@@ -1445,10 +1445,10 @@
         body.innerHTML = items
           .map(
             ([label, value]) => `
-                    <div class="subject-summary-item">
-                        <span class="subject-summary-label">${escapeHtml(label)}</span>
-                        <span class="subject-summary-value">${escapeHtml(String(value))}</span>
-                    </div>
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(String(value))}</span>
+                    </li>
                 `,
           )
           .join("");
