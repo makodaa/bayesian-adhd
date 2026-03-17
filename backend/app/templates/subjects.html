@@ -180,12 +180,6 @@
               </div>
             </div>
             <div class="page-actions">
-              <button id="refresh-subjects-btn" type="button" class="btn-secondary-app">
-                Refresh List
-              </button>
-              <button id="open-assessment-btn" type="button" class="btn-primary-app">
-                New Assessment
-              </button>
             </div>
           </div>
         </header>
@@ -863,9 +857,6 @@
         byId("detail-backdrop")?.addEventListener("click", closeDetailDrawer);
 
         byId("logout-btn")?.addEventListener("click", handleLogout);
-        byId("open-assessment-btn")?.addEventListener("click", () => {
-          window.location.href = "/index.html";
-        });
 
         byId("detail-new-assessment-btn")?.addEventListener("click", () => {
           if (appState.selectedSubjectCode) {
@@ -878,10 +869,6 @@
           window.location.href = `/results.html?search=${encodeURIComponent(appState.selectedSubjectCode)}`;
         });
 
-        byId("refresh-subjects-btn")?.addEventListener("click", async () => {
-          await loadSubjects();
-          showToast("Subject list refreshed.", "success");
-        });
 
         byId("search-subjects")?.addEventListener("input", applyFilters);
         byId("gender-filter")?.addEventListener("change", applyFilters);
