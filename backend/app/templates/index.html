@@ -111,11 +111,15 @@
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
+              <path d="M11 2v2"></path>
+              <path d="M5 2v2"></path>
+              <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"></path>
+              <path d="M8 15a6 6 0 0 0 12 0v-3"></path>
+              <circle cx="20" cy="10" r="2"></circle>
             </svg>
             <span>Clinicians</span>
           </a>
@@ -289,6 +293,15 @@
                     Start a new assessment to view classification, data quality notes, spectral
                     analysis, and export actions.
                   </p>
+                </div>
+
+                <div id="results-loading" class="loading-block hidden">
+                  <div class="skeleton-row"></div>
+                  <div class="skeleton-row" style="width: 70%"></div>
+                  <div class="skeleton-row"></div>
+                  <div class="skeleton-row" style="width: 85%"></div>
+                  <div class="skeleton-row large"></div>
+                  <div class="skeleton-row" style="width: 60%"></div>
                 </div>
 
                 <div id="results-content" class="results-content hidden">
@@ -854,43 +867,43 @@
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="coffee-hours-ago">Coffee (hours ago)</label>
+                  <label for="coffee-hours-ago">Time since caffeine intake (hours)</label>
                   <input
                     type="number"
                     id="coffee-hours-ago"
-                    min="0"
-                    max="99.99"
-                    step="0.25"
-                    placeholder="99 = never"
+                    min="1"
+                    max="99"
+                    step="1"
+                    placeholder="1-99; 99 means never"
                     required
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="drugs-hours-ago">Drugs (hours ago)</label>
+                  <label for="drugs-hours-ago">Time since drug intake (hours)</label>
                   <input
                     type="number"
                     id="drugs-hours-ago"
-                    min="0"
-                    max="99.99"
-                    step="0.25"
-                    placeholder="99 = never"
+                    min="1"
+                    max="99"
+                    step="1"
+                    placeholder="1-99; 99 means never"
                     required
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="meal-hours-ago">Meal (hours ago)</label>
+                  <label for="meal-hours-ago">Time since last meal (hours)</label>
                   <input
                     type="number"
                     id="meal-hours-ago"
                     min="0"
-                    max="99.99"
-                    step="0.25"
+                    max="99"
+                    step="1"
                     placeholder="Hours since last meal"
                     required
                   />
                 </div>
                 <div class="field-wrap full">
-                  <label for="medication">Medication</label>
+                  <label for="medication">Medication Details</label>
                   <textarea
                     id="medication"
                     rows="2"
@@ -1281,6 +1294,13 @@
         return normalized ? normalized : fallback;
       }
 
+      function formatHoursSince(value, fallback = "Not provided") {
+        if (value === null || value === undefined) return fallback;
+        const numeric = Number(value);
+        if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
+        return formatContextValue(value, fallback);
+      }
+
       function formatBooleanContext(value) {
         if (value === "true" || value === true) return "Yes";
         if (value === "false" || value === false) return "No";
@@ -1386,9 +1406,18 @@
           ["Gender", formatContextValue(context.gender, "-")],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
-          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
-          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          [
+            "Time since caffeine intake (hours)",
+            formatHoursSince(context.coffeeHoursAgo),
+          ],
+          [
+            "Time since drug intake (hours)",
+            formatHoursSince(context.drugsHoursAgo),
+          ],
+          [
+            "Time since last meal (hours)",
+            formatContextValue(context.mealHoursAgo),
+          ],
           ["Medication", formatContextValue(context.medication)],
           [
             "CSV File",
@@ -1539,9 +1568,18 @@
           ["Gender", context.gender || "-"],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
-          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
-          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          [
+            "Time since caffeine intake (hours)",
+            formatHoursSince(context.coffeeHoursAgo),
+          ],
+          [
+            "Time since drug intake (hours)",
+            formatHoursSince(context.drugsHoursAgo),
+          ],
+          [
+            "Time since last meal (hours)",
+            formatContextValue(context.mealHoursAgo),
+          ],
           ["Medication", formatContextValue(context.medication)],
           ["CSV File", context.fileMeta ? context.fileMeta.name : "Not selected"],
           [
@@ -1763,62 +1801,34 @@
         );
       }
 
-      function _narrativeAttentionSentence(isAdhd, tbr, classification, confPct) {
+      function _narrativeAttentionSentence(isAdhd, tbr) {
         const elevatedTbr = tbr > _TBR_HYPO;
         if (isAdhd && elevatedTbr) {
           return (
-            `Combined with a ${classification} classification at ` +
-            `${confPct}% confidence, this profile is consistent with ` +
-            "reduced attentional gating and impaired frontally mediated " +
-            "inhibitory control, patterns commonly observed in ADHD."
+            "This profile is consistent with reduced attentional gating and " +
+            "impaired frontally mediated inhibitory control."
           );
         }
         if (isAdhd && !elevatedTbr) {
           return (
-            `The ${classification} classification (${confPct}% confidence) ` +
-            "was reached despite a theta/beta ratio that does not fall in the " +
-            "typically elevated range; other spectral and temporal features " +
-            "may have contributed to this classification."
+            "The theta/beta ratio does not fall in the typically elevated range; " +
+            "other spectral and temporal features may have contributed to this classification."
           );
         }
         if (!isAdhd && elevatedTbr) {
           return (
-            `Although the recording was classified as ${classification} ` +
-            `at ${confPct}% confidence, the elevated theta/beta ratio ` +
-            "warrants clinical consideration, as this pattern can occasionally " +
-            "appear in the context of other neurodevelopmental or attentional presentations."
+            "The elevated theta/beta ratio warrants clinical consideration, as this " +
+            "pattern can occasionally appear in other neurodevelopmental or attentional presentations."
           );
         }
         return (
-          `Consistent with the ${classification} classification ` +
-          `(${confPct}% confidence), the attention regulation markers ` +
-          "in this recording do not indicate the spectral patterns typically " +
-          "associated with ADHD-related cortical dysregulation."
-        );
-      }
-
-      function _narrativeConfidenceSentence(confidence) {
-        const confPct = (confidence * 100).toFixed(1);
-        if (confidence >= 0.80) {
-          return (
-            `Model confidence is high (${confPct}%), supporting ` +
-            "a stronger weighting of these findings within a broader clinical assessment."
-          );
-        }
-        if (confidence >= 0.60) {
-          return (
-            `Model confidence is moderate (${confPct}%); these findings ` +
-            "should be corroborated with additional clinical and behavioral data before drawing conclusions."
-          );
-        }
-        return (
-          `Model confidence is low (${confPct}%), and these findings ` +
-          "should be interpreted with considerable caution; additional testing is strongly recommended."
+          "The attention regulation markers in this recording do not indicate " +
+          "spectral patterns typically associated with ADHD-related cortical dysregulation."
         );
       }
 
       /**
-       * Generate a 3–5 sentence arousal & attention narrative.
+       * Generate a 3-sentence arousal & attention narrative.
        *
        * @param {string} classification  - predicted_class label
        * @param {number} confidence      - confidence score in [0,1]
@@ -1835,7 +1845,6 @@
         const thetaPct = (theta * 100).toFixed(1);
         const betaPct  = (beta  * 100).toFixed(1);
         const alphaPct = (alpha * 100).toFixed(1);
-        const confPct  = (confidence * 100).toFixed(1);
 
         const isAdhd = String(classification).toLowerCase().includes("adhd") &&
                        !String(classification).toLowerCase().includes("non-adhd");
@@ -1847,15 +1856,9 @@
           `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
         );
         const s2 = _narrativeArousalSentence(theta, beta, tbr);
-        const s3 = _narrativeAttentionSentence(isAdhd, tbr, classification, confPct);
-        const s4 = _narrativeConfidenceSentence(confidence);
-        const s5 = (
-          "These findings are intended to support clinical decision-making " +
-          "and should not be interpreted in isolation from clinical history, " +
-          "behavioral evaluation, and qualified professional judgment."
-        );
+        const s3 = _narrativeAttentionSentence(isAdhd, tbr);
 
-        return [s1, s2, s3, s4, s5].join(" ");
+        return [s1, s2, s3].join(" ");
       }
 
       function renderNarrativeCard(classification, confidence, bandData) {
@@ -1873,14 +1876,12 @@
       function clinicalImpressionText(classification, confidence) {
         const confidencePercent = (confidence * 100).toFixed(1);
         const isNonAdhd = String(classification).toLowerCase().includes("non-adhd");
-        const disclaimer =
-          "This application provides automated clinical decision support and is not a definitive diagnostic tool. Interpret findings alongside clinical history, behavioral assessments, and qualified professional judgment.";
 
         if (isNonAdhd) {
-          return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures at ${confidencePercent}% confidence. This finding should be interpreted with clinical history, behavioral evaluation, and longitudinal follow-up as needed. ${disclaimer}`;
+          return `The EEG pattern in this recording does not strongly align with ADHD-associated signatures (${confidencePercent}% confidence).`;
         }
 
-        return `The EEG pattern is consistent with ${classification} at ${confidencePercent}% confidence. This output is a decision-support signal and should be interpreted alongside clinical interviews, developmental history, and other assessment tools. ${disclaimer}`;
+        return `The EEG pattern is consistent with ${classification} (${confidencePercent}% confidence).`;
       }
 
       function displayPrediction(classification, confidenceScore) {
@@ -1916,6 +1917,7 @@
         const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
         const coffeeValue = context.coffeeHoursAgo ? Number(context.coffeeHoursAgo) : null;
         const drugsValue = context.drugsHoursAgo ? Number(context.drugsHoursAgo) : null;
+        const mealValue = context.mealHoursAgo ? Number(context.mealHoursAgo) : null;
         const age = computeAgeFromDob(context.dateOfBirth);
 
         // Confidence < 60% — High
@@ -1966,15 +1968,6 @@
           }
         }
 
-        // Sleep missing — Moderate
-        if (sleepValue === null || Number.isNaN(sleepValue)) {
-          notices.push({
-            severity: "moderate",
-            message:
-              "Sleep duration was not recorded. Missing context can affect interpretation confidence.",
-          });
-        }
-
         // Coffee within 6 hours — Moderate
         if (coffeeValue !== null && !Number.isNaN(coffeeValue) && coffeeValue < 6) {
           notices.push({
@@ -1990,6 +1983,15 @@
             message: "Recent drug intake was reported and may affect EEG-derived features.",
           });
         }
+
+        // No meal within 6 hours — Moderate
+        if (mealValue !== null && !Number.isNaN(mealValue) && mealValue >= 6) {
+          notices.push({
+            severity: "moderate",
+            message: "No meal was reported in the last 6 hours.",
+          });
+        }
+
 
         // Medication details present — Moderate
         if (String(context.medication || "").trim()) {
@@ -2682,9 +2684,7 @@
       function enterProcessingMode() {
         appState.isProcessing = true;
         setHidden("analysis-form", true);
-        setHidden("drawer-processing", false);
-        initProcessingList();
-        updateProcessingStage(0, "Preparing analysis...");
+        setHidden("drawer-processing", true);
       }
 
       function leaveProcessingMode() {
@@ -2709,9 +2709,14 @@
         appState.latestAssessmentContext = context;
 
         enterProcessingMode();
+        closeAssessmentDrawer(true);
+        setHidden("results-empty-state", true);
+        setHidden("results-content", true);
+        setHidden("results-loading", false);
+        scrollToAssessmentFindings();
+        appState.currentStep = 1;
 
         try {
-          updateProcessingStage(0, "Validating subject metadata and EEG file...");
           const formData = buildFormDataFromContext(context);
 
           const predictionResponse = await fetch("/predict", { method: "POST", body: formData });
@@ -2742,26 +2747,21 @@
             hydratePrepSummary(appState.latestResultId);
           }
 
-          setHidden("results-empty-state", true);
+          setHidden("results-loading", true);
           setHidden("results-content", false);
           setHidden("export-bar", false);
           updateExportControls();
 
-          updateProcessingStage(2, "Loading waveform visualizations...");
+          // Load visualizations after core results render
           await ensureVisualizationContext(result);
 
           if (appState.latestResultId) {
-            updateProcessingStage(3, "Loading topographic maps...");
             await loadTopographicMapsByResult(appState.latestResultId);
           }
 
-          updateProcessingStage(3, "Assessment complete. Review findings below.");
-          await new Promise((resolve) => window.setTimeout(resolve, 480));
           leaveProcessingMode();
-          closeAssessmentDrawer(true);
           setStep(1);
           applyAssessmentPriorityDisclosure();
-          scrollToAssessmentFindings();
 
           const fileInput = byId("file");
           if (fileInput) fileInput.value = "";
@@ -2773,6 +2773,8 @@
           updateDraftIndicator();
         } catch (error) {
           leaveProcessingMode();
+          setHidden("results-loading", true);
+          setHidden("results-empty-state", false);
           setStep(3);
           showToast(
             error.message || "An unexpected error occurred while running assessment.",
@@ -3029,7 +3031,6 @@
         });
 
         byId("open-assessment-btn")?.addEventListener("click", openAssessmentDrawer);
-        byId("empty-start-btn")?.addEventListener("click", openAssessmentDrawer);
         byId("close-assessment-btn")?.addEventListener("click", () => closeAssessmentDrawer());
         byId("assessment-backdrop")?.addEventListener("click", () => closeAssessmentDrawer());
 
@@ -3422,12 +3423,30 @@
         setupTopographicToggleButtons();
         setupSubjectAutofill();
         setupUploadInteractions();
+        disableNumberInputScroll();
         setupEventHandlers();
         eegModal.init();
 
         await loadCurrentClinician();
         await loadSubjects();
         updateDraftIndicator();
+      }
+
+      function disableNumberInputScroll() {
+        document.addEventListener(
+          "wheel",
+          (event) => {
+            const target = event.target;
+            if (
+              target instanceof HTMLInputElement &&
+              target.type === "number" &&
+              document.activeElement === target
+            ) {
+              event.preventDefault();
+            }
+          },
+          { passive: false },
+        );
       }
 
       document.addEventListener("DOMContentLoaded", initializePage);
