@@ -58,12 +58,7 @@ body {
   min-height: 100vh;
   font-family: "Lato", sans-serif;
   color: var(--text-900);
-  background: radial-gradient(
-    circle at 15% -10%,
-    #ffffff 0%,
-    var(--surface-bg) 45%,
-    #eff1f3 100%
-  );
+  background: #ffffff;
 }
 
 button,
@@ -487,7 +482,7 @@ a:focus-visible {
   z-index: 900;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  background: var(--surface-bg);
+  background: #ffffff;
   border-bottom: none;
 }
 
