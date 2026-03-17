@@ -2740,6 +2740,10 @@
           renderSubjectSummary(context, result);
           renderPrepChecklist(result);
 
+          if (appState.latestResultId) {
+            hydratePrepSummary(appState.latestResultId);
+          }
+
           setHidden("results-empty-state", true);
           setHidden("results-content", false);
           setHidden("export-bar", false);
@@ -2776,6 +2780,22 @@
             error.message || "An unexpected error occurred while running assessment.",
             "error",
           );
+        }
+      }
+
+      async function hydratePrepSummary(resultId) {
+        try {
+          const response = await fetch(`/api/results/${resultId}`);
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!data || !data.preprocessing_summary) return;
+          appState.latestResult = {
+            ...(appState.latestResult || {}),
+            preprocessing_summary: data.preprocessing_summary,
+          };
+          renderPrepChecklist(appState.latestResult);
+        } catch (error) {
+          console.warn("Failed to hydrate preprocessing summary", error);
         }
       }
 
