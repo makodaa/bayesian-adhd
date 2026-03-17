@@ -444,7 +444,37 @@ class EEGService:
             else 0.0
         )
         missing_fields = max(missing_fields, 0)
-        run_id = datetime.utcnow().strftime("prep-%Y%m%d%H%M%S")
+        channel_count = max(19 - missing_fields, 0)
+        steps = [
+            {
+                "name": "Recording Intake & Validation",
+                "statement": (
+                    f"Validated {raw_row_count} samples from {channel_count} channels."
+                ),
+            },
+            {
+                "name": "Channel Alignment & Structuring",
+                "statement": "Aligned recording to 19-channel 10-20 layout.",
+            },
+            {
+                "name": "Signal Cleaning & Conditioning",
+                "statement": (
+                    f"Cleaned recording to {cleaned_row_count} usable samples."
+                ),
+            },
+            {
+                "name": "Feature Extraction",
+                "statement": (
+                    f"Found {feature_count} usable features in recording."
+                ),
+            },
+            {
+                "name": "Final Readiness Check",
+                "statement": (
+                    f"Prepared {cleaned_row_count} samples for model input."
+                ),
+            },
+        ]
         return {
             "files_received": 1,
             "records_accepted": cleaned_row_count,
@@ -452,7 +482,7 @@ class EEGService:
             "missing_fields": missing_fields,
             "usable_data_pct": round(usable_pct, 1),
             "feature_count": feature_count,
-            "run_id": run_id,
+            "steps": steps,
         }
 
     @staticmethod

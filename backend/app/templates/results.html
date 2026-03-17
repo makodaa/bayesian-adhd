@@ -822,22 +822,14 @@
           </section>`;
 
         const prep = data.preprocessing_summary || {};
-        const prepItems = [
-          ["Files", prep.files_received],
-          ["Accepted", prep.records_accepted],
-          ["Missing fields", prep.missing_fields],
-          ["Rows removed", prep.rows_removed],
-          ["Usable data", prep.usable_data_pct != null ? `${prep.usable_data_pct}%` : null],
-          ["Features", prep.feature_count],
-          ["Run ID", prep.run_id],
-        ].filter(([, v]) => v != null && v !== "");
-        const prepRows = prepItems.length
-          ? prepItems
-          : [["Status", "Not available for this assessment"]];
+        const prepSteps = Array.isArray(prep.steps) ? prep.steps : [];
+        const prepRows = prepSteps.length
+          ? prepSteps.map((step) => [step.name, step.statement])
+          : [["Status", "Step detail not recorded for this assessment"]];
 
         const prepSection = `
           <section class="detail-section prep-section">
-            <h3>Recording Prep Checklist</h3>
+            <h3>Preprocessing Summary</h3>
             <ul class="detail-list">
               ${prepRows
                 .map(

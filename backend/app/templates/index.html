@@ -256,7 +256,7 @@
               data-target="prep-checklist-content"
               aria-expanded="false"
             >
-              <span>Recording Prep Checklist</span>
+              <span>Preprocessing Summary</span>
               <span class="toggle-symbol" aria-hidden="true"></span>
             </button>
             <div id="prep-checklist-content" class="section-content" data-collapsible-content>
@@ -1428,16 +1428,17 @@
           return;
         }
 
-        helper.textContent = "Minimal preprocessing checkpoints from the latest assessment.";
-        const items = [
-          ["Files", prep.files_received],
-          ["Accepted", prep.records_accepted],
-          ["Missing fields", prep.missing_fields],
-          ["Rows removed", prep.rows_removed],
-          ["Usable data", prep.usable_data_pct != null ? `${prep.usable_data_pct}%` : null],
-          ["Features", prep.feature_count],
-          ["Run ID", prep.run_id],
-        ].filter(([, v]) => v != null && v !== "");
+        const steps = Array.isArray(prep.steps) ? prep.steps : [];
+        helper.textContent = "Step-by-step preprocessing overview.";
+        const items = steps
+          .map((step) => [step.name, step.statement])
+          .filter(([, v]) => v != null && v !== "");
+
+        if (items.length === 0) {
+          body.innerHTML =
+            "<li class='subject-summary-empty'>Preprocessing steps were not recorded.</li>";
+          return;
+        }
 
         body.innerHTML = items
           .map(
