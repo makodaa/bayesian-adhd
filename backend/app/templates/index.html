@@ -858,43 +858,43 @@
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="coffee-hours-ago">Coffee (hours ago)</label>
+                  <label for="coffee-hours-ago">Time since caffeine intake (hours)</label>
                   <input
                     type="number"
                     id="coffee-hours-ago"
-                    min="0"
-                    max="99.99"
-                    step="0.25"
-                    placeholder="99 = never"
+                    min="1"
+                    max="99"
+                    step="1"
+                    placeholder="1-99; 99 means never"
                     required
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="drugs-hours-ago">Drugs (hours ago)</label>
+                  <label for="drugs-hours-ago">Time since drug intake (hours)</label>
                   <input
                     type="number"
                     id="drugs-hours-ago"
-                    min="0"
-                    max="99.99"
-                    step="0.25"
-                    placeholder="99 = never"
+                    min="1"
+                    max="99"
+                    step="1"
+                    placeholder="1-99; 99 means never"
                     required
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="meal-hours-ago">Meal (hours ago)</label>
+                  <label for="meal-hours-ago">Time since last meal (hours)</label>
                   <input
                     type="number"
                     id="meal-hours-ago"
                     min="0"
-                    max="99.99"
-                    step="0.25"
+                    max="99"
+                    step="1"
                     placeholder="Hours since last meal"
                     required
                   />
                 </div>
                 <div class="field-wrap full">
-                  <label for="medication">Medication</label>
+                  <label for="medication">Medication Details</label>
                   <textarea
                     id="medication"
                     rows="2"
@@ -1390,9 +1390,18 @@
           ["Gender", formatContextValue(context.gender, "-")],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
-          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
-          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          [
+            "Time since caffeine intake (hours)",
+            formatContextValue(context.coffeeHoursAgo),
+          ],
+          [
+            "Time since drug intake (hours)",
+            formatContextValue(context.drugsHoursAgo),
+          ],
+          [
+            "Time since last meal (hours)",
+            formatContextValue(context.mealHoursAgo),
+          ],
           ["Medication", formatContextValue(context.medication)],
           [
             "CSV File",
@@ -1543,9 +1552,18 @@
           ["Gender", context.gender || "-"],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
-          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
-          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          [
+            "Time since caffeine intake (hours)",
+            formatContextValue(context.coffeeHoursAgo),
+          ],
+          [
+            "Time since drug intake (hours)",
+            formatContextValue(context.drugsHoursAgo),
+          ],
+          [
+            "Time since last meal (hours)",
+            formatContextValue(context.mealHoursAgo),
+          ],
           ["Medication", formatContextValue(context.medication)],
           ["CSV File", context.fileMeta ? context.fileMeta.name : "Not selected"],
           [
@@ -1920,6 +1938,7 @@
         const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
         const coffeeValue = context.coffeeHoursAgo ? Number(context.coffeeHoursAgo) : null;
         const drugsValue = context.drugsHoursAgo ? Number(context.drugsHoursAgo) : null;
+        const mealValue = context.mealHoursAgo ? Number(context.mealHoursAgo) : null;
         const age = computeAgeFromDob(context.dateOfBirth);
 
         // Confidence < 60% — High
@@ -1970,15 +1989,6 @@
           }
         }
 
-        // Sleep missing — Moderate
-        if (sleepValue === null || Number.isNaN(sleepValue)) {
-          notices.push({
-            severity: "moderate",
-            message:
-              "Sleep duration was not recorded. Missing context can affect interpretation confidence.",
-          });
-        }
-
         // Coffee within 6 hours — Moderate
         if (coffeeValue !== null && !Number.isNaN(coffeeValue) && coffeeValue < 6) {
           notices.push({
@@ -1994,6 +2004,15 @@
             message: "Recent drug intake was reported and may affect EEG-derived features.",
           });
         }
+
+        // No meal within 6 hours — Moderate
+        if (mealValue !== null && !Number.isNaN(mealValue) && mealValue >= 6) {
+          notices.push({
+            severity: "moderate",
+            message: "No meal was reported in the last 6 hours.",
+          });
+        }
+
 
         // Medication details present — Moderate
         if (String(context.medication || "").trim()) {
@@ -3425,12 +3444,30 @@
         setupTopographicToggleButtons();
         setupSubjectAutofill();
         setupUploadInteractions();
+        disableNumberInputScroll();
         setupEventHandlers();
         eegModal.init();
 
         await loadCurrentClinician();
         await loadSubjects();
         updateDraftIndicator();
+      }
+
+      function disableNumberInputScroll() {
+        document.addEventListener(
+          "wheel",
+          (event) => {
+            const target = event.target;
+            if (
+              target instanceof HTMLInputElement &&
+              target.type === "number" &&
+              document.activeElement === target
+            ) {
+              event.preventDefault();
+            }
+          },
+          { passive: false },
+        );
       }
 
       document.addEventListener("DOMContentLoaded", initializePage);
