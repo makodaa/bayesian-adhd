@@ -295,6 +295,15 @@
                   </p>
                 </div>
 
+                <div id="results-loading" class="loading-block hidden">
+                  <div class="skeleton-row"></div>
+                  <div class="skeleton-row" style="width: 70%"></div>
+                  <div class="skeleton-row"></div>
+                  <div class="skeleton-row" style="width: 85%"></div>
+                  <div class="skeleton-row large"></div>
+                  <div class="skeleton-row" style="width: 60%"></div>
+                </div>
+
                 <div id="results-content" class="results-content hidden">
                    <article class="summary-card">
                      <h3>Classification Summary</h3>
@@ -2712,9 +2721,7 @@
       function enterProcessingMode() {
         appState.isProcessing = true;
         setHidden("analysis-form", true);
-        setHidden("drawer-processing", false);
-        initProcessingList();
-        updateProcessingStage(0, "Preparing analysis...");
+        setHidden("drawer-processing", true);
       }
 
       function leaveProcessingMode() {
@@ -2739,9 +2746,14 @@
         appState.latestAssessmentContext = context;
 
         enterProcessingMode();
+        closeAssessmentDrawer(true);
+        setHidden("results-empty-state", true);
+        setHidden("results-content", true);
+        setHidden("results-loading", false);
+        scrollToAssessmentFindings();
+        appState.currentStep = 1;
 
         try {
-          updateProcessingStage(0, "Validating subject metadata and EEG file...");
           const formData = buildFormDataFromContext(context);
 
           const predictionResponse = await fetch("/predict", { method: "POST", body: formData });
@@ -2772,26 +2784,21 @@
             hydratePrepSummary(appState.latestResultId);
           }
 
-          setHidden("results-empty-state", true);
+          setHidden("results-loading", true);
           setHidden("results-content", false);
           setHidden("export-bar", false);
           updateExportControls();
 
-          updateProcessingStage(2, "Loading waveform visualizations...");
+          // Load visualizations after core results render
           await ensureVisualizationContext(result);
 
           if (appState.latestResultId) {
-            updateProcessingStage(3, "Loading topographic maps...");
             await loadTopographicMapsByResult(appState.latestResultId);
           }
 
-          updateProcessingStage(3, "Assessment complete. Review findings below.");
-          await new Promise((resolve) => window.setTimeout(resolve, 480));
           leaveProcessingMode();
-          closeAssessmentDrawer(true);
           setStep(1);
           applyAssessmentPriorityDisclosure();
-          scrollToAssessmentFindings();
 
           const fileInput = byId("file");
           if (fileInput) fileInput.value = "";
@@ -2803,6 +2810,8 @@
           updateDraftIndicator();
         } catch (error) {
           leaveProcessingMode();
+          setHidden("results-loading", true);
+          setHidden("results-empty-state", false);
           setStep(3);
           showToast(
             error.message || "An unexpected error occurred while running assessment.",
