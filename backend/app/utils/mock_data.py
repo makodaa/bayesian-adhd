@@ -25,21 +25,28 @@ class MockDataGenerator:
         }
     
     @staticmethod
-    def generate_recording_data(file_name: str):
+    def generate_recording_data(file_name: str | None):
         """Generate mock recording data."""
         return {
             'file_name': file_name or f"mock_file_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv",
+            'technician_name': 'Auto Technician',
             'sleep_hours': round(random.uniform(4.0, 10.0), 2),
-            'food_intake': random.choice(['Light breakfast', 'Normal meal', 'Heavy meal', 'Fasting']),
-            'caffeinated': random.choice([True, False]),
-            'medicated': False,  # Default to False for safety
-            'medication_intake': None,
+            'coffee_hours_ago': round(random.uniform(0.0, 99.0), 2),
+            'drugs_hours_ago': round(random.uniform(0.0, 99.0), 2),
+            'meal_hours_ago': round(random.uniform(0.0, 8.0), 2),
+            'medication': None,
+            'recorded_minutes': round(random.uniform(8.0, 30.0), 2),
+            'duration_minutes': round(random.uniform(8.0, 30.0), 2),
             'artifacts_noted': 'Auto-generated recording - no artifacts manually reviewed',
             'notes': 'This is a mock recording created automatically for testing purposes.'
         }
     
     @staticmethod
-    def create_mock_subject_and_recording(subject_service, recording_service, file_name: str = None):
+    def create_mock_subject_and_recording(
+        subject_service,
+        recording_service,
+        file_name: str | None = None,
+    ):
         """
         Create a mock subject and recording in the database.
         
@@ -64,11 +71,14 @@ class MockDataGenerator:
         recording_id = recording_service.create_recording(
             subject_id=subject_id,
             file_name=recording_data['file_name'],
+            technician_name=recording_data['technician_name'],
             sleep_hours=recording_data['sleep_hours'],
-            food_intake=recording_data['food_intake'],
-            caffeinated=recording_data['caffeinated'],
-            medicated=recording_data['medicated'],
-            medication_intake=recording_data['medication_intake'],
+            coffee_hours_ago=recording_data['coffee_hours_ago'],
+            drugs_hours_ago=recording_data['drugs_hours_ago'],
+            meal_hours_ago=recording_data['meal_hours_ago'],
+            medication=recording_data['medication'],
+            recorded_minutes=recording_data['recorded_minutes'],
+            duration_minutes=recording_data['duration_minutes'],
             artifacts_noted=recording_data['artifacts_noted'],
             notes=recording_data['notes']
         )

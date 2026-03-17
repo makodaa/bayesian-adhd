@@ -494,47 +494,17 @@
   line-height: 1.45;
 }
 
-/* ─── Subject summary grid ───────────────────────────────────────────────── */
-
-.subject-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-}
-
-.subject-summary-item {
-  background: #f2f6f8;
-  border: 1px solid #dbe6ec;
-  border-radius: var(--radius-sm);
-  padding: 0.52rem 0.64rem;
-  display: grid;
-  gap: 0.16rem;
-}
-
-.subject-summary-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-500);
-}
-
-.subject-summary-value {
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--text-900);
-  line-height: 1.35;
-  word-break: break-word;
-}
+/* ─── Subject summary empty state ────────────────────────────────────────── */
 
 .subject-summary-empty {
   margin: 0;
-  grid-column: 1 / -1;
   font-size: 0.84rem;
   color: var(--text-700);
   background: #f7fbfc;
   border: 1px dashed #ccdbe3;
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.7rem;
+  list-style: none;
 }
 
 /* ─── Band view toggle ───────────────────────────────────────────────────── */

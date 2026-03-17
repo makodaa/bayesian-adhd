@@ -15,14 +15,22 @@ class ResultsService:
         logger.debug(f"ResultsService: fetching result {result_id}")
         return self.results_repo.get_by_id(result_id)
     
-    def create_result(self, recording_id: int, classification: str, confidence_score: float, clinician_id: int | None = None) -> int:
+    def create_result(
+        self,
+        recording_id: int,
+        classification: str,
+        confidence_score: float,
+        clinician_id: int | None = None,
+        preprocessing_summary: dict | None = None,
+    ) -> int:
         """Create a new result entry."""
         logger.info(f"ResultsService: creating result for recording {recording_id}")
         return self.results_repo.create_result(
             recording_id=recording_id,
             classification=classification,
             confidence_score=confidence_score,
-            clinician_id=clinician_id
+            clinician_id=clinician_id,
+            preprocessing_summary=preprocessing_summary,
         )
     
     def get_all_results_with_details(self):
@@ -33,6 +41,7 @@ class ResultsService:
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
+            r.preprocessing_summary,
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
@@ -68,18 +77,23 @@ class ResultsService:
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
+            r.preprocessing_summary,
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
+            rec.technician_name,
             rec.sleep_hours,
-            rec.food_intake,
-            rec.caffeinated,
-            rec.medicated,
-            rec.medication_intake,
+            rec.coffee_hours_ago,
+            rec.drugs_hours_ago,
+            rec.meal_hours_ago,
+            rec.medication,
+            rec.recorded_minutes,
+            rec.duration_minutes,
             rec.notes,
             s.id as subject_id,
             s.subject_code,
             s.age,
+            s.date_of_birth,
             s.gender,
             c.first_name as clinician_first_name,
             c.last_name as clinician_last_name,

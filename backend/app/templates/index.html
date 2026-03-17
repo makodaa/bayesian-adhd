@@ -244,7 +244,26 @@
               <p id="subject-summary-helper" class="helper-copy">
                 Run an assessment to populate the subject summary for quick review.
               </p>
-              <div id="subject-summary-body" class="subject-summary-grid"></div>
+              <ul id="subject-summary-body" class="detail-list"></ul>
+            </div>
+          </section>
+
+          <section class="section-shell section-shell--top-level" id="prep-checklist-section">
+            <button
+              type="button"
+              class="section-toggle priority-toggle"
+              data-collapsible-toggle
+              data-target="prep-checklist-content"
+              aria-expanded="false"
+            >
+              <span>Preprocessing Summary</span>
+              <span class="toggle-symbol" aria-hidden="true"></span>
+            </button>
+            <div id="prep-checklist-content" class="section-content" data-collapsible-content>
+              <p id="prep-checklist-helper" class="helper-copy">
+                Run an assessment to generate the preprocessing checklist.
+              </p>
+              <ul id="prep-checklist-body" class="detail-list"></ul>
             </div>
           </section>
 
@@ -814,6 +833,15 @@
               <h3>Recording Context</h3>
               <div class="form-grid">
                 <div class="field-wrap">
+                  <label for="technician-name">Technician</label>
+                  <input
+                    type="text"
+                    id="technician-name"
+                    placeholder="Technician name"
+                    maxlength="100"
+                  />
+                </div>
+                <div class="field-wrap">
                   <label for="sleep-hours">Sleep Hours</label>
                   <input
                     type="number"
@@ -822,60 +850,51 @@
                     max="24"
                     step="0.5"
                     placeholder="Hours slept"
+                    required
                   />
                 </div>
                 <div class="field-wrap">
-                  <label for="food-intake">Food Intake (last 3 hours)</label>
-                  <input type="text" id="food-intake" placeholder="e.g., light meal" maxlength="500" />
+                  <label for="coffee-hours-ago">Coffee (hours ago)</label>
+                  <input
+                    type="number"
+                    id="coffee-hours-ago"
+                    min="0"
+                    max="99.99"
+                    step="0.25"
+                    placeholder="99 = never"
+                    required
+                  />
                 </div>
-                <fieldset class="radio-group">
-                  <legend>Caffeine Status</legend>
-                  <div class="radio-options">
-                    <label for="caffeinated-yes"
-                      ><input
-                        type="radio"
-                        id="caffeinated-yes"
-                        name="caffeinated"
-                        value="true"
-                      />Yes</label
-                    >
-                    <label for="caffeinated-no"
-                      ><input
-                        type="radio"
-                        id="caffeinated-no"
-                        name="caffeinated"
-                        value="false"
-                      />No</label
-                    >
-                  </div>
-                </fieldset>
-                <fieldset class="radio-group">
-                  <legend>Medication Status</legend>
-                  <div class="radio-options">
-                    <label for="medicated-yes"
-                      ><input
-                        type="radio"
-                        id="medicated-yes"
-                        name="medicated"
-                        value="true"
-                      />Yes</label
-                    >
-                    <label for="medicated-no"
-                      ><input
-                        type="radio"
-                        id="medicated-no"
-                        name="medicated"
-                        value="false"
-                      />No</label
-                    >
-                  </div>
-                </fieldset>
+                <div class="field-wrap">
+                  <label for="drugs-hours-ago">Drugs (hours ago)</label>
+                  <input
+                    type="number"
+                    id="drugs-hours-ago"
+                    min="0"
+                    max="99.99"
+                    step="0.25"
+                    placeholder="99 = never"
+                    required
+                  />
+                </div>
+                <div class="field-wrap">
+                  <label for="meal-hours-ago">Meal (hours ago)</label>
+                  <input
+                    type="number"
+                    id="meal-hours-ago"
+                    min="0"
+                    max="99.99"
+                    step="0.25"
+                    placeholder="Hours since last meal"
+                    required
+                  />
+                </div>
                 <div class="field-wrap full">
-                  <label for="medication-intake">Medication Details</label>
+                  <label for="medication">Medication</label>
                   <textarea
-                    id="medication-intake"
+                    id="medication"
                     rows="2"
-                    placeholder="Enter medication details if applicable"
+                    placeholder="List medications or dosing notes"
                     maxlength="500"
                   ></textarea>
                 </div>
@@ -1319,10 +1338,11 @@
           "dateOfBirth",
           "gender",
           "sleepHours",
-          "foodIntake",
-          "caffeinated",
-          "medicated",
-          "medicationIntake",
+          "coffeeHoursAgo",
+          "drugsHoursAgo",
+          "mealHoursAgo",
+          "medication",
+          "technicianName",
           "notes",
         ];
 
@@ -1340,7 +1360,7 @@
           helper.textContent =
             "Run an assessment to populate the subject summary for quick review.";
           body.innerHTML =
-            "<p class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</p>";
+            "<li class='subject-summary-empty'>No subject metadata has been recorded in this session yet.</li>";
           return;
         }
 
@@ -1364,11 +1384,12 @@
               : "-",
           ],
           ["Gender", formatContextValue(context.gender, "-")],
+          ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          ["Food Intake", formatContextValue(context.foodIntake)],
-          ["Caffeine", formatBooleanContext(context.caffeinated)],
-          ["Medication", formatBooleanContext(context.medicated)],
-          ["Medication Details", formatContextValue(context.medicationIntake)],
+          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
+          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
+          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          ["Medication", formatContextValue(context.medication)],
           [
             "CSV File",
             formatContextValue(context.fileMeta && context.fileMeta.name, "Not selected"),
@@ -1384,10 +1405,48 @@
         body.innerHTML = items
           .map(
             ([label, value]) => `
-                    <div class="subject-summary-item">
-                        <span class="subject-summary-label">${escapeHtml(label)}</span>
-                        <span class="subject-summary-value">${escapeHtml(value)}</span>
-                    </div>
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(value)}</span>
+                    </li>
+                `,
+          )
+          .join("");
+      }
+
+      function renderPrepChecklist(result = null) {
+        const helper = byId("prep-checklist-helper");
+        const body = byId("prep-checklist-body");
+        if (!helper || !body) return;
+
+        const prep = (result && result.preprocessing_summary) || null;
+        if (!prep) {
+          helper.textContent =
+            "Run an assessment to generate the preprocessing checklist.";
+          body.innerHTML =
+            "<li class='subject-summary-empty'>No preprocessing summary recorded yet.</li>";
+          return;
+        }
+
+        const steps = Array.isArray(prep.steps) ? prep.steps : [];
+        helper.textContent = "Step-by-step preprocessing overview.";
+        const items = steps
+          .map((step) => [step.name, step.statement])
+          .filter(([, v]) => v != null && v !== "");
+
+        if (items.length === 0) {
+          body.innerHTML =
+            "<li class='subject-summary-empty'>Preprocessing steps were not recorded.</li>";
+          return;
+        }
+
+        body.innerHTML = items
+          .map(
+            ([label, value]) => `
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(label)}</span>
+                        <span class="detail-value">${escapeHtml(String(value))}</span>
+                    </li>
                 `,
           )
           .join("");
@@ -1402,16 +1461,15 @@
           byId("date-of-birth")?.value,
           byId("gender")?.value,
           byId("sleep-hours")?.value,
-          byId("food-intake")?.value,
-          byId("medication-intake")?.value,
+          byId("coffee-hours-ago")?.value,
+          byId("drugs-hours-ago")?.value,
+          byId("meal-hours-ago")?.value,
+          byId("medication")?.value,
+          byId("technician-name")?.value,
           byId("notes")?.value,
         ];
-        const hasRadioSelection =
-          Boolean(document.querySelector("input[name='caffeinated']:checked")) ||
-          Boolean(document.querySelector("input[name='medicated']:checked"));
         const hasDraft =
           fields.some((value) => Boolean(value && String(value).trim())) ||
-          hasRadioSelection ||
           Boolean(appState.file);
         const hasCompletedAssessment = Boolean(
           appState.latestAssessmentContext &&
@@ -1435,30 +1493,32 @@
           const draftContext = collectAssessmentContext();
           const alignedWithLatest = !appState.file && isContextAlignedWithLatest(draftContext);
           renderSubjectSummary(draftContext, alignedWithLatest ? appState.latestResult : null);
+          renderPrepChecklist(alignedWithLatest ? appState.latestResult : null);
           return;
         }
 
         renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
+        renderPrepChecklist(appState.latestResult);
       }
 
       function collectAssessmentContext() {
-        const getCheckedValue = (name) => {
-          const selected = document.querySelector(`input[name='${name}']:checked`);
-          return selected ? selected.value : null;
-        };
-
+        const recordedMinutes = appState.fileMeta
+          ? Math.max(0, (appState.fileMeta.durationSec || 0) / 60)
+          : null;
         return {
           subjectCode: byId("subject-code").value.trim(),
           dateOfBirth: byId("date-of-birth").value,
           gender: byId("gender").value,
           sleepHours: byId("sleep-hours").value,
-          foodIntake: byId("food-intake").value.trim(),
-          caffeinated: getCheckedValue("caffeinated"),
-          medicated: getCheckedValue("medicated"),
-          medicationIntake: byId("medication-intake").value.trim(),
+          coffeeHoursAgo: byId("coffee-hours-ago").value,
+          drugsHoursAgo: byId("drugs-hours-ago").value,
+          mealHoursAgo: byId("meal-hours-ago").value,
+          medication: byId("medication").value.trim(),
           notes: byId("notes").value.trim(),
           clinicianName: byId("clinician-input").value,
           occupation: byId("occupation").value,
+          technicianName: byId("technician-name").value.trim(),
+          recordedMinutes,
           fileMeta: appState.fileMeta,
         };
       }
@@ -1477,24 +1537,12 @@
               : "-",
           ],
           ["Gender", context.gender || "-"],
-          ["Sleep Hours", context.sleepHours || "Not provided"],
-          ["Food Intake", context.foodIntake || "Not provided"],
-          [
-            "Caffeine",
-            context.caffeinated === null
-              ? "Not provided"
-              : context.caffeinated === "true"
-                ? "Yes"
-                : "No",
-          ],
-          [
-            "Medication",
-            context.medicated === null
-              ? "Not provided"
-              : context.medicated === "true"
-                ? "Yes"
-                : "No",
-          ],
+          ["Technician", formatContextValue(context.technicianName)],
+          ["Sleep Hours", formatContextValue(context.sleepHours)],
+          ["Coffee (hours ago)", formatContextValue(context.coffeeHoursAgo)],
+          ["Drugs (hours ago)", formatContextValue(context.drugsHoursAgo)],
+          ["Meal (hours ago)", formatContextValue(context.mealHoursAgo)],
+          ["Medication", formatContextValue(context.medication)],
           ["CSV File", context.fileMeta ? context.fileMeta.name : "Not selected"],
           [
             "Estimated Duration",
@@ -1548,6 +1596,10 @@
         const subjectCode = byId("subject-code");
         const dateOfBirth = byId("date-of-birth");
         const gender = byId("gender");
+        const sleepHours = byId("sleep-hours");
+        const coffeeHoursAgo = byId("coffee-hours-ago");
+        const drugsHoursAgo = byId("drugs-hours-ago");
+        const mealHoursAgo = byId("meal-hours-ago");
         const error = byId("step-1-error");
 
         const subjectValid = Boolean(subjectCode && subjectCode.value.trim());
@@ -1555,9 +1607,19 @@
         const dobParsed = parseIsoDate(dobValue);
         const dobValid = Boolean(dobParsed);
         const genderValid = Boolean(gender && gender.value);
+        const numericFields = [
+          [sleepHours, "Sleep hours"],
+          [coffeeHoursAgo, "Coffee hours ago"],
+          [drugsHoursAgo, "Drugs hours ago"],
+          [mealHoursAgo, "Meal hours ago"],
+        ];
+        const numericValid = numericFields.every(([field]) =>
+          Boolean(field && String(field.value).trim()),
+        );
 
-        if (!subjectValid || !dobValid || !genderValid) {
-          error.textContent = "Enter subject code, date of birth, and gender to continue.";
+        if (!subjectValid || !dobValid || !genderValid || !numericValid) {
+          error.textContent =
+            "Enter subject code, date of birth, gender, sleep hours, and hours-ago fields to continue.";
           error.classList.remove("hidden");
           return false;
         }
@@ -1567,6 +1629,15 @@
           const dobDate = new Date(dobParsed.year, dobParsed.month - 1, dobParsed.day);
           if (dobDate > today) {
             error.textContent = "Date of birth cannot be in the future.";
+            error.classList.remove("hidden");
+            return false;
+          }
+        }
+
+        for (const [field, label] of numericFields) {
+          const value = field ? Number(field.value) : NaN;
+          if (!Number.isFinite(value) || value < 0 || value > 99.99) {
+            error.textContent = `${label} must be between 0 and 99.99.`;
             error.classList.remove("hidden");
             return false;
           }
@@ -1629,6 +1700,7 @@
       function applyAssessmentPriorityDisclosure() {
         setCollapsibleState("workflow-content", false);
         setCollapsibleState("subject-summary-content", false);
+        setCollapsibleState("prep-checklist-content", false);
         setCollapsibleState("clinical-assessment-content", true);
       }
 
@@ -1842,6 +1914,8 @@
         // Each notice: { severity: "high"|"moderate", message: string }
         const notices = [];
         const sleepValue = context.sleepHours ? Number(context.sleepHours) : null;
+        const coffeeValue = context.coffeeHoursAgo ? Number(context.coffeeHoursAgo) : null;
+        const drugsValue = context.drugsHoursAgo ? Number(context.drugsHoursAgo) : null;
         const age = computeAgeFromDob(context.dateOfBirth);
 
         // Confidence < 60% — High
@@ -1862,12 +1936,17 @@
           });
         }
 
-        // Medication yes + missing details — High
-        if (context.medicated === "true" && !String(context.medicationIntake || "").trim()) {
+        // Drug intake reported + missing details — High
+        if (
+          drugsValue !== null &&
+          !Number.isNaN(drugsValue) &&
+          drugsValue < 99 &&
+          !String(context.medication || "").trim()
+        ) {
           notices.push({
             severity: "high",
             message:
-              "Medication status is marked as yes, but medication details were not provided.",
+              "Drug intake was reported, but medication details were not provided.",
           });
         }
 
@@ -1896,19 +1975,27 @@
           });
         }
 
-        // Caffeine yes — Moderate
-        if (context.caffeinated === "true") {
+        // Coffee within 6 hours — Moderate
+        if (coffeeValue !== null && !Number.isNaN(coffeeValue) && coffeeValue < 6) {
           notices.push({
             severity: "moderate",
-            message: "Recent caffeine intake was reported and may influence EEG activity patterns.",
+            message: "Recent coffee intake was reported and may influence EEG activity patterns.",
           });
         }
 
-        // Medication yes + details present — Moderate
-        if (context.medicated === "true" && String(context.medicationIntake || "").trim()) {
+        // Drugs within 6 hours — Moderate
+        if (drugsValue !== null && !Number.isNaN(drugsValue) && drugsValue < 6) {
           notices.push({
             severity: "moderate",
-            message: "Current medication status was reported and may affect EEG-derived features.",
+            message: "Recent drug intake was reported and may affect EEG-derived features.",
+          });
+        }
+
+        // Medication details present — Moderate
+        if (String(context.medication || "").trim()) {
+          notices.push({
+            severity: "moderate",
+            message: "Medication details were reported and may affect EEG-derived features.",
           });
         }
 
@@ -2544,12 +2631,18 @@
         formData.append("clinician_name", context.clinicianName || "");
         formData.append("occupation", context.occupation || "");
 
-        if (context.sleepHours) formData.append("sleep_hours", context.sleepHours);
-        if (context.foodIntake) formData.append("food_intake", context.foodIntake);
-        if (context.caffeinated !== null) formData.append("caffeinated", context.caffeinated);
-        if (context.medicated !== null) formData.append("medicated", context.medicated);
-        if (context.medicationIntake)
-          formData.append("medication_intake", context.medicationIntake);
+        if (context.sleepHours !== "") formData.append("sleep_hours", context.sleepHours);
+        if (context.coffeeHoursAgo !== "")
+          formData.append("coffee_hours_ago", context.coffeeHoursAgo);
+        if (context.drugsHoursAgo !== "")
+          formData.append("drugs_hours_ago", context.drugsHoursAgo);
+        if (context.mealHoursAgo !== "")
+          formData.append("meal_hours_ago", context.mealHoursAgo);
+        if (context.medication) formData.append("medication", context.medication);
+        if (context.technicianName)
+          formData.append("technician_name", context.technicianName);
+        if (context.recordedMinutes != null)
+          formData.append("recorded_minutes", context.recordedMinutes.toFixed(2));
         if (context.notes) formData.append("notes", context.notes);
 
         return formData;
@@ -2643,6 +2736,11 @@
           renderDataQualityNotice(context, result.confidence_score || 0);
           renderInterventionSuggestions(result.classification || "Unknown");
           renderSubjectSummary(context, result);
+          renderPrepChecklist(result);
+
+          if (appState.latestResultId) {
+            hydratePrepSummary(appState.latestResultId);
+          }
 
           setHidden("results-empty-state", true);
           setHidden("results-content", false);
@@ -2680,6 +2778,22 @@
             error.message || "An unexpected error occurred while running assessment.",
             "error",
           );
+        }
+      }
+
+      async function hydratePrepSummary(resultId) {
+        try {
+          const response = await fetch(`/api/results/${resultId}`);
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!data || !data.preprocessing_summary) return;
+          appState.latestResult = {
+            ...(appState.latestResult || {}),
+            preprocessing_summary: data.preprocessing_summary,
+          };
+          renderPrepChecklist(appState.latestResult);
+        } catch (error) {
+          console.warn("Failed to hydrate preprocessing summary", error);
         }
       }
 
@@ -2756,7 +2870,7 @@
         const subjectInput = byId("subject-code");
         if (!subjectInput) return;
 
-        subjectInput.addEventListener("input", () => {
+        const applyAutofill = () => {
           const selectedCode = subjectInput.value;
           const details = appState.subjectLookup.get(selectedCode);
           const dateOfBirth = byId("date-of-birth");
@@ -2766,19 +2880,20 @@
           if (details) {
             if (details.dateOfBirth) {
               dateOfBirth.value = details.dateOfBirth;
-              dateOfBirth.readOnly = true;
+              dateOfBirth.dispatchEvent(new Event("input", { bubbles: true }));
+              dateOfBirth.dispatchEvent(new Event("change", { bubbles: true }));
             }
             if (details.gender) {
               gender.value = details.gender;
-              gender.disabled = true;
+              gender.dispatchEvent(new Event("change", { bubbles: true }));
             }
-          } else {
-            dateOfBirth.readOnly = false;
-            gender.disabled = false;
           }
 
           updateDraftIndicator();
-        });
+        };
+
+        subjectInput.addEventListener("input", applyAutofill);
+        subjectInput.addEventListener("change", applyAutofill);
       }
 
       function setupUploadInteractions() {
@@ -2943,14 +3058,13 @@
           "subject-code",
           "date-of-birth",
           "gender",
+          "technician-name",
           "sleep-hours",
-          "food-intake",
-          "medication-intake",
+          "coffee-hours-ago",
+          "drugs-hours-ago",
+          "meal-hours-ago",
+          "medication",
           "notes",
-          "caffeinated-yes",
-          "caffeinated-no",
-          "medicated-yes",
-          "medicated-no",
         ].forEach((id) => {
           byId(id)?.addEventListener("input", updateDraftIndicator);
           byId(id)?.addEventListener("change", updateDraftIndicator);

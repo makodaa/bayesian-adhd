@@ -31,11 +31,14 @@ CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(50) NOT NULL,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    technician_name TEXT,
     sleep_hours NUMERIC(4,2) CHECK (sleep_hours >= 0),
-    food_intake TEXT,
-    caffeinated BOOLEAN,
-    medicated BOOLEAN,
-    medication_intake TEXT,
+    coffee_hours_ago NUMERIC(4,2) NOT NULL CHECK (coffee_hours_ago >= 0),
+    drugs_hours_ago NUMERIC(4,2) NOT NULL CHECK (drugs_hours_ago >= 0),
+    meal_hours_ago NUMERIC(4,2) NOT NULL CHECK (meal_hours_ago >= 0),
+    medication TEXT,
+    recorded_minutes NUMERIC(6,2),
+    duration_minutes NUMERIC(6,2),
     artifacts_noted TEXT,
     notes TEXT,
     uploaded_at TIMESTAMP DEFAULT NOW()
@@ -47,6 +50,7 @@ CREATE TABLE results (
     clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
     predicted_class VARCHAR(50) NOT NULL,
     confidence_score FLOAT NOT NULL CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
+    preprocessing_summary JSONB,
     inferenced_at TIMESTAMP DEFAULT NOW()
 );
 

@@ -64,6 +64,24 @@ class SubjectsRepository(BaseRepository):
             logger.error(f"Failed to fetch subject by code {subject_code}: {e}", exc_info=True)
             raise
 
+    def update_date_of_birth(self, subject_id, date_of_birth):
+        """Update subject date of birth."""
+        logger.info("Updating date_of_birth for subject %s", subject_id)
+        query = "UPDATE subjects SET date_of_birth = %s WHERE id = %s;"
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (date_of_birth, subject_id))
+                return cursor.rowcount
+        except Exception as e:
+            logger.error(
+                "Failed to update date_of_birth for subject %s: %s",
+                subject_id,
+                e,
+                exc_info=True,
+            )
+            raise
+
     def get_with_assessments(self, subject_id):
         """Get subject with their assessment results."""
         logger.debug(f"Fetching subject {subject_id} with assessments")
