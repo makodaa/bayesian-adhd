@@ -478,6 +478,7 @@
   padding: 0.62rem 0.68rem;
   display: grid;
   gap: 0.26rem;
+  align-content: start;
 }
 
 .workflow-step h3 {
