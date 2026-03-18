@@ -22,7 +22,7 @@ _OCCUPATION_RE = re.compile(r"^[A-Za-z\s'\-]+$")
 
 TEXT_FIELD_MAX = 500       # characters for free-text clinical fields
 NAME_FIELD_MAX = 50        # characters for name / occupation fields
-SUBJECT_CODE_MAX = 50      # characters for subject_code
+SUBJECT_CODE_MAX = 60      # characters for subject_code
 
 # Password strength requirements
 _PW_MIN_LEN = 8
@@ -141,10 +141,15 @@ def validate_required_sleep_hours(value: str | float | None) -> float:
     return hours
 
 
-def validate_hours_ago(value: str | float | None, field_label: str) -> float:
+def validate_hours_ago(
+    value: str | float | None,
+    field_label: str,
+    min_value: float = 0.0,
+    max_value: float = 99.99,
+) -> float:
     """Parse and range-check a required hours-ago field.
 
-    Raises ``ValueError`` if the value is missing, non-numeric, or out of range 0–99.99.
+    Raises ``ValueError`` if the value is missing, non-numeric, or out of range.
     """
     if value is None or value == "":
         raise ValueError(f"{field_label} is required.")
@@ -152,8 +157,10 @@ def validate_hours_ago(value: str | float | None, field_label: str) -> float:
         hours = float(value)
     except (TypeError, ValueError):
         raise ValueError(f"{field_label} must be a number.")
-    if not (0 <= hours <= 99.99):
-        raise ValueError(f"{field_label} must be between 0 and 99.99.")
+    if not (min_value <= hours <= max_value):
+        raise ValueError(
+            f"{field_label} must be between {min_value:g} and {max_value:g}."
+        )
     return hours
 
 

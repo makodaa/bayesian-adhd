@@ -551,6 +551,8 @@ def predict():
         meal_hours_ago_raw = request.form.get("meal_hours_ago")
         medication = request.form.get("medication")
         technician_name = request.form.get("technician_name")
+        referral_name = request.form.get("referral_name")
+        referral_institution = request.form.get("referral_institution")
         recorded_minutes_raw = request.form.get("recorded_minutes")
         notes = request.form.get("notes")
 
@@ -561,15 +563,36 @@ def predict():
         gender = validate_gender(gender)
 
         # Validate optional text fields (500-char cap)
-        medication = validate_text_field(medication, "Medication")
-        technician_name = validate_text_field(technician_name, "Technician", max_len=100)
-        notes = validate_text_field(notes, "Clinical notes")
+        medication = validate_text_field(medication, "Medication details", max_len=255)
+        technician_name = validate_text_field(technician_name, "Technician", max_len=60)
+        referral_name = validate_text_field(
+            referral_name, "Referral name", max_len=60
+        )
+        referral_institution = validate_text_field(
+            referral_institution, "Referral institution", max_len=60
+        )
+        notes = validate_text_field(notes, "Clinical notes", max_len=255)
 
         # Validate required numeric fields
         sleep_hours_float = validate_required_sleep_hours(sleep_hours_raw)
-        coffee_hours_ago = validate_hours_ago(coffee_hours_ago_raw, "Coffee hours ago")
-        drugs_hours_ago = validate_hours_ago(drugs_hours_ago_raw, "Drugs hours ago")
-        meal_hours_ago = validate_hours_ago(meal_hours_ago_raw, "Meal hours ago")
+        coffee_hours_ago = validate_hours_ago(
+            coffee_hours_ago_raw,
+            "Time since caffeine intake",
+            min_value=1,
+            max_value=99,
+        )
+        drugs_hours_ago = validate_hours_ago(
+            drugs_hours_ago_raw,
+            "Time since drug intake",
+            min_value=1,
+            max_value=99,
+        )
+        meal_hours_ago = validate_hours_ago(
+            meal_hours_ago_raw,
+            "Time since last meal",
+            min_value=0,
+            max_value=99,
+        )
 
         recorded_minutes = None
         if recorded_minutes_raw not in (None, ""):
@@ -621,6 +644,8 @@ def predict():
         recording_id = recording_service.create_recording(
             subject_id=subject_id,
             file_name=filename,
+            referral_name=referral_name,
+            referral_institution=referral_institution,
             technician_name=technician_name,
             sleep_hours=sleep_hours_float,
             coffee_hours_ago=coffee_hours_ago,
