@@ -70,6 +70,18 @@ def _display(value, fallback: str = "Not recorded") -> str:
     return text if text else fallback
 
 
+def _format_hours(value) -> str:
+    if value is None:
+        return "Not recorded"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return _display(value)
+    if numeric.is_integer():
+        return f"{int(numeric)} h"
+    return f"{numeric:.1f} h"
+
+
 def _clean_percent(value: float | int | None) -> float:
     if value is None:
         return 0.0
@@ -748,6 +760,7 @@ class PDFReportService:
             "duration_minutes": _display(result_data.get("duration_minutes")),
             "recorded_minutes": _display(result_data.get("recorded_minutes")),
             "medication": _display(result_data.get("medication"), "None"),
+            "alertness": _display(result_data.get("alertness"), "Not recorded"),
             "sleep_hours": _display(result_data.get("sleep_hours")),
             "coffee_hours_ago": _display(result_data.get("coffee_hours_ago")),
             "drugs_hours_ago": _display(result_data.get("drugs_hours_ago")),
@@ -895,24 +908,57 @@ class PDFReportService:
         elements.append(bar_table)
         elements.append(Spacer(1, 3))
 
-        details = [
-            ["Medication", _display(report_data["medication"])],
-            ["Sleep (hours)", _display(report_data["sleep_hours"])],
-            ["Coffee (hours ago)", _display(report_data["coffee_hours_ago"])],
-            ["Drugs (hours ago)", _display(report_data["drugs_hours_ago"])],
-            ["Meal (hours ago)", _display(report_data["meal_hours_ago"])],
+        left_details = [
             ["Sensor group", _display(report_data["sensor_group"])],
+            ["Medication", _display(report_data["medication"])],
+            [
+                "Time since drug intake (hours)",
+                _format_hours(report_data.get("drugs_hours_ago")),
+            ],
         ]
-        details_table = Table(details, colWidths=[45 * mm, doc_width() - 45 * mm])
+        right_details = [
+            ["Alertness", _display(report_data["alertness"])],
+            ["Sleep hours", _format_hours(report_data.get("sleep_hours"))],
+            [
+                "Time since caffeine intake (hours)",
+                _format_hours(report_data.get("coffee_hours_ago")),
+            ],
+            [
+                "Time since last meal (hours)",
+                _format_hours(report_data.get("meal_hours_ago")),
+            ],
+        ]
+
+        def build_detail_table(rows: list[list[str]]) -> Table:
+            table = Table(rows, colWidths=[45 * mm, (doc_width() / 2) - 45 * mm])
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                        ("TOPPADDING", (0, 0), (-1, -1), 2),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ]
+                )
+            )
+            return table
+
+        left_table = build_detail_table(left_details)
+        right_table = build_detail_table(right_details)
+        details_table = Table(
+            [[left_table, right_table]],
+            colWidths=[doc_width() / 2, doc_width() / 2],
+        )
         details_table.setStyle(
             TableStyle(
                 [
-                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 2),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
                 ]
             )
         )
