@@ -1248,7 +1248,8 @@
 
 .field-wrap {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.18rem;
+  align-content: start;
 }
 
 .field-wrap.full {
@@ -1275,7 +1276,12 @@
 }
 
 .field-wrap textarea {
-  resize: vertical;
+  resize: none;
+}
+
+.required-indicator {
+  color: var(--error-600);
+  font-weight: 700;
 }
 
 .field-wrap input[readonly],
@@ -1285,9 +1291,10 @@
 }
 
 .field-error {
-  margin: 0.2rem 0 0;
+  margin: 0.1rem 0 0;
   font-size: 0.75rem;
   color: var(--error-600);
+  min-height: 0.75rem;
 }
 
 .field-error.hidden {
