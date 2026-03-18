@@ -81,6 +81,8 @@ class ResultsService:
             r.inferenced_at,
             rec.id as recording_id,
             rec.file_name,
+            rec.referral_name,
+            rec.referral_institution,
             rec.technician_name,
             rec.sleep_hours,
             rec.coffee_hours_ago,

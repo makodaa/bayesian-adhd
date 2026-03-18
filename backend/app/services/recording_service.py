@@ -45,6 +45,8 @@ class RecordingService:
         self,
         subject_id: int,
         file: FileStorage,
+        referral_name=None,
+        referral_institution=None,
         technician_name=None,
         sleep_hours=None,
         coffee_hours_ago=None,
@@ -67,6 +69,8 @@ class RecordingService:
         recording_id = self.recordings_repo.create_recording(
             subject_id=subject_id,
             file_name=file.filename,
+            referral_name=referral_name,
+            referral_institution=referral_institution,
             technician_name=technician_name,
             sleep_hours=sleep_hours,
             coffee_hours_ago=coffee_hours_ago,

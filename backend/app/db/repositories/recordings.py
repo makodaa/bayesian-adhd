@@ -8,6 +8,8 @@ class RecordingsRepository(BaseRepository):
         self,
         subject_id,
         file_name,
+        referral_name=None,
+        referral_institution=None,
         technician_name=None,
         sleep_hours=None,
         coffee_hours_ago=None,
@@ -25,6 +27,8 @@ class RecordingsRepository(BaseRepository):
         INSERT INTO recordings(
             subject_id,
             file_name,
+            referral_name,
+            referral_institution,
             technician_name,
             sleep_hours,
             coffee_hours_ago,
@@ -36,7 +40,7 @@ class RecordingsRepository(BaseRepository):
             artifacts_noted,
             notes
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id;
         """
         try:
@@ -47,6 +51,8 @@ class RecordingsRepository(BaseRepository):
                     (
                         subject_id,
                         file_name,
+                        referral_name,
+                        referral_institution,
                         technician_name,
                         sleep_hours,
                         coffee_hours_ago,
