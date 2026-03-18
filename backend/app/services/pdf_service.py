@@ -1059,7 +1059,7 @@ class PDFReportService:
                 report_data["clinical_comments"],
                 self.styles,
                 width / 2 - 6,
-                min_height=26,
+                min_height=40,
             ),
             Spacer(1, 4),
         ]
