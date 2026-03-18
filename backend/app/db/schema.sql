@@ -31,16 +31,16 @@ CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(50) NOT NULL,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    technician_name TEXT,
+    technician_name VARCHAR(100),
     sleep_hours NUMERIC(4,2) CHECK (sleep_hours >= 0),
     coffee_hours_ago NUMERIC(4,2) NOT NULL CHECK (coffee_hours_ago >= 0),
     drugs_hours_ago NUMERIC(4,2) NOT NULL CHECK (drugs_hours_ago >= 0),
     meal_hours_ago NUMERIC(4,2) NOT NULL CHECK (meal_hours_ago >= 0),
-    medication TEXT,
+    medication VARCHAR(255),
     recorded_minutes NUMERIC(6,2),
     duration_minutes NUMERIC(6,2),
     artifacts_noted TEXT,
-    notes TEXT,
+    notes VARCHAR(255),
     uploaded_at TIMESTAMP DEFAULT NOW()
 );
 
