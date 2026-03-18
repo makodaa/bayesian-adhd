@@ -806,6 +806,7 @@
                   />
                   <datalist id="subject-list"></datalist>
                   <p class="hint">Select an existing subject code or enter a new one.</p>
+                  <p class="field-error hidden" data-error-for="subject-code"></p>
                 </div>
                 <div class="field-wrap">
                   <label for="date-of-birth">Date of Birth</label>
@@ -814,6 +815,7 @@
                     id="date-of-birth"
                     required
                   />
+                  <p class="field-error hidden" data-error-for="date-of-birth"></p>
                 </div>
                 <div class="field-wrap">
                   <label for="gender">Gender</label>
@@ -824,6 +826,7 @@
                     <option value="Other">Other</option>
                     <option value="Prefer not to say">Prefer not to say</option>
                   </select>
+                  <p class="field-error hidden" data-error-for="gender"></p>
                 </div>
               </div>
             </div>
@@ -889,6 +892,7 @@
                     placeholder="Hours slept"
                     required
                   />
+                  <p class="field-error hidden" data-error-for="sleep-hours"></p>
                 </div>
                 <div class="field-wrap">
                   <label for="coffee-hours-ago">Time since caffeine intake (hours)</label>
@@ -901,6 +905,7 @@
                     placeholder="1-99; 99 means no record"
                     required
                   />
+                  <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
                 </div>
                 <div class="field-wrap">
                   <label for="drugs-hours-ago">Time since drug intake (hours)</label>
@@ -913,6 +918,7 @@
                     placeholder="1-99; 99 means no record"
                     required
                   />
+                  <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
                 </div>
                 <div class="field-wrap">
                   <label for="meal-hours-ago">Time since last meal (hours)</label>
@@ -925,6 +931,7 @@
                     placeholder="Hours since last meal"
                     required
                   />
+                  <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
                 </div>
                 <div class="field-wrap full">
                   <label for="medication">Medication Details</label>
@@ -958,6 +965,7 @@
                 >
                 <input type="file" id="file" name="file" accept=".csv" class="hidden" />
               </label>
+              <p class="field-error hidden" data-error-for="file"></p>
             </div>
 
             <div class="form-panel">
@@ -995,8 +1003,6 @@
             </div>
           </section>
 
-          <p id="step-1-error" class="form-error hidden"></p>
-          <p id="step-2-error" class="form-error hidden"></p>
 
           <div class="drawer-actions" id="drawer-actions">
             <button type="button" class="btn-secondary-app" id="step-back-btn">Back</button>
@@ -1323,6 +1329,39 @@
         const numeric = Number(value);
         if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
         return formatContextValue(value, fallback);
+      }
+
+      function setFieldError(fieldId, message) {
+        const field = byId(fieldId);
+        if (!field) return;
+        const errorNode = document.querySelector(`[data-error-for='${fieldId}']`);
+        field.classList.add("field-invalid");
+        field.setCustomValidity(message);
+        if (errorNode) {
+          errorNode.textContent = message;
+          errorNode.classList.remove("hidden");
+        }
+      }
+
+      function clearFieldError(fieldId) {
+        const field = byId(fieldId);
+        if (!field) return;
+        if (
+          field instanceof HTMLInputElement &&
+          ["meal-hours-ago", "coffee-hours-ago", "drugs-hours-ago"].includes(field.id)
+        ) {
+          const digitsOnly = field.value.replace(/\D/g, "");
+          if (digitsOnly.length > 2) {
+            return;
+          }
+        }
+        const errorNode = document.querySelector(`[data-error-for='${fieldId}']`);
+        field.classList.remove("field-invalid");
+        field.setCustomValidity("");
+        if (errorNode) {
+          errorNode.textContent = "";
+          errorNode.classList.add("hidden");
+        }
       }
 
       function formatBooleanContext(value) {
@@ -1674,81 +1713,88 @@
       }
 
       function validateStepOne() {
-        const subjectCode = byId("subject-code");
-        const dateOfBirth = byId("date-of-birth");
-        const gender = byId("gender");
-        const sleepHours = byId("sleep-hours");
-        const coffeeHoursAgo = byId("coffee-hours-ago");
-        const drugsHoursAgo = byId("drugs-hours-ago");
-        const mealHoursAgo = byId("meal-hours-ago");
-        const error = byId("step-1-error");
-
-        const subjectValid = Boolean(subjectCode && subjectCode.value.trim());
-        const dobValue = dateOfBirth ? dateOfBirth.value : "";
-        const dobParsed = parseIsoDate(dobValue);
-        const dobValid = Boolean(dobParsed);
-        const genderValid = Boolean(gender && gender.value);
-        const numericFields = [
-          [sleepHours, "Sleep hours", 0, 99.99],
-          [coffeeHoursAgo, "Time since caffeine intake", 1, 99],
-          [drugsHoursAgo, "Time since drug intake", 1, 99],
-          [mealHoursAgo, "Time since last meal", 0, 99],
+        const requiredFields = [
+          "subject-code",
+          "date-of-birth",
+          "gender",
+          "sleep-hours",
+          "coffee-hours-ago",
+          "drugs-hours-ago",
+          "meal-hours-ago",
         ];
-        const numericValid = numericFields.every(([field]) =>
-          Boolean(field && String(field.value).trim()),
-        );
+        requiredFields.forEach(clearFieldError);
 
-        if (!subjectValid || !dobValid || !genderValid || !numericValid) {
-          error.textContent =
-            "Enter subject code, date of birth, gender, sleep hours, and hours-ago fields to continue.";
-          error.classList.remove("hidden");
-          return false;
+        let hasErrors = false;
+        requiredFields.forEach((fieldId) => {
+          const field = byId(fieldId);
+          if (!field || !String(field.value || "").trim()) {
+            setFieldError(fieldId, "Field cannot be empty.");
+            hasErrors = true;
+          }
+        });
+
+        const dobValue = byId("date-of-birth")?.value || "";
+        const dobParsed = parseIsoDate(dobValue);
+        if (dobValue && !dobParsed) {
+          setFieldError("date-of-birth", "Field cannot be empty.");
+          hasErrors = true;
         }
 
         const today = new Date();
         if (dobParsed) {
           const dobDate = new Date(dobParsed.year, dobParsed.month - 1, dobParsed.day);
           if (dobDate > today) {
-            error.textContent = "Date of birth cannot be in the future.";
-            error.classList.remove("hidden");
-            return false;
+            setFieldError("date-of-birth", "Field cannot be empty.");
+            hasErrors = true;
           }
         }
 
-        for (const [field, label, min, max] of numericFields) {
-          const value = field ? Number(field.value) : NaN;
+        const numericFields = [
+          ["sleep-hours", 0, 99.99],
+          ["coffee-hours-ago", 1, 99],
+          ["drugs-hours-ago", 1, 99],
+          ["meal-hours-ago", 0, 99],
+        ];
+
+        numericFields.forEach(([fieldId, min, max]) => {
+          const field = byId(fieldId);
+          if (!field) return;
+          if (!String(field.value || "").trim()) return;
+          const value = Number(field.value);
           if (!Number.isFinite(value) || value < min || value > max) {
-            error.textContent = `${label} must be between ${min} and ${max}.`;
-            error.classList.remove("hidden");
-            return false;
+            setFieldError(fieldId, `Enter a value between ${min} and ${max}.`);
+            hasErrors = true;
           }
-        }
+        });
 
-        error.classList.add("hidden");
-        return true;
+        if (hasErrors) {
+          showToast("Please correct highlighted fields.", "warning");
+        }
+        return !hasErrors;
       }
 
       function validateStepTwo() {
-        const error = byId("step-2-error");
+        clearFieldError("file");
+        let hasErrors = false;
+
         if (!appState.file) {
-          error.textContent = "Upload an EEG CSV file before moving to review.";
-          error.classList.remove("hidden");
-          return false;
+          setFieldError("file", "Field cannot be empty.");
+          hasErrors = true;
         }
 
-        // Block if any required EEG channels are missing
         const meta = appState.fileMeta;
         if (meta && meta.missingChannels && meta.missingChannels.length > 0) {
-          const missing = meta.missingChannels.join(", ");
-          error.textContent =
-            `EEG file is missing required channel(s): ${missing}. ` +
-            "Upload a complete 19-channel recording using the 10-20 system.";
-          error.classList.remove("hidden");
-          return false;
+          setFieldError(
+            "file",
+            "Upload a complete 19-channel recording using the 10-20 system.",
+          );
+          hasErrors = true;
         }
 
-        error.classList.add("hidden");
-        return true;
+        if (hasErrors) {
+          showToast("Please correct highlighted fields.", "warning");
+        }
+        return !hasErrors;
       }
 
       function setCollapsibleState(targetId, expanded) {
@@ -3120,6 +3166,20 @@
           byId(id)?.addEventListener("change", updateDraftIndicator);
         });
 
+        [
+          "subject-code",
+          "date-of-birth",
+          "gender",
+          "sleep-hours",
+          "coffee-hours-ago",
+          "drugs-hours-ago",
+          "meal-hours-ago",
+          "file",
+        ].forEach((id) => {
+          byId(id)?.addEventListener("input", () => clearFieldError(id));
+          byId(id)?.addEventListener("change", () => clearFieldError(id));
+        });
+
         byId("band-view-average")?.addEventListener("click", () => setBandView("average"));
         byId("band-view-electrode")?.addEventListener("click", () => setBandView("electrode"));
         byId("download-pdf-btn")?.addEventListener("click", handlePdfDownload);
@@ -3510,6 +3570,25 @@
           input.addEventListener("input", () => {
             if (input.value.includes("-")) {
               input.value = input.value.replace(/-/g, "");
+            }
+            if (["meal-hours-ago", "coffee-hours-ago", "drugs-hours-ago"].includes(input.id)) {
+              const digitsOnly = input.value.replace(/\D/g, "");
+              const minAttr = input.getAttribute("min");
+              const maxAttr = input.getAttribute("max");
+              const minValue = minAttr !== null ? Number(minAttr) : 0;
+              const maxValue = maxAttr !== null ? Number(maxAttr) : 99;
+              if (digitsOnly.length > 2) {
+                input.value = digitsOnly.slice(0, 2);
+                input.setCustomValidity(
+                  `Enter a value between ${minValue} and ${maxValue}.`,
+                );
+                input.classList.add("field-invalid");
+              } else {
+                if (input.validationMessage.startsWith("Enter a value between")) {
+                  input.setCustomValidity("");
+                }
+                input.classList.remove("field-invalid");
+              }
             }
           });
 

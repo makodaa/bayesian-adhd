@@ -1284,6 +1284,21 @@
   color: var(--text-700);
 }
 
+.field-error {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--error-600);
+}
+
+.field-error.hidden {
+  display: none;
+}
+
+.field-invalid {
+  border-color: #d18386 !important;
+  background: #fff6f6;
+}
+
 .hint {
   margin: 0;
   color: var(--text-500);
