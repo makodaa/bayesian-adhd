@@ -511,8 +511,25 @@ class PDFReportService:
             leading=7,
             spaceAfter=2,
         )
+        styles["HeaderMeta"] = ParagraphStyle(
+            name="HeaderMeta",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            spaceAfter=2,
+        )
         styles["BodyTextRight"] = ParagraphStyle(
             name="BodyTextRight",
+            fontName="Helvetica",
+            fontSize=7.5,
+            textColor=colors.black,
+            leading=7,
+            alignment=2,
+            spaceAfter=2,
+        )
+        styles["HeaderMetaRight"] = ParagraphStyle(
+            name="HeaderMetaRight",
             fontName="Helvetica",
             fontSize=7.5,
             textColor=colors.black,
@@ -618,8 +635,9 @@ class PDFReportService:
 
         story: list = []
         story.extend(self._build_header(report_data))
+        story.append(Spacer(1, 1))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
-        story.append(Spacer(1, 4))
+        story.append(Spacer(1, 1))
         story.extend(self._build_referral_patient(report_data))
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
@@ -760,38 +778,28 @@ class PDFReportService:
             Paragraph(
                 "Electroencephalogram (EEG) Report", self.styles["ReportTitle"]
             ),
-            Paragraph(_display(report_data["institution_name"]), self.styles["BodyText"]),
+            Paragraph(
+                _display(report_data["institution_name"]),
+                self.styles["HeaderMeta"],
+            ),
         ]
-
-        logo = report_data.get("logo_path")
-        if logo:
-            try:
-                reader = ImageReader(logo)
-                iw, ih = reader.getSize()
-                max_h = 40
-                scale = max_h / ih
-                img = Image(logo, width=iw * scale, height=ih * scale)
-                center_block = [img]
-            except Exception:
-                center_block = [Spacer(1, 40)]
-        else:
-            center_block = [Spacer(1, 40)]
 
         right_block = [
             Paragraph(
-                f"Date: {report_data['report_date']}", self.styles["BodyTextRight"]
+                f"Date: {report_data['report_date']}",
+                self.styles["HeaderMetaRight"],
             )
         ]
 
         table = Table(
-            [[left_block, center_block, right_block]],
-            colWidths=[doc_width() * 0.5, doc_width() * 0.2, doc_width() * 0.3],
+            [[left_block, right_block]],
+            colWidths=[doc_width() * 0.7, doc_width() * 0.3],
         )
         table.setStyle(
             TableStyle(
                 [
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("ALIGN", (2, 0), (2, 0), "RIGHT"),
+                    ("ALIGN", (1, 0), (1, 0), "RIGHT"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                     ("TOPPADDING", (0, 0), (-1, -1), 0),
@@ -800,7 +808,6 @@ class PDFReportService:
             )
         )
         elements.append(table)
-        elements.append(Spacer(1, 2))
         return elements
 
     def _build_referral_patient(self, report_data: dict) -> list:
@@ -848,7 +855,7 @@ class PDFReportService:
             )
         )
         elements.append(table)
-        elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 1))
         return elements
 
     def _build_recording_assessment(self, report_data: dict) -> list:
@@ -886,7 +893,7 @@ class PDFReportService:
             )
         )
         elements.append(bar_table)
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 3))
 
         details = [
             ["Medication", _display(report_data["medication"])],
@@ -931,7 +938,7 @@ class PDFReportService:
             )
         )
         elements.append(band_wrapper)
-        elements.append(Spacer(1, 3))
+        elements.append(Spacer(1, 2))
         return elements
 
     def _build_findings(self, report_data: dict) -> list:
@@ -951,7 +958,7 @@ class PDFReportService:
                 )
             )
             elements.append(Spacer(1, 2))
-        elements.append(Spacer(1, 1))
+        elements.append(Spacer(1, 0))
 
         return elements
 
@@ -972,7 +979,7 @@ class PDFReportService:
         elements.append(
             Paragraph(classification_statement, self.styles["FindingsBody"])
         )
-        elements.append(Spacer(1, 3))
+        elements.append(Spacer(1, 2))
         return elements
 
     @staticmethod
@@ -987,7 +994,7 @@ class PDFReportService:
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
         left_column = [
-            Spacer(1, 6),
+            Spacer(1, 4),
             Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
@@ -1008,14 +1015,14 @@ class PDFReportService:
                 width / 2 - 6,
                 min_height=26,
             ),
-            Spacer(1, 6),
+            Spacer(1, 4),
         ]
 
         right_column = [
-            Spacer(1, 6),
+            Spacer(1, 4),
             Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
             build_disclaimer_box(self.styles, width / 2 - 6),
-            Spacer(1, 6),
+            Spacer(1, 4),
         ]
 
         table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
