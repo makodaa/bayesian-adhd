@@ -111,11 +111,15 @@
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
+              <path d="M11 2v2"></path>
+              <path d="M5 2v2"></path>
+              <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"></path>
+              <path d="M8 15a6 6 0 0 0 12 0v-3"></path>
+              <circle cx="20" cy="10" r="2"></circle>
             </svg>
             <span>Clinicians</span>
           </a>
@@ -173,7 +177,7 @@
               </div>
             </div>
             <div class="page-actions">
-              <button id="export-results-btn" type="button" class="btn-secondary-app">
+              <button id="export-results-btn" type="button" class="btn-primary-app">
                 Export Results
               </button>
             </div>
@@ -328,6 +332,13 @@
         const mm = String(parts.month).padStart(2, "0");
         const dd = String(parts.day).padStart(2, "0");
         return `${mm}/${dd}/${parts.year}`;
+      }
+
+      function formatHoursSince(value) {
+        if (value === null || value === undefined) return null;
+        const numeric = Number(value);
+        if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
+        return String(value);
       }
 
       function showToast(message, variant = "error") {
@@ -625,45 +636,30 @@
         );
       }
 
-      function _narrAttentionSentence(isAdhd, tbr, classification, confPct) {
+      function _narrAttentionSentence(isAdhd, tbr) {
         const elevated = tbr > _NARR_TBR_HYPO;
         if (isAdhd && elevated) {
           return (
-            `Combined with a ${classification} classification at ${confPct}% confidence, ` +
-            "this profile is consistent with reduced attentional gating and impaired " +
-            "frontally mediated inhibitory control, patterns commonly observed in ADHD."
+            "This profile is consistent with reduced attentional gating and impaired " +
+            "frontally mediated inhibitory control."
           );
         }
         if (isAdhd && !elevated) {
           return (
-            `The ${classification} classification (${confPct}% confidence) was reached ` +
-            "despite a theta/beta ratio that does not fall in the typically elevated range; " +
+            "The theta/beta ratio does not fall in the typically elevated range; " +
             "other spectral and temporal features may have contributed to this classification."
           );
         }
         if (!isAdhd && elevated) {
           return (
-            `Although the recording was classified as ${classification} at ${confPct}% confidence, ` +
-            "the elevated theta/beta ratio warrants clinical consideration, as this pattern can " +
-            "occasionally appear in the context of other neurodevelopmental or attentional presentations."
+            "The elevated theta/beta ratio warrants clinical consideration, as this pattern can " +
+            "occasionally appear in other neurodevelopmental or attentional presentations."
           );
         }
         return (
-          `Consistent with the ${classification} classification (${confPct}% confidence), ` +
-          "the attention regulation markers in this recording do not indicate the spectral " +
+          "The attention regulation markers in this recording do not indicate the spectral " +
           "patterns typically associated with ADHD-related cortical dysregulation."
         );
-      }
-
-      function _narrConfidenceSentence(confidence) {
-        const pct = (confidence * 100).toFixed(1);
-        if (confidence >= 0.80) {
-          return `Model confidence is high (${pct}%), supporting a stronger weighting of these findings within a broader clinical assessment.`;
-        }
-        if (confidence >= 0.60) {
-          return `Model confidence is moderate (${pct}%); these findings should be corroborated with additional clinical and behavioral data before drawing conclusions.`;
-        }
-        return `Model confidence is low (${pct}%), and these findings should be interpreted with considerable caution; additional testing is strongly recommended.`;
       }
 
       /**
@@ -696,8 +692,6 @@
         const theta = Number(avgRel.theta) || 0;
         const beta  = Number(avgRel.beta)  || 0;
         const alpha = Number(avgRel.alpha) || 0;
-        const conf  = Number(data.confidence_score) || 0;
-        const confPct = (conf * 100).toFixed(1);
         const cls   = data.predicted_class || "Unknown";
         const isAdhd = cls.toLowerCase().includes("adhd") && !cls.toLowerCase().includes("non-adhd");
 
@@ -708,15 +702,9 @@
           `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
         );
         const s2 = _narrArousalSentence(theta, beta, tbr);
-        const s3 = _narrAttentionSentence(isAdhd, tbr, cls, confPct);
-        const s4 = _narrConfidenceSentence(conf);
-        const s5 = (
-          "These findings are intended to support clinical decision-making " +
-          "and should not be interpreted in isolation from clinical history, " +
-          "behavioral evaluation, and qualified professional judgment."
-        );
+        const s3 = _narrAttentionSentence(isAdhd, tbr);
 
-        return [s1, s2, s3, s4, s5].join(" ");
+        return [s1, s2, s3].join(" ");
       }
 
       const BAND_COLORS = {
@@ -783,11 +771,11 @@
           ["Sleep Hours", data.sleep_hours != null ? String(data.sleep_hours) + " h" : null],
           [
             "Coffee (hours ago)",
-            data.coffee_hours_ago != null ? String(data.coffee_hours_ago) : null,
+            formatHoursSince(data.coffee_hours_ago),
           ],
           [
             "Drugs (hours ago)",
-            data.drugs_hours_ago != null ? String(data.drugs_hours_ago) : null,
+            formatHoursSince(data.drugs_hours_ago),
           ],
           [
             "Meal (hours ago)",
@@ -810,6 +798,28 @@
             <h3>Subject &amp; Recording</h3>
             <ul class="detail-list">
               ${subjectItems
+                .map(
+                  ([label, value]) => `
+                <li class="detail-item">
+                  <span class="detail-label">${escapeHtml(label)}</span>
+                  <span class="detail-value">${escapeHtml(String(value))}</span>
+                </li>`,
+                )
+                .join("")}
+            </ul>
+          </section>`;
+
+        const prep = data.preprocessing_summary || {};
+        const prepSteps = Array.isArray(prep.steps) ? prep.steps : [];
+        const prepRows = prepSteps.length
+          ? prepSteps.map((step) => [step.name, step.statement])
+          : [["Status", "Step detail not recorded for this assessment"]];
+
+        const prepSection = `
+          <section class="detail-section prep-section">
+            <h3>Preprocessing Summary</h3>
+            <ul class="detail-list">
+              ${prepRows
                 .map(
                   ([label, value]) => `
                 <li class="detail-item">
@@ -965,12 +975,14 @@
         body.innerHTML =
           classificationSection +
           subjectSection +
+          prepSection +
           bandSection +
           narrativeSection +
           ratioSection +
           notesSection +
           eegVizSection +
           topoSection;
+
 
         // Setup topo toggle
         document.querySelectorAll("[data-topo]").forEach((btn) => {

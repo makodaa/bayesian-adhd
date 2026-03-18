@@ -478,6 +478,7 @@
   padding: 0.62rem 0.68rem;
   display: grid;
   gap: 0.26rem;
+  align-content: start;
 }
 
 .workflow-step h3 {
@@ -493,47 +494,17 @@
   line-height: 1.45;
 }
 
-/* ─── Subject summary grid ───────────────────────────────────────────────── */
-
-.subject-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-}
-
-.subject-summary-item {
-  background: #f2f6f8;
-  border: 1px solid #dbe6ec;
-  border-radius: var(--radius-sm);
-  padding: 0.52rem 0.64rem;
-  display: grid;
-  gap: 0.16rem;
-}
-
-.subject-summary-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-500);
-}
-
-.subject-summary-value {
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--text-900);
-  line-height: 1.35;
-  word-break: break-word;
-}
+/* ─── Subject summary empty state ────────────────────────────────────────── */
 
 .subject-summary-empty {
   margin: 0;
-  grid-column: 1 / -1;
   font-size: 0.84rem;
   color: var(--text-700);
   background: #f7fbfc;
   border: 1px dashed #ccdbe3;
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.7rem;
+  list-style: none;
 }
 
 /* ─── Band view toggle ───────────────────────────────────────────────────── */
@@ -1234,7 +1205,15 @@
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.95rem 1rem 1rem;
+  padding: 0.95rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#analysis-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .drawer-step {
@@ -1493,13 +1472,14 @@
 .drawer-actions {
   position: sticky;
   bottom: 0;
-  margin-top: 0.2rem;
+  margin: 0.2rem -1rem 0;
   background: #f8fbfc;
   border-top: 1px solid #dbe6ec;
-  padding-top: 0.75rem;
+  padding: 0.75rem 1rem 0.75rem;
   display: flex;
   justify-content: space-between;
   gap: 0.45rem;
+  margin-top: auto;
 }
 
 /* ─── Processing panel ───────────────────────────────────────────────────── */

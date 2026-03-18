@@ -16,10 +16,6 @@ _TBR_HYPER_THRESHOLD = 1.5     # theta/beta ratio below this (with high beta) �
 _THETA_HYPO_THRESHOLD = 0.35   # relative theta above this → hypoarousal signal
 _BETA_HYPER_THRESHOLD = 0.25   # relative beta above this (with low TBR) → hyperarousal signal
 
-# Confidence tier boundaries (mirror getConfidenceState in JS)
-_CONF_HIGH = 0.80
-_CONF_MODERATE = 0.60
-
 
 class NarrativeService:
     """
@@ -38,7 +34,7 @@ class NarrativeService:
         band_ratios: dict[str, float],
     ) -> str:
         """
-        Generate a 3–5 sentence narrative paragraph.
+        Generate a 3-sentence narrative paragraph.
 
         Parameters
         ----------
@@ -74,8 +70,6 @@ class NarrativeService:
         alpha_pct = alpha * 100
 
         is_adhd = self._is_adhd(predicted_class)
-        conf_tier = self._confidence_tier(confidence_score)
-        conf_pct = confidence_score * 100 if confidence_score <= 1 else confidence_score
 
         # ── Sentence 1: spectral overview ──────────────────────────────────
         s1 = (
@@ -88,20 +82,10 @@ class NarrativeService:
         # ── Sentence 2: arousal characterisation ───────────────────────────
         s2 = self._arousal_sentence(theta, beta, tbr)
 
-        # ── Sentence 3: attention regulation link to classification ─────────
-        s3 = self._attention_sentence(is_adhd, tbr, predicted_class, conf_tier, conf_pct)
+        # ── Sentence 3: attention regulation ───────────────────────────────
+        s3 = self._attention_sentence(is_adhd, tbr)
 
-        # ── Sentence 4: confidence qualifier ───────────────────────────────
-        s4 = self._confidence_sentence(conf_tier, conf_pct)
-
-        # ── Sentence 5: closing disclaimer ─────────────────────────────────
-        s5 = (
-            "These findings are intended to support clinical decision-making "
-            "and should not be interpreted in isolation from clinical history, "
-            "behavioral evaluation, and qualified professional judgment."
-        )
-
-        narrative = " ".join([s1, s2, s3, s4, s5])
+        narrative = " ".join([s1, s2, s3])
         logger.debug("Narrative generated (%d characters)", len(narrative))
         return narrative
 
@@ -111,14 +95,6 @@ class NarrativeService:
     def _is_adhd(predicted_class: str) -> bool:
         label = str(predicted_class).lower()
         return "non-adhd" not in label and "adhd" in label
-
-    @staticmethod
-    def _confidence_tier(confidence_score: float) -> str:
-        if confidence_score >= _CONF_HIGH:
-            return "high"
-        if confidence_score >= _CONF_MODERATE:
-            return "moderate"
-        return "low"
 
     @staticmethod
     def _arousal_sentence(theta: float, beta: float, tbr: float) -> str:
@@ -144,65 +120,30 @@ class NarrativeService:
         )
 
     @staticmethod
-    def _attention_sentence(
-        is_adhd: bool,
-        tbr: float,
-        predicted_class: str,
-        conf_tier: str,
-        conf_pct: float,
-    ) -> str:
-        """Link arousal pattern to attention regulation in the context of classification."""
+    def _attention_sentence(is_adhd: bool, tbr: float) -> str:
+        """Characterise attention regulation from arousal pattern and classification."""
         elevated_tbr = tbr > _TBR_HYPO_THRESHOLD
 
         if is_adhd and elevated_tbr:
             return (
-                f"Combined with a {predicted_class} classification at "
-                f"{conf_pct:.1f}% confidence, this profile is consistent with "
-                "reduced attentional gating and impaired frontally mediated "
-                "inhibitory control, patterns commonly observed in ADHD."
+                "This profile is consistent with reduced attentional gating and "
+                "impaired frontally mediated inhibitory control."
             )
 
         if is_adhd and not elevated_tbr:
             return (
-                f"The {predicted_class} classification ({conf_pct:.1f}% confidence) "
-                "was reached despite a theta/beta ratio that does not fall in the "
-                "typically elevated range; other spectral and temporal features "
-                "may have contributed to this classification."
+                "The theta/beta ratio does not fall in the typically elevated range; "
+                "other spectral and temporal features may have contributed to this classification."
             )
 
         if not is_adhd and elevated_tbr:
             return (
-                f"Although the recording was classified as {predicted_class} "
-                f"at {conf_pct:.1f}% confidence, the elevated theta/beta ratio "
-                "warrants clinical consideration, as this pattern can occasionally "
-                "appear in the context of other neurodevelopmental or attentional "
-                "presentations."
+                "The elevated theta/beta ratio warrants clinical consideration, as this "
+                "pattern can occasionally appear in other neurodevelopmental or attentional presentations."
             )
 
         # Non-ADHD, normal TBR
         return (
-            f"Consistent with the {predicted_class} classification "
-            f"({conf_pct:.1f}% confidence), the attention regulation markers "
-            "in this recording do not indicate the spectral patterns typically "
-            "associated with ADHD-related cortical dysregulation."
-        )
-
-    @staticmethod
-    def _confidence_sentence(conf_tier: str, conf_pct: float) -> str:
-        if conf_tier == "high":
-            return (
-                f"Model confidence is high ({conf_pct:.1f}%), supporting "
-                "a stronger weighting of these findings within a broader "
-                "clinical assessment."
-            )
-        if conf_tier == "moderate":
-            return (
-                f"Model confidence is moderate ({conf_pct:.1f}%); these findings "
-                "should be corroborated with additional clinical and behavioral data "
-                "before drawing conclusions."
-            )
-        return (
-            f"Model confidence is low ({conf_pct:.1f}%), and these findings "
-            "should be interpreted with considerable caution; additional testing "
-            "is strongly recommended."
+            "The attention regulation markers in this recording do not indicate "
+            "spectral patterns typically associated with ADHD-related cortical dysregulation."
         )
