@@ -610,7 +610,7 @@ class PDFReportService:
             name="DisclaimerBody",
             fontName="Helvetica-Oblique",
             fontSize=7.5,
-            textColor=colors.HexColor("#e67e22"),
+            textColor=colors.black,
             leading=7,
             spaceAfter=2,
         )
@@ -778,6 +778,9 @@ class PDFReportService:
             "summary_findings": summary_findings,
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
+            "post_assessment_notes": _display(
+                result_data.get("post_assessment_notes"), "Not recorded"
+            ),
             "technician_name": _display(result_data.get("technician_name")),
             "clinician_name": clinician_name or "Not recorded",
             "clinician_occupation": clinician_occupation,
@@ -1054,20 +1057,28 @@ class PDFReportService:
                 bold=True,
             ),
             Spacer(1, 6),
-            Paragraph("CLINICAL COMMENTS", self.styles["SectionHeader"]),
+            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
+            build_disclaimer_box(self.styles, width / 2 - 6),
+            Spacer(1, 4),
+        ]
+
+        right_column = [
+            Spacer(1, 4),
+            Paragraph("PRE-ASSESSMENT NOTES", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["clinical_comments"],
                 self.styles,
                 width / 2 - 6,
                 min_height=40,
             ),
-            Spacer(1, 4),
-        ]
-
-        right_column = [
-            Spacer(1, 4),
-            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
-            build_disclaimer_box(self.styles, width / 2 - 6),
+            Spacer(1, 6),
+            Paragraph("POST-ASSESSMENT NOTES", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["post_assessment_notes"],
+                self.styles,
+                width / 2 - 6,
+                min_height=40,
+            ),
             Spacer(1, 4),
         ]
 
