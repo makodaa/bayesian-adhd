@@ -801,7 +801,7 @@
                     id="subject-code"
                     list="subject-list"
                     placeholder="e.g., SUB001"
-                    maxlength="50"
+                    maxlength="60"
                     required
                   />
                   <datalist id="subject-list"></datalist>
@@ -851,7 +851,7 @@
                     type="text"
                     id="referral-name"
                     placeholder="Referring clinician"
-                    maxlength="120"
+                    maxlength="60"
                   />
                 </div>
                 <div class="field-wrap">
@@ -860,7 +860,7 @@
                     type="text"
                     id="referral-institution"
                     placeholder="Clinic or institution"
-                    maxlength="120"
+                    maxlength="60"
                   />
                 </div>
               </div>
@@ -875,7 +875,7 @@
                     type="text"
                     id="technician-name"
                     placeholder="Technician name"
-                    maxlength="100"
+                    maxlength="60"
                   />
                 </div>
                 <div class="field-wrap">
@@ -1410,17 +1410,14 @@
           return;
         }
 
-        const confidence = Number(result && result.confidence_score);
-        const confidenceText = Number.isFinite(confidence)
-          ? `${Math.max(0, Math.min(100, confidence * 100)).toFixed(1)}%`
-          : "Pending";
-        const hasResult = Boolean(result && (result.classification || Number.isFinite(confidence)));
+        const hasResult = Boolean(result && result.classification);
 
         helper.textContent = hasResult
           ? "Quick view of the latest subject context used for interpretation."
           : "Current subject metadata draft. Run assessment to add classification findings.";
 
         const items = [
+          ["Subject Details", ""],
           ["Subject Code", formatContextValue(context.subjectCode, "-")],
           ["Date of Birth", formatDateMMDDYYYY(context.dateOfBirth, "-")],
           [
@@ -1430,8 +1427,11 @@
               : "-",
           ],
           ["Gender", formatContextValue(context.gender, "-")],
+          ["Clinician Details", ""],
           ["Referral Name", formatContextValue(context.referralName)],
           ["Referral Institution", formatContextValue(context.referralInstitution)],
+          ["Clinician Name", formatContextValue(context.clinicianName)],
+          ["Recording Details", ""],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           [
@@ -1455,19 +1455,25 @@
             "Recording Duration",
             context.fileMeta ? formatDuration(context.fileMeta.durationSec) : "-",
           ],
-          ["Latest Classification", formatContextValue(result && result.classification, "Pending")],
-          ["Confidence", confidenceText],
         ];
 
         body.innerHTML = items
-          .map(
-            ([label, value]) => `
+          .map(([label, value]) => {
+            const isGroup = !value;
+            if (isGroup) {
+              return `
+                    <li class="detail-item detail-group">
+                        <span class="detail-label detail-group-label">${escapeHtml(label)}</span>
+                    </li>
+                `;
+            }
+            return `
                     <li class="detail-item">
                         <span class="detail-label">${escapeHtml(label)}</span>
                         <span class="detail-value">${escapeHtml(value)}</span>
                     </li>
-                `,
-          )
+                `;
+          })
           .join("");
       }
 

@@ -564,12 +564,12 @@ def predict():
 
         # Validate optional text fields (500-char cap)
         medication = validate_text_field(medication, "Medication details", max_len=255)
-        technician_name = validate_text_field(technician_name, "Technician", max_len=100)
+        technician_name = validate_text_field(technician_name, "Technician", max_len=60)
         referral_name = validate_text_field(
-            referral_name, "Referral name", max_len=120
+            referral_name, "Referral name", max_len=60
         )
         referral_institution = validate_text_field(
-            referral_institution, "Referral institution", max_len=120
+            referral_institution, "Referral institution", max_len=60
         )
         notes = validate_text_field(notes, "Clinical notes", max_len=255)
 

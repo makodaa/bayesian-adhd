@@ -22,7 +22,7 @@ _OCCUPATION_RE = re.compile(r"^[A-Za-z\s'\-]+$")
 
 TEXT_FIELD_MAX = 500       # characters for free-text clinical fields
 NAME_FIELD_MAX = 50        # characters for name / occupation fields
-SUBJECT_CODE_MAX = 50      # characters for subject_code
+SUBJECT_CODE_MAX = 60      # characters for subject_code
 
 # Password strength requirements
 _PW_MIN_LEN = 8
