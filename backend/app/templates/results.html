@@ -224,8 +224,38 @@
                 <thead>
                   <tr>
                     <th>Subject Code</th>
-                    <th>Classification</th>
-                    <th>Confidence</th>
+                    <th>
+                      <span>Classification</span>
+                      <span class="tooltip-anchor">
+                        <span
+                          class="tooltip-trigger"
+                          role="button"
+                          tabindex="0"
+                          aria-label="Classification definition"
+                        >
+                          i
+                        </span>
+                        <span class="tooltip-bubble" role="tooltip">
+                          <div>Model-predicted class label for the assessment.</div>
+                        </span>
+                      </span>
+                    </th>
+                    <th>
+                      <span>Confidence</span>
+                      <span class="tooltip-anchor">
+                        <span
+                          class="tooltip-trigger"
+                          role="button"
+                          tabindex="0"
+                          aria-label="Confidence definition"
+                        >
+                          i
+                        </span>
+                        <span class="tooltip-bubble" role="tooltip">
+                          <div>Model certainty score for the predicted class.</div>
+                        </span>
+                      </span>
+                    </th>
                     <th>Clinician</th>
                     <th>Date</th>
                   </tr>
@@ -860,7 +890,29 @@
 
         const bandSection = `
           <section class="detail-section">
-            <h3>Spectral Band Power</h3>
+            <h3>
+              Spectral Band Power
+              <span class="tooltip-anchor">
+                <span
+                  class="tooltip-trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Spectral band power definition"
+                >
+                  i
+                </span>
+                <span class="tooltip-bubble" role="tooltip">
+                  <div>Relative power across EEG frequency bands.</div>
+                  <ul>
+                    <li>Delta: slow-wave activity.</li>
+                    <li>Theta: drowsiness/attention regulation.</li>
+                    <li>Alpha: relaxed wakefulness.</li>
+                    <li>Beta: alertness/cognitive activity.</li>
+                    <li>Gamma: high-frequency processing.</li>
+                  </ul>
+                </span>
+              </span>
+            </h3>
             ${bandBars ? `<div class="band-bar-wrap">${bandBars}</div>` : '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No band power data available.</p>'}
           </section>`;
 
@@ -881,7 +933,22 @@
         }
         const ratioSection = `
           <section class="detail-section">
-            <h3>Clinical Ratios</h3>
+            <h3>
+              Clinical Ratios
+              <span class="tooltip-anchor">
+                <span
+                  class="tooltip-trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Clinical ratios definition"
+                >
+                  i
+                </span>
+                <span class="tooltip-bubble" role="tooltip">
+                  <div>Computed ratios used to summarize attention/arousal.</div>
+                </span>
+              </span>
+            </h3>
             ${
               ratioItems
                 ? `<ul class="detail-list">${ratioItems}</ul>`
@@ -947,7 +1014,22 @@
         // Topo maps placeholder (populated async)
         const topoSection = `
           <section class="detail-section" id="drawer-topo-section">
-            <h3>Topographic Maps</h3>
+            <h3>
+              Topographic Maps
+              <span class="tooltip-anchor">
+                <span
+                  class="tooltip-trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Topographic maps definition"
+                >
+                  i
+                </span>
+                <span class="tooltip-bubble" role="tooltip">
+                  <div>Scalp distribution of power by band.</div>
+                </span>
+              </span>
+            </h3>
             <div class="topo-toggle-row" id="drawer-topo-toggle">
               <button class="topo-type-btn active" data-topo="absolute">Absolute Power</button>
               <button class="topo-type-btn" data-topo="relative">Relative Power</button>
