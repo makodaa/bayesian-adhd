@@ -7,7 +7,7 @@
 ## 1. Application Identity
 
 **Full Name:** Bayesian ADHD — EEG-Based ADHD Classification System  
-**Short Name:** BaeysianADHD  
+**Short Name:** BayesianADHD  
 **Tagline:** *Objective EEG insights for informed clinical decisions.*  
 **Audience:** Clinicians — developmental pediatricians, psychiatrists, neurologists, and trained EEG technicians working in Philippine clinical settings.  
 **Nature:** A clinical *support* tool. Not a standalone diagnostic instrument. The application's language, interface copy, and report framing must consistently reinforce this distinction.
@@ -52,7 +52,7 @@ The **Page Body** is the full working area. It uses a maximum content width of 1
 
 ### 2.3 The Assessment Flow (Core Workflow)
 
-The assessment flow is the heart of the application. It is not a separate page — it is a **right-side drawer panel** that slides in over the current view without destroying context. This keeps the clinician in the Subjects view while they submit an EEG.
+The assessment flow is the heart of the application. It is not a separate page — it is a **right-side drawer panel** that slides in over the current view without destroying context. This keeps the clinician in the Dashboard view while they submit an EEG.
 
 The drawer is divided into three sequential steps, displayed as a horizontal step indicator at the top of the panel:
 
@@ -77,32 +77,32 @@ The drawer does not close automatically after submission. It transitions into a 
 
 ### 2.4 Results View
 
-Results are accessible from both the Assessment History page and each Subject's detail page. Selecting a result opens a dedicated full-page Results View — the most information-dense part of the application.
+Results are accessible from both the Assessment History page and each Subject's detail page. Selecting a result opens a dedicated detail drawer — the most information-dense part of the application.
 
-The Results View is organized into a vertical stack of collapsible sections:
+The Results View is organized into a vertical stack of sections:
 
 1. **Classification Summary** — The primary output. Displayed as a large, unambiguous label (e.g., "Consistent with ADHD-I — Inattentive Type") accompanied by the confidence score as a horizontal bar, not a percentage in isolation. Below the label, two sentences of clinical impression language describe what this classification means and what it does not mean.
 
 2. **Data Quality Notice** — Conditionally shown. If sleep data was missing, caffeine was reported, or confidence is below a set threshold (e.g., 60%), this section appears with amber styling and explains the specific factors that may affect reliability. If data quality is acceptable, this section is hidden entirely — not collapsed, not shown as "All Clear." Silence here means no concern.
 
-3. **Spectral Band Power Analysis** — A horizontal grouped bar chart showing absolute and relative power across delta, theta, alpha, beta, and gamma bands, per electrode, with the option to toggle between per-electrode and averaged views. Clinical ratios (TBR, TAR, ATR) are shown as a compact table beneath the chart with reference ranges annotated.
+3. **Spectral Band Power Analysis** — A horizontal grouped bar chart showing averaged relative power across delta, theta, alpha, beta, and gamma bands. Clinical ratios (TBR, TAR, ATR) are shown as a compact list with reference ranges annotated.
 
 4. **Topographic Scalp Maps** — A row of per-band heatmaps rendered on the standard 10-20 head outline. Clinicians can click any map to expand it. A toggle switches between absolute and relative power views.
 
-5. **EEG Waveform Visualization** — The rendered EEG trace. Tabs allow switching between raw, bandpass-filtered, and individual band views. Electrode groups are visually separated with subtle dividing lines.
+5. **EEG Waveform Visualization** — The rendered EEG trace. Tabs allow switching between raw, filtered, and individual band views. A full-screen modal is available for detailed inspection.
 
-6. **Temporal Biomarker Evolution** — Time-series plots of the 20 computed biomarkers across the recording window. These are grouped into panels: band power ratios, spectral features, hemispheric asymmetry, and regional metrics. Each panel is collapsible. Summary statistics (mean, std, min, max) for each biomarker appear in a tooltip on hover.
+6. **Temporal Biomarker Evolution** — Time-series plots of computed biomarkers across the recording window. These are stored server-side and available on demand, but currently hidden in the main dashboard UI.
 
-7. **Intervention Suggestions** — A structured list of general recommendations appropriate to the classified subtype. Each suggestion is phrased in clinical, not prescriptive, language ("Behavioral assessment by a licensed psychologist may be warranted..."). These are not personalized treatment plans — that limitation is stated once, plainly, at the top of this section.
+7. **Intervention Suggestions** — A structured list of general recommendations appropriate to the classified subtype. These are implemented but currently hidden in the main dashboard UI.
 
-8. **Export Actions** — A sticky bar at the bottom of the results view with a single prominent "Download PDF Report" button and a secondary "Share via Link" option (generates a time-limited read-only URL to the result for colleagues).
+8. **Export Actions** — A sticky bar at the bottom of the results view with a single prominent "Download PDF Report" button.
 
 ---
 
 ## 3. Intended Use Patterns
 
 ### 3.1 Primary Use Case — In-Clinic EEG Review
-A clinician has conducted an EEG session with a child and exported the recording as CSV. They open BaeysianADHD on a desktop workstation at their clinic, navigate to the subject's record (or create one if new), open the assessment drawer, upload the file, enter the session metadata from their intake notes, and submit. Within two to three minutes, they have a structured report to reference during their consultation or to attach to the child's file.
+A clinician has conducted an EEG session with a child and exported the recording as CSV. They open BayesianADHD on a desktop workstation at their clinic, navigate to the subject's record (or create one if new), open the assessment drawer, upload the file, enter the session metadata from their intake notes, and submit. Within two to three minutes, they have a structured report to reference during their consultation or to attach to the child's file.
 
 ### 3.2 Secondary Use Case — Retrospective Review
 A clinician reviews a subject's history across multiple assessments over several months. The Subject detail page shows a timeline of all past classifications with confidence scores, allowing the clinician to observe trends in EEG-based indicators over time. This supports follow-up consultations and monitoring of treatment effects, without the system making any claims about treatment efficacy.
@@ -142,10 +142,10 @@ The typeface should be clean, neutral, and highly legible at small sizes — a c
 
 The type scale should establish a clear hierarchy between page headings, section labels, body text, and helper text. The classification result label — the most important piece of information on the results page — should be the most visually prominent text element in the application.
 
-Both typefaces should be self-hosted to avoid external font CDN dependencies, which may be unreliable in clinic network environments.
+The current implementation loads Lato from Google Fonts in the shared stylesheet. Self-hosted fonts remain a recommended future enhancement for clinics with restricted network access.
 
 ### 4.4 Iconography
-Icons are sourced from the Lucide icon set — consistent stroke weight (1.5px), rounded line caps, and 24×24px base size. Icons are never used alone as the sole indicator of meaning — they always appear paired with a text label or tooltip. No filled icon style is used, maintaining visual lightness.
+Icons are inline SVGs with consistent stroke weight and rounded line caps. Icons are never used alone as the sole indicator of meaning — they always appear paired with a text label or tooltip. No filled icon style is used, maintaining visual lightness.
 
 ### 4.5 Data Visualization Style
 All charts (band power bars, temporal biomarker plots) use the primary palette as a base. Chart axes are labeled in plain language ("Power (µV²/Hz)"), not abbreviated. Gridlines are light and minimal. No chart uses 3D rendering or decorative effects. Topographic maps use a perceptually uniform diverging colormap (blue–white–red) appropriate for scientific display, not a rainbow scale.
@@ -205,7 +205,7 @@ The report header and footer carry the disclaimer on every page: *"This report i
 
 ## 7. State and Session Behavior
 
-The application uses server-side session management. Sessions expire after 8 hours of inactivity — appropriate for a full clinical workday without forcing re-authentication between patient consultations. Concurrent login from two devices under the same clinician account is prevented; the newer login invalidates the previous session with a clear on-screen notification.
+The application uses server-side session management. Sessions expire after 24 hours of inactivity. Concurrent login from two devices under the same clinician account is prevented; the newer login is blocked with an error response.
 
 Unsaved metadata in the assessment drawer (Step 1 fields filled, EEG not yet submitted) is preserved if the clinician navigates away and returns within the same session. A subtle "Draft" indicator in the drawer trigger reminds them an unsubmitted assessment exists.
 

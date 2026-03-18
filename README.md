@@ -1,14 +1,16 @@
 # BayesianADHD
 
-A web-based EEG analysis platform for ADHD classification using deep learning. The system processes EEG recordings, extracts frequency band features, and provides probabilistic predictions with confidence scores.
+A web-based EEG analysis platform for ADHD classification using deep learning. The system processes 19-channel EEG recordings, extracts spectral features, and returns probabilistic classifications with confidence scores and clinical context.
 
 ## Features
 
--   **EEG Signal Processing**: Automated filtering and band power extraction (Delta, Theta, Alpha, Beta, Gamma)
+-   **EEG Signal Processing**: Automated filtering, band power extraction, and ratio computation
 -   **Deep Learning Classification**: CNN-LSTM hybrid model with Bayesian optimization
--   **Interactive Visualizations**: Real-time plotting of raw, filtered, and band-specific EEG signals
--   **Clinical Metrics**: Theta/Beta ratio and other clinically relevant frequency band ratios
--   **Data Management**: Subject, clinician, and recording tracking with PostgreSQL database
+-   **Assessment Drawer Workflow**: Three-step intake (subject, upload, review) with live validation
+-   **Interactive Visualizations**: Raw/filtered/band EEG previews, topographic scalp maps, and segment overlays
+-   **Temporal Biomarkers**: Per-window plots and summary statistics stored per assessment
+-   **Clinical Outputs**: Confidence scoring, narrative interpretation, and PDF report export
+-   **Data Management**: Subject, clinician, recording, and result tracking in PostgreSQL
 -   **Professional UI**: Clean, responsive interface built with Bootstrap 5
 
 ## Technology Stack
@@ -18,7 +20,7 @@ A web-based EEG analysis platform for ADHD classification using deep learning. T
 -   Flask (Python web framework)
 -   PyTorch (Deep learning model)
 -   MNE-Python (EEG signal processing)
--   PostgreSQL (Database)
+-   PostgreSQL 18 (Database)
 -   Gunicorn (Production server)
 
 **Frontend:**
@@ -85,15 +87,16 @@ docker-compose up -d
 
 ### Usage
 
-1. **Upload EEG Data**: Select a CSV file containing EEG recordings
-2. **Enter Subject Information**: Provide demographics and recording environment details
-3. **Select/Add Clinician**: Choose from existing clinicians or add a new one
-4. **Analyze**: Click "Analyze EEG Recording" to process the data
-5. **View Results**: Examine classification results, band power analysis, and visualizations
+1. **Start an Assessment**: Open the assessment drawer from the Dashboard
+2. **Enter Subject Information**: Provide demographics and recording context
+3. **Upload EEG CSV**: Validate 19-channel coverage and recording metadata
+4. **Review & Submit**: Confirm details and run the assessment
+5. **View Results**: Inspect classification, ratios, topographic maps, temporal plots, and EEG waveforms
+6. **Export Report**: Download the PDF report for documentation
 
 ### Data Format
 
-EEG CSV files should contain time-series data with columns representing different channels. The system automatically handles preprocessing and feature extraction.
+EEG CSV files should contain time-series data with 19 channels following the 10-20 set. The system validates channel coverage, sampling rate, and recording duration before inference.
 
 ## Development
 
@@ -145,9 +148,21 @@ The project includes Jupyter notebooks for model development:
 -   `POST /predict` - Analyze EEG and return classification
 -   `POST /api/eeg_visualization_context` - Cache uploaded EEG CSV for lazy visualization
 -   `GET /api/eeg_visualizations/<context_id>/<band>.png` - Render or fetch cached EEG band preview
+-   `POST /api/eeg_segment_visualization/<context_id>` - Render segment classification overlay
+-   `GET /api/eeg_visualizations/<result_id>` - Retrieve stored EEG visualizations
+-   `POST /api/topographic_maps` - Generate topographic maps for an uploaded EEG
+-   `GET /api/topographic_maps/<result_id>` - Retrieve stored topographic maps
+-   `POST /api/temporal_biomarkers` - Generate temporal biomarker plots
+-   `GET /api/temporal_biomarkers/<result_id>` - Retrieve stored temporal biomarkers
+-   `GET /api/model/info` - Model architecture and hyperparameter info
 -   `GET /api/subjects` - List all subjects
+-   `GET /api/subjects/<subject_id>` - Subject details and recordings
+-   `GET /api/subjects/<subject_id>/assessments` - Subject details with assessments
 -   `GET /api/clinicians` - List all clinicians
+-   `GET /api/clinicians/<clinician_id>` - Clinician details and assessments
 -   `GET /api/results` - List all analysis results
+-   `GET /api/results/<result_id>` - Result details (band powers, ratios, metadata)
+-   `GET /api/results/<result_id>/pdf` - Download PDF report
 
 ## Configuration
 
@@ -155,6 +170,10 @@ Key configuration in `backend/app/config.py`:
 
 -   `SAMPLE_RATE`: EEG sampling frequency (128 Hz default)
 -   `TARGET_FREQUENCY_BINS`: Number of frequency bins for model input
+
+## Clinical Use Notice
+
+This system is a clinical support tool and does not provide a definitive diagnosis. All findings must be interpreted by a qualified healthcare professional alongside other clinical assessments.
 
 ## License
 
