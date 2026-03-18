@@ -592,7 +592,7 @@ a:focus-visible {
 /* ─── Page body + section shell/head ─────────────────────────────────────── */
 
 .page-body {
-  max-width: var(--content-width);
+  max-width: calc(var(--content-width) + 3rem);
   margin: 0 auto;
   padding: 1.5rem;
   display: grid;
