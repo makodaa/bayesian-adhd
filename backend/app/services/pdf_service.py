@@ -647,7 +647,7 @@ class PDFReportService:
 
         story: list = []
         story.extend(self._build_header(report_data))
-        story.append(Spacer(1, 1))
+        story.append(Spacer(1, 0))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
         story.append(Spacer(1, 1))
         story.extend(self._build_referral_patient(report_data))
@@ -819,7 +819,7 @@ class PDFReportService:
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                     ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                 ]
             )
         )
@@ -1042,28 +1042,13 @@ class PDFReportService:
         return f"{tier} ({confidence_pct:.1f}%)."
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
-        left_column = [
-            Spacer(1, 4),
+        summary_block = [
             Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
             ),
-            Spacer(1, 6),
-            Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]),
-            build_shaded_content_box(
-                report_data["diagnostic_significance"],
-                self.styles,
-                width / 2 - 6,
-                bold=True,
-            ),
-            Spacer(1, 6),
-            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
-            build_disclaimer_box(self.styles, width / 2 - 6),
-            Spacer(1, 4),
         ]
-
-        right_column = [
-            Spacer(1, 4),
+        pre_block = [
             Paragraph("PRE-ASSESSMENT NOTES", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["clinical_comments"],
@@ -1071,7 +1056,17 @@ class PDFReportService:
                 width / 2 - 6,
                 min_height=40,
             ),
-            Spacer(1, 6),
+        ]
+        diagnostic_block = [
+            Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["diagnostic_significance"],
+                self.styles,
+                width / 2 - 6,
+                bold=True,
+            ),
+        ]
+        post_block = [
             Paragraph("POST-ASSESSMENT NOTES", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["post_assessment_notes"],
@@ -1079,18 +1074,28 @@ class PDFReportService:
                 width / 2 - 6,
                 min_height=40,
             ),
-            Spacer(1, 4),
+        ]
+        disclaimer_block = [
+            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
+            build_disclaimer_box(self.styles, width / 2 - 6),
         ]
 
-        table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
+        table = Table(
+            [
+                [summary_block, pre_block],
+                [diagnostic_block, post_block],
+                [disclaimer_block, ""],
+            ],
+            colWidths=[width / 2, width / 2],
+        )
         table.setStyle(
             TableStyle(
                 [
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ]
             )
         )
