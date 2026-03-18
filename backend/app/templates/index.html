@@ -199,7 +199,24 @@
               data-target="workflow-content"
               aria-expanded="true"
             >
-              <span>Clinical Workflow</span>
+              <span class="section-title">
+                <span>Clinical Workflow</span>
+                <span class="tooltip-anchor">
+                  <span class="tooltip-trigger" aria-label="Clinical workflow terminology">
+                    i
+                  </span>
+                  <span class="tooltip-bubble" role="tooltip">
+                    <div>Key terms:</div>
+                    <ul>
+                      <li>EEG: electrical activity recorded from the scalp.</li>
+                      <li>Frequency bands: grouped EEG rhythms (delta-gamma) used in analysis.</li>
+                      <li>Metadata: subject/recording context captured with the EEG.</li>
+                      <li>CNN-LSTM: model architecture combining spatial + temporal learning.</li>
+                      <li>Confidence: model certainty score for the prediction.</li>
+                    </ul>
+                  </span>
+                </span>
+              </span>
               <span class="toggle-symbol" aria-hidden="true"></span>
             </button>
             <div id="workflow-content" class="section-content" data-collapsible-content>
@@ -260,7 +277,23 @@
               data-target="prep-checklist-content"
               aria-expanded="false"
             >
-              <span>Preprocessing Summary</span>
+              <span class="section-title">
+                <span>Preprocessing Summary</span>
+                <span class="tooltip-anchor">
+                  <span class="tooltip-trigger" aria-label="Preprocessing summary definition">
+                    i
+                  </span>
+                  <span class="tooltip-bubble" role="tooltip">
+                    <div>Preprocessing steps applied:</div>
+                    <ul>
+                      <li>Band-pass filtering.</li>
+                      <li>Artifact mitigation (e.g., noise/motion).</li>
+                      <li>Segmentation into analysis windows.</li>
+                      <li>Normalization / scaling.</li>
+                    </ul>
+                  </span>
+                </span>
+              </span>
               <span class="toggle-symbol" aria-hidden="true"></span>
             </button>
             <div id="prep-checklist-content" class="section-content" data-collapsible-content>
@@ -306,7 +339,24 @@
 
                 <div id="results-content" class="results-content hidden">
                    <article class="summary-card">
-                     <h3>Classification Summary</h3>
+                     <h3>
+                       Classification Summary
+                       <span class="tooltip-anchor">
+                         <span
+                           class="tooltip-trigger"
+                           role="button"
+                           tabindex="0"
+                           aria-label="Classification summary definition"
+                         >
+                           i
+                         </span>
+                         <span class="tooltip-bubble" role="tooltip">
+                           <div>
+                             Prediction from the CNN-LSTM model based on learned EEG features.
+                           </div>
+                         </span>
+                       </span>
+                     </h3>
                      <div id="prediction-result"></div>
                    </article>
 
@@ -328,7 +378,27 @@
                       data-target="spectral-content"
                       aria-expanded="true"
                     >
-                      <span>Spectral Band Power Analysis</span>
+                      <span class="section-title">
+                        <span>Spectral Band Power Analysis</span>
+                        <span class="tooltip-anchor">
+                          <span
+                            class="tooltip-trigger"
+                            aria-label="Spectral band power definition"
+                          >
+                            i
+                          </span>
+                          <span class="tooltip-bubble" role="tooltip">
+                            <div>Relative power across EEG frequency bands.</div>
+                            <ul>
+                              <li>Delta: slow-wave activity.</li>
+                              <li>Theta: drowsiness/attention regulation.</li>
+                              <li>Alpha: relaxed wakefulness.</li>
+                              <li>Beta: alertness/cognitive activity.</li>
+                              <li>Gamma: high-frequency processing.</li>
+                            </ul>
+                          </span>
+                        </span>
+                      </span>
                       <span class="toggle-symbol" aria-hidden="true"></span>
                     </button>
                     <div id="spectral-content" class="section-content" data-collapsible-content>
@@ -356,7 +426,20 @@
                       data-target="topographic-content"
                       aria-expanded="false"
                     >
-                      <span>Topographic Scalp Maps</span>
+                      <span class="section-title">
+                        <span>Topographic Scalp Maps</span>
+                        <span class="tooltip-anchor">
+                          <span
+                            class="tooltip-trigger"
+                            aria-label="Topographic scalp maps definition"
+                          >
+                            i
+                          </span>
+                          <span class="tooltip-bubble" role="tooltip">
+                            <div>Spatial distribution of band power across the scalp.</div>
+                          </span>
+                        </span>
+                      </span>
                       <span class="toggle-symbol" aria-hidden="true"></span>
                     </button>
                     <div
@@ -591,7 +674,19 @@
                       data-target="clinical-ratios-content"
                       aria-expanded="true"
                     >
-                      <span>Clinical Ratios</span>
+                      <span class="section-title">
+                        <span>Clinical Ratios</span>
+                        <span class="tooltip-anchor">
+                          <span class="tooltip-trigger" aria-label="Clinical ratios definition">
+                            i
+                          </span>
+                          <span class="tooltip-bubble" role="tooltip">
+                            <div>
+                              Derived ratios (e.g., theta/beta) used in attention profiling.
+                            </div>
+                          </span>
+                        </span>
+                      </span>
                       <span class="toggle-symbol" aria-hidden="true"></span>
                     </button>
                     <div
@@ -618,6 +713,17 @@
                       aria-expanded="false"
                     >
                       <span>Temporal Biomarker Evolution</span>
+                      <span class="tooltip-anchor">
+                        <span
+                          class="tooltip-trigger"
+                          aria-label="Temporal biomarker evolution definition"
+                        >
+                          i
+                        </span>
+                        <span class="tooltip-bubble" role="tooltip">
+                          <div>Biomarkers computed over time to show stability/variability.</div>
+                        </span>
+                      </span>
                       <span class="toggle-symbol" aria-hidden="true"></span>
                     </button>
                     <div
@@ -870,7 +976,25 @@
             </div>
 
             <div class="form-panel">
-              <h3>Recording Context</h3>
+              <h3>
+                Recording Context
+                <span class="tooltip-anchor">
+                  <span
+                    class="tooltip-trigger"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Recording context definition"
+                  >
+                    i
+                  </span>
+                  <span class="tooltip-bubble" role="tooltip">
+                    <div>Captured to interpret EEG responses.</div>
+                    <ul>
+                      <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
+                    </ul>
+                  </span>
+                </span>
+              </h3>
               <div class="form-grid">
                 <div class="field-wrap">
                   <label for="technician-name">Technician</label>
@@ -969,7 +1093,22 @@
             </div>
 
             <div class="form-panel">
-              <h3>Channel Validation (10-20 set)</h3>
+              <h3>
+                Channel Validation (10-20 set)
+                <span class="tooltip-anchor">
+                  <span
+                    class="tooltip-trigger"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Channel validation definition"
+                  >
+                    i
+                  </span>
+                  <span class="tooltip-bubble" role="tooltip">
+                    <div>Confirms standard 19-channel montage for analysis.</div>
+                  </span>
+                </span>
+              </h3>
               <p class="hint" id="channel-status">
                 Upload a CSV file to validate channel coverage.
               </p>

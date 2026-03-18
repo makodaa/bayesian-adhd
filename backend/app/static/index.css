@@ -98,7 +98,7 @@
 }
 
 .section-shell {
-  overflow: hidden;
+  overflow: visible;
   border-radius: var(--radius-md);
 }
 
@@ -411,6 +411,16 @@
   font-size: 0.95rem;
   font-weight: 400;
   cursor: pointer;
+}
+
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.section-title .tooltip-anchor {
+  margin-left: 0;
 }
 
 .section-toggle:hover {
