@@ -843,6 +843,30 @@
             </div>
 
             <div class="form-panel">
+              <h3>Referral Information</h3>
+              <div class="form-grid">
+                <div class="field-wrap">
+                  <label for="referral-name">Referral Name</label>
+                  <input
+                    type="text"
+                    id="referral-name"
+                    placeholder="Referring clinician"
+                    maxlength="120"
+                  />
+                </div>
+                <div class="field-wrap">
+                  <label for="referral-institution">Referral Institution</label>
+                  <input
+                    type="text"
+                    id="referral-institution"
+                    placeholder="Clinic or institution"
+                    maxlength="120"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-panel">
               <h3>Recording Context</h3>
               <div class="form-grid">
                 <div class="field-wrap">
@@ -860,7 +884,7 @@
                     type="number"
                     id="sleep-hours"
                     min="0"
-                    max="24"
+                    max="99.99"
                     step="0.5"
                     placeholder="Hours slept"
                     required
@@ -874,7 +898,7 @@
                     min="1"
                     max="99"
                     step="1"
-                    placeholder="1-99; 99 means never"
+                    placeholder="1-99; 99 means no record"
                     required
                   />
                 </div>
@@ -886,7 +910,7 @@
                     min="1"
                     max="99"
                     step="1"
-                    placeholder="1-99; 99 means never"
+                    placeholder="1-99; 99 means no record"
                     required
                   />
                 </div>
@@ -908,7 +932,7 @@
                     id="medication"
                     rows="2"
                     placeholder="List medications or dosing notes"
-                    maxlength="500"
+                    maxlength="255"
                   ></textarea>
                 </div>
                 <div class="field-wrap full">
@@ -917,7 +941,7 @@
                     id="notes"
                     rows="3"
                     placeholder="Add recording context notes (optional)"
-                    maxlength="500"
+                    maxlength="255"
                   ></textarea>
                 </div>
               </div>
@@ -1363,6 +1387,8 @@
           "mealHoursAgo",
           "medication",
           "technicianName",
+          "referralName",
+          "referralInstitution",
           "notes",
         ];
 
@@ -1404,6 +1430,8 @@
               : "-",
           ],
           ["Gender", formatContextValue(context.gender, "-")],
+          ["Referral Name", formatContextValue(context.referralName)],
+          ["Referral Institution", formatContextValue(context.referralInstitution)],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           [
@@ -1418,7 +1446,7 @@
             "Time since last meal (hours)",
             formatContextValue(context.mealHoursAgo),
           ],
-          ["Medication", formatContextValue(context.medication)],
+          ["Medication Details", formatContextValue(context.medication)],
           [
             "CSV File",
             formatContextValue(context.fileMeta && context.fileMeta.name, "Not selected"),
@@ -1495,6 +1523,8 @@
           byId("meal-hours-ago")?.value,
           byId("medication")?.value,
           byId("technician-name")?.value,
+          byId("referral-name")?.value,
+          byId("referral-institution")?.value,
           byId("notes")?.value,
         ];
         const hasDraft =
@@ -1547,6 +1577,8 @@
           clinicianName: byId("clinician-input").value,
           occupation: byId("occupation").value,
           technicianName: byId("technician-name").value.trim(),
+          referralName: byId("referral-name").value.trim(),
+          referralInstitution: byId("referral-institution").value.trim(),
           recordedMinutes,
           fileMeta: appState.fileMeta,
         };
@@ -1566,6 +1598,11 @@
               : "-",
           ],
           ["Gender", context.gender || "-"],
+          ["Referral Name", formatContextValue(context.referralName, "Not provided")],
+          [
+            "Referral Institution",
+            formatContextValue(context.referralInstitution, "Not provided"),
+          ],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
           [
@@ -1580,7 +1617,7 @@
             "Time since last meal (hours)",
             formatContextValue(context.mealHoursAgo),
           ],
-          ["Medication", formatContextValue(context.medication)],
+          ["Medication Details", formatContextValue(context.medication)],
           ["CSV File", context.fileMeta ? context.fileMeta.name : "Not selected"],
           [
             "Estimated Duration",
@@ -1646,10 +1683,10 @@
         const dobValid = Boolean(dobParsed);
         const genderValid = Boolean(gender && gender.value);
         const numericFields = [
-          [sleepHours, "Sleep hours"],
-          [coffeeHoursAgo, "Coffee hours ago"],
-          [drugsHoursAgo, "Drugs hours ago"],
-          [mealHoursAgo, "Meal hours ago"],
+          [sleepHours, "Sleep hours", 0, 99.99],
+          [coffeeHoursAgo, "Time since caffeine intake", 1, 99],
+          [drugsHoursAgo, "Time since drug intake", 1, 99],
+          [mealHoursAgo, "Time since last meal", 0, 99],
         ];
         const numericValid = numericFields.every(([field]) =>
           Boolean(field && String(field.value).trim()),
@@ -1672,10 +1709,10 @@
           }
         }
 
-        for (const [field, label] of numericFields) {
+        for (const [field, label, min, max] of numericFields) {
           const value = field ? Number(field.value) : NaN;
-          if (!Number.isFinite(value) || value < 0 || value > 99.99) {
-            error.textContent = `${label} must be between 0 and 99.99.`;
+          if (!Number.isFinite(value) || value < min || value > max) {
+            error.textContent = `${label} must be between ${min} and ${max}.`;
             error.classList.remove("hidden");
             return false;
           }
@@ -1972,7 +2009,7 @@
         if (coffeeValue !== null && !Number.isNaN(coffeeValue) && coffeeValue < 6) {
           notices.push({
             severity: "moderate",
-            message: "Recent coffee intake was reported and may influence EEG activity patterns.",
+            message: "Recent caffeine intake was reported and may influence EEG activity patterns.",
           });
         }
 
@@ -2643,6 +2680,9 @@
         if (context.medication) formData.append("medication", context.medication);
         if (context.technicianName)
           formData.append("technician_name", context.technicianName);
+        if (context.referralName) formData.append("referral_name", context.referralName);
+        if (context.referralInstitution)
+          formData.append("referral_institution", context.referralInstitution);
         if (context.recordedMinutes != null)
           formData.append("recorded_minutes", context.recordedMinutes.toFixed(2));
         if (context.notes) formData.append("notes", context.notes);
@@ -3061,6 +3101,8 @@
           "date-of-birth",
           "gender",
           "technician-name",
+          "referral-name",
+          "referral-institution",
           "sleep-hours",
           "coffee-hours-ago",
           "drugs-hours-ago",

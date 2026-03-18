@@ -31,6 +31,8 @@ CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(50) NOT NULL,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    referral_name VARCHAR(120),
+    referral_institution VARCHAR(120),
     technician_name VARCHAR(100),
     sleep_hours NUMERIC(4,2) CHECK (sleep_hours >= 0),
     coffee_hours_ago NUMERIC(4,2) NOT NULL CHECK (coffee_hours_ago >= 0),
