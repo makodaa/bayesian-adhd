@@ -70,6 +70,18 @@ def _display(value, fallback: str = "Not recorded") -> str:
     return text if text else fallback
 
 
+def _format_hours(value) -> str:
+    if value is None:
+        return "Not recorded"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return _display(value)
+    if numeric.is_integer():
+        return f"{int(numeric)} h"
+    return f"{numeric:.1f} h"
+
+
 def _clean_percent(value: float | int | None) -> float:
     if value is None:
         return 0.0
@@ -598,7 +610,7 @@ class PDFReportService:
             name="DisclaimerBody",
             fontName="Helvetica-Oblique",
             fontSize=7.5,
-            textColor=colors.HexColor("#e67e22"),
+            textColor=colors.black,
             leading=7,
             spaceAfter=2,
         )
@@ -635,7 +647,7 @@ class PDFReportService:
 
         story: list = []
         story.extend(self._build_header(report_data))
-        story.append(Spacer(1, 1))
+        story.append(Spacer(1, 0))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
         story.append(Spacer(1, 1))
         story.extend(self._build_referral_patient(report_data))
@@ -748,6 +760,7 @@ class PDFReportService:
             "duration_minutes": _display(result_data.get("duration_minutes")),
             "recorded_minutes": _display(result_data.get("recorded_minutes")),
             "medication": _display(result_data.get("medication"), "None"),
+            "alertness": _display(result_data.get("alertness"), "Not recorded"),
             "sleep_hours": _display(result_data.get("sleep_hours")),
             "coffee_hours_ago": _display(result_data.get("coffee_hours_ago")),
             "drugs_hours_ago": _display(result_data.get("drugs_hours_ago")),
@@ -765,6 +778,9 @@ class PDFReportService:
             "summary_findings": summary_findings,
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
+            "post_assessment_notes": _display(
+                result_data.get("post_assessment_notes"), "Not recorded"
+            ),
             "technician_name": _display(result_data.get("technician_name")),
             "clinician_name": clinician_name or "Not recorded",
             "clinician_occupation": clinician_occupation,
@@ -803,7 +819,7 @@ class PDFReportService:
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                     ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                 ]
             )
         )
@@ -895,24 +911,57 @@ class PDFReportService:
         elements.append(bar_table)
         elements.append(Spacer(1, 3))
 
-        details = [
-            ["Medication", _display(report_data["medication"])],
-            ["Sleep (hours)", _display(report_data["sleep_hours"])],
-            ["Coffee (hours ago)", _display(report_data["coffee_hours_ago"])],
-            ["Drugs (hours ago)", _display(report_data["drugs_hours_ago"])],
-            ["Meal (hours ago)", _display(report_data["meal_hours_ago"])],
+        left_details = [
             ["Sensor group", _display(report_data["sensor_group"])],
+            ["Medication", _display(report_data["medication"])],
+            [
+                "Time since drug intake (hours)",
+                _format_hours(report_data.get("drugs_hours_ago")),
+            ],
         ]
-        details_table = Table(details, colWidths=[45 * mm, doc_width() - 45 * mm])
+        right_details = [
+            ["Alertness", _display(report_data["alertness"])],
+            ["Sleep hours", _format_hours(report_data.get("sleep_hours"))],
+            [
+                "Time since caffeine intake (hours)",
+                _format_hours(report_data.get("coffee_hours_ago")),
+            ],
+            [
+                "Time since last meal (hours)",
+                _format_hours(report_data.get("meal_hours_ago")),
+            ],
+        ]
+
+        def build_detail_table(rows: list[list[str]]) -> Table:
+            table = Table(rows, colWidths=[45 * mm, (doc_width() / 2) - 45 * mm])
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                        ("TOPPADDING", (0, 0), (-1, -1), 2),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ]
+                )
+            )
+            return table
+
+        left_table = build_detail_table(left_details)
+        right_table = build_detail_table(right_details)
+        details_table = Table(
+            [[left_table, right_table]],
+            colWidths=[doc_width() / 2, doc_width() / 2],
+        )
         details_table.setStyle(
             TableStyle(
                 [
-                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 2),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
                 ]
             )
         )
@@ -993,13 +1042,22 @@ class PDFReportService:
         return f"{tier} ({confidence_pct:.1f}%)."
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
-        left_column = [
-            Spacer(1, 4),
+        summary_block = [
             Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
             ),
-            Spacer(1, 6),
+        ]
+        pre_block = [
+            Paragraph("PRE-ASSESSMENT NOTES", self.styles["SectionHeader"]),
+            build_shaded_content_box(
+                report_data["clinical_comments"],
+                self.styles,
+                width / 2 - 6,
+                min_height=40,
+            ),
+        ]
+        diagnostic_block = [
             Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]),
             build_shaded_content_box(
                 report_data["diagnostic_significance"],
@@ -1007,33 +1065,37 @@ class PDFReportService:
                 width / 2 - 6,
                 bold=True,
             ),
-            Spacer(1, 6),
-            Paragraph("CLINICAL COMMENTS", self.styles["SectionHeader"]),
+        ]
+        post_block = [
+            Paragraph("POST-ASSESSMENT NOTES", self.styles["SectionHeader"]),
             build_shaded_content_box(
-                report_data["clinical_comments"],
+                report_data["post_assessment_notes"],
                 self.styles,
                 width / 2 - 6,
-                min_height=26,
+                min_height=40,
             ),
-            Spacer(1, 4),
         ]
-
-        right_column = [
-            Spacer(1, 4),
+        disclaimer_block = [
             Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
             build_disclaimer_box(self.styles, width / 2 - 6),
-            Spacer(1, 4),
         ]
 
-        table = Table([[left_column, right_column]], colWidths=[width / 2, width / 2])
+        table = Table(
+            [
+                [summary_block, pre_block],
+                [diagnostic_block, post_block],
+                [disclaimer_block, ""],
+            ],
+            colWidths=[width / 2, width / 2],
+        )
         table.setStyle(
             TableStyle(
                 [
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ]
             )
         )
