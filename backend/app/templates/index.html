@@ -3472,6 +3472,7 @@
         setupSubjectAutofill();
         setupUploadInteractions();
         disableNumberInputScroll();
+        enforceNumberInputBounds();
         setupEventHandlers();
         eegModal.init();
 
@@ -3495,6 +3496,37 @@
           },
           { passive: false },
         );
+      }
+
+      function enforceNumberInputBounds() {
+        const numberInputs = document.querySelectorAll("input[type='number']");
+        numberInputs.forEach((input) => {
+          input.addEventListener("keydown", (event) => {
+            if (["-", "+", "e", "E"].includes(event.key)) {
+              event.preventDefault();
+            }
+          });
+
+          input.addEventListener("input", () => {
+            if (input.value.includes("-")) {
+              input.value = input.value.replace(/-/g, "");
+            }
+          });
+
+          input.addEventListener("blur", () => {
+            if (!input.value) return;
+            const value = Number(input.value);
+            if (Number.isNaN(value)) return;
+            const minAttr = input.getAttribute("min");
+            const maxAttr = input.getAttribute("max");
+            const minValue = minAttr !== null ? Number(minAttr) : null;
+            const maxValue = maxAttr !== null ? Number(maxAttr) : null;
+            let nextValue = value;
+            if (minValue !== null && nextValue < minValue) nextValue = minValue;
+            if (maxValue !== null && nextValue > maxValue) nextValue = maxValue;
+            input.value = String(nextValue);
+          });
+        });
       }
 
       document.addEventListener("DOMContentLoaded", initializePage);
