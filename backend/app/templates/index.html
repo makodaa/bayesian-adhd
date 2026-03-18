@@ -1296,6 +1296,7 @@
         if (!drawer || !backdrop) return;
 
         appState.isDrawerOpen = true;
+        document.body.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -1311,6 +1312,7 @@
         if (!drawer || !backdrop) return;
 
         appState.isDrawerOpen = false;
+        document.body.classList.remove("drawer-open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");

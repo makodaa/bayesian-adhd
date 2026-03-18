@@ -61,6 +61,10 @@ body {
   background: #ffffff;
 }
 
+body.drawer-open {
+  overflow: hidden;
+}
+
 button,
 input,
 select,

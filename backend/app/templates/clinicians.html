@@ -532,6 +532,7 @@
         const drawer = byId(drawerId);
         const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
+        document.body.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -547,6 +548,7 @@
           drawer.setAttribute("aria-hidden", "true");
         }
         if (backdrop) backdrop.classList.remove("open");
+        document.body.classList.remove("drawer-open");
         activeDrawer = null;
       }
 

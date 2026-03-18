@@ -611,6 +611,7 @@
         const drawer = byId("result-detail-drawer");
         const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
+        document.body.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -620,6 +621,7 @@
         const drawer = byId("result-detail-drawer");
         const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
+        document.body.classList.remove("drawer-open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");
