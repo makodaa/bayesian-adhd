@@ -14,16 +14,29 @@ class EEGAnnotationsRepository(BaseRepository):
             band_name,
         )
         query = """
-        SELECT id, result_id, clinician_id, band_name, start_time_sec, end_time_sec,
-               label, notes, color, created_at, updated_at
-        FROM eeg_annotations
-        WHERE result_id = %s
+        SELECT a.id,
+               a.result_id,
+               a.clinician_id,
+               a.band_name,
+               a.start_time_sec,
+               a.end_time_sec,
+               a.lane_start,
+               a.lane_end,
+               a.label,
+               a.notes,
+               a.color,
+               a.created_at,
+               a.updated_at,
+               TRIM(CONCAT_WS(' ', c.first_name, c.last_name)) AS clinician_name
+        FROM eeg_annotations a
+        LEFT JOIN clinicians c ON a.clinician_id = c.id
+        WHERE a.result_id = %s
         """
         params: list[object] = [result_id]
         if band_name:
-            query += " AND band_name = %s"
+            query += " AND a.band_name = %s"
             params.append(band_name)
-        query += " ORDER BY start_time_sec, id;"
+        query += " ORDER BY a.start_time_sec, a.id;"
 
         try:
             with self.get_connection() as conn:
@@ -42,10 +55,23 @@ class EEGAnnotationsRepository(BaseRepository):
     def get_by_id(self, annotation_id: int) -> dict | None:
         logger.debug("Fetching annotation %s", annotation_id)
         query = """
-        SELECT id, result_id, clinician_id, band_name, start_time_sec, end_time_sec,
-               label, notes, color, created_at, updated_at
-        FROM eeg_annotations
-        WHERE id = %s;
+        SELECT a.id,
+               a.result_id,
+               a.clinician_id,
+               a.band_name,
+               a.start_time_sec,
+               a.end_time_sec,
+               a.lane_start,
+               a.lane_end,
+               a.label,
+               a.notes,
+               a.color,
+               a.created_at,
+               a.updated_at,
+               TRIM(CONCAT_WS(' ', c.first_name, c.last_name)) AS clinician_name
+        FROM eeg_annotations a
+        LEFT JOIN clinicians c ON a.clinician_id = c.id
+        WHERE a.id = %s;
         """
         try:
             with self.get_connection() as conn:
@@ -68,6 +94,8 @@ class EEGAnnotationsRepository(BaseRepository):
         band_name: str,
         start_time_sec: float,
         end_time_sec: float | None,
+        lane_start: float | None,
+        lane_end: float | None,
         label: str,
         notes: str | None,
         color: str | None,
@@ -76,9 +104,9 @@ class EEGAnnotationsRepository(BaseRepository):
         query = """
         INSERT INTO eeg_annotations(
             result_id, clinician_id, band_name, start_time_sec, end_time_sec,
-            label, notes, color
+            lane_start, lane_end, label, notes, color
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id;
         """
         try:
@@ -92,6 +120,8 @@ class EEGAnnotationsRepository(BaseRepository):
                         band_name,
                         start_time_sec,
                         end_time_sec,
+                        lane_start,
+                        lane_end,
                         label,
                         notes,
                         color,
@@ -112,6 +142,8 @@ class EEGAnnotationsRepository(BaseRepository):
         annotation_id: int,
         start_time_sec: float,
         end_time_sec: float | None,
+        lane_start: float | None,
+        lane_end: float | None,
         label: str,
         notes: str | None,
         color: str | None,
@@ -121,13 +153,31 @@ class EEGAnnotationsRepository(BaseRepository):
         UPDATE eeg_annotations
         SET start_time_sec = %s,
             end_time_sec = %s,
+            lane_start = %s,
+            lane_end = %s,
             label = %s,
             notes = %s,
             color = %s,
             updated_at = NOW()
         WHERE id = %s
-        RETURNING id, result_id, clinician_id, band_name, start_time_sec, end_time_sec,
-                  label, notes, color, created_at, updated_at;
+        RETURNING id,
+                  result_id,
+                  clinician_id,
+                  band_name,
+                  start_time_sec,
+                  end_time_sec,
+                  lane_start,
+                  lane_end,
+                  label,
+                  notes,
+                  color,
+                  created_at,
+                  updated_at,
+                  (
+                      SELECT TRIM(CONCAT_WS(' ', c.first_name, c.last_name))
+                      FROM clinicians c
+                      WHERE c.id = eeg_annotations.clinician_id
+                  ) AS clinician_name;
         """
         try:
             with self.get_connection() as conn:
@@ -137,6 +187,8 @@ class EEGAnnotationsRepository(BaseRepository):
                     (
                         start_time_sec,
                         end_time_sec,
+                        lane_start,
+                        lane_end,
                         label,
                         notes,
                         color,

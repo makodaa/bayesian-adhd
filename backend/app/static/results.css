@@ -649,8 +649,6 @@
 
 .eeg-annotation {
   position: absolute;
-  top: 0;
-  bottom: 0;
   pointer-events: auto;
 }
 
@@ -667,21 +665,64 @@
 
 .eeg-annotation-label {
   position: absolute;
-  top: 0.35rem;
-  left: 0.35rem;
+  top: -1.7rem;
+  left: 0;
   background: rgba(12, 28, 38, 0.7);
   color: #f3f8fb;
   font-size: 0.7rem;
   padding: 0.12rem 0.35rem;
   border-radius: 999px;
-  max-width: 80%;
+  max-width: 90%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .eeg-annotation-point .eeg-annotation-label {
   left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.eeg-annotation-label-short {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.eeg-annotation-tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 140px;
+  max-width: 240px;
+  padding: 0.45rem 0.6rem;
+  background: #0c1c26;
+  color: #f3f8fb;
+  border-radius: 10px;
+  box-shadow: 0 12px 26px rgba(8, 16, 22, 0.35);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  white-space: normal;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.eeg-annotation-label:hover .eeg-annotation-tooltip,
+.eeg-annotation-label:focus .eeg-annotation-tooltip,
+.eeg-annotation-label:focus-within .eeg-annotation-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.eeg-annotation-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 }
 
 .eeg-annotation.is-selected {
@@ -752,6 +793,11 @@
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+
+.eeg-annotation-modes {
+  display: inline-flex;
+  gap: 0.35rem;
 }
 
 .eeg-modal-annotation-editor .annotation-editor-label {

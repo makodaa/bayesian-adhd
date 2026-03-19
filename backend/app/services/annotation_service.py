@@ -14,6 +14,8 @@ class AnnotationPayload:
     band_name: str
     start_time_sec: float
     end_time_sec: float | None
+    lane_start: float | None
+    lane_end: float | None
     label: str
     notes: str | None = None
     color: str | None = None
@@ -23,7 +25,7 @@ class AnnotationService:
     """Validate and persist EEG waveform annotations."""
 
     DEFAULT_LABEL = "Annotation"
-    MAX_LABEL_LEN = 100
+    MAX_LABEL_LEN = 60
     MAX_NOTES_LEN = 255
     MAX_COLOR_LEN = 20
 
@@ -42,6 +44,8 @@ class AnnotationService:
         start_raw = payload.get("start_time_sec")
         end_raw = payload.get("end_time_sec")
 
+        if start_raw in (None, ""):
+            raise ValueError("start_time_sec is required")
         try:
             start_time = float(start_raw)
         except (TypeError, ValueError):
@@ -61,6 +65,33 @@ class AnnotationService:
 
         if end_time is not None and end_time < start_time:
             start_time, end_time = end_time, start_time
+
+        lane_start_raw = payload.get("lane_start")
+        lane_end_raw = payload.get("lane_end")
+        lane_start = None
+        lane_end = None
+
+        if lane_start_raw not in (None, ""):
+            try:
+                lane_start = float(lane_start_raw)
+            except (TypeError, ValueError):
+                raise ValueError("lane_start must be a number")
+
+        if lane_end_raw not in (None, ""):
+            try:
+                lane_end = float(lane_end_raw)
+            except (TypeError, ValueError):
+                raise ValueError("lane_end must be a number")
+
+        if lane_start is None and lane_end is not None:
+            raise ValueError("lane_start is required when lane_end is provided")
+
+        if lane_start is not None and not (0 <= lane_start <= 1):
+            raise ValueError("lane_start must be between 0 and 1")
+        if lane_end is not None and not (0 <= lane_end <= 1):
+            raise ValueError("lane_end must be between 0 and 1")
+        if lane_start is not None and lane_end is not None and lane_end < lane_start:
+            raise ValueError("lane_end must be >= lane_start")
 
         label = str(payload.get("label") or "").strip()
         if not label:
@@ -84,6 +115,8 @@ class AnnotationService:
             band_name=band_name,
             start_time_sec=start_time,
             end_time_sec=end_time,
+            lane_start=lane_start,
+            lane_end=lane_end,
             label=label,
             notes=notes,
             color=color,
@@ -105,6 +138,8 @@ class AnnotationService:
             band_name=normalized.band_name,
             start_time_sec=normalized.start_time_sec,
             end_time_sec=normalized.end_time_sec,
+            lane_start=normalized.lane_start,
+            lane_end=normalized.lane_end,
             label=normalized.label,
             notes=normalized.notes,
             color=normalized.color,
@@ -116,9 +151,12 @@ class AnnotationService:
             "band_name": normalized.band_name,
             "start_time_sec": normalized.start_time_sec,
             "end_time_sec": normalized.end_time_sec,
+            "lane_start": normalized.lane_start,
+            "lane_end": normalized.lane_end,
             "label": normalized.label,
             "notes": normalized.notes,
             "color": normalized.color,
+            "clinician_name": None,
         }
 
     def update_annotation(
@@ -137,6 +175,8 @@ class AnnotationService:
             "band_name": existing.get("band_name"),
             "start_time_sec": payload.get("start_time_sec", existing.get("start_time_sec")),
             "end_time_sec": payload.get("end_time_sec", existing.get("end_time_sec")),
+            "lane_start": payload.get("lane_start", existing.get("lane_start")),
+            "lane_end": payload.get("lane_end", existing.get("lane_end")),
             "label": payload.get("label", existing.get("label")),
             "notes": payload.get("notes", existing.get("notes")),
             "color": payload.get("color", existing.get("color")),
@@ -146,6 +186,8 @@ class AnnotationService:
             annotation_id=annotation_id,
             start_time_sec=normalized.start_time_sec,
             end_time_sec=normalized.end_time_sec,
+            lane_start=normalized.lane_start,
+            lane_end=normalized.lane_end,
             label=normalized.label,
             notes=normalized.notes,
             color=normalized.color,

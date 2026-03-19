@@ -124,6 +124,8 @@ CREATE TABLE eeg_annotations (
     band_name VARCHAR(50) NOT NULL,
     start_time_sec FLOAT NOT NULL,
     end_time_sec FLOAT,
+    lane_start FLOAT,
+    lane_end FLOAT,
     label VARCHAR(100) NOT NULL,
     notes VARCHAR(255),
     color VARCHAR(20),

@@ -378,12 +378,28 @@
                 <span id="eeg-modal-zoom-readout" class="eeg-modal-zoom-readout">100%</span>
                 <button id="eeg-annotate-toggle-btn" type="button" class="eeg-modal-control-btn">Annotate</button>
               </div>
-              <div class="eeg-modal-annotation-editor hidden" id="eeg-annotation-editor">
-                <span class="annotation-editor-label">Annotation</span>
-                <input id="eeg-annotation-label" type="text" maxlength="100" placeholder="Label" />
-                <button id="eeg-annotation-save-btn" type="button" class="eeg-modal-control-btn">Update</button>
-                <button id="eeg-annotation-delete-btn" type="button" class="eeg-modal-control-btn">Delete</button>
+            <div class="eeg-modal-annotation-editor hidden" id="eeg-annotation-editor">
+              <span class="annotation-editor-label">Annotation</span>
+              <div class="eeg-annotation-modes" role="group" aria-label="Annotation mode">
+                <button
+                  type="button"
+                  class="eeg-modal-control-btn eeg-annotation-mode-btn is-active"
+                  data-annotation-mode="draw"
+                >
+                  Draw
+                </button>
+                <button
+                  type="button"
+                  class="eeg-modal-control-btn eeg-annotation-mode-btn"
+                  data-annotation-mode="select"
+                >
+                  Select
+                </button>
               </div>
+              <input id="eeg-annotation-label" type="text" maxlength="60" placeholder="Label" />
+              <button id="eeg-annotation-save-btn" type="button" class="eeg-modal-control-btn">Update</button>
+              <button id="eeg-annotation-delete-btn" type="button" class="eeg-modal-control-btn">Delete</button>
+            </div>
               <div class="eeg-modal-hints">
                 Press <kbd>Esc</kbd> to close
                 <span class="eeg-modal-footer-sep">·</span>
@@ -1744,13 +1760,13 @@
 
         const annotationState = {
           enabled: false,
+          mode: "select",
           isDragging: false,
           dragMode: null,
           dragStartX: 0,
+          dragStartY: 0,
           dragCurrentX: 0,
-          dragAnnotationId: null,
-          dragOriginStart: 0,
-          dragOriginEnd: null,
+          dragCurrentY: 0,
           selectedId: null,
           annotations: [],
           durationSeconds: null,
@@ -1797,6 +1813,15 @@
               <img src="${src}" alt="${escapeHtml(BAND_LABELS[band] || band)} EEG waveform" id="eeg-modal-img" />
               <div class="eeg-modal-annotation-layer" id="eeg-modal-annotation-layer"></div>
             </div>`;
+          const img = byId("eeg-modal-img");
+          if (img) {
+            img.addEventListener("load", () => {
+              renderAnnotations();
+            });
+            if (img.complete) {
+              renderAnnotations();
+            }
+          }
           applyTransform();
           renderAnnotations();
         }
@@ -1881,7 +1906,13 @@
         function startPan(event) {
           if (!isOpen) return;
           if (event.button !== 0) return;
-          if (annotationState.enabled && !annotationState.panOverride) return;
+          if (
+            annotationState.enabled &&
+            annotationState.mode === "draw" &&
+            !annotationState.panOverride
+          ) {
+            return;
+          }
           if (zoomState.scale <= 1) return;
           if (!modalImage()) return;
           event.preventDefault();
@@ -1935,11 +1966,12 @@
             annotationState.selectedId = null;
             annotationState.isDragging = false;
             annotationState.dragMode = null;
-            annotationState.dragAnnotationId = null;
             updateAnnotationEditor();
             renderAnnotations();
             return;
           }
+
+          setAnnotationMode(annotationState.mode || "select");
 
           if (!currentResultId) {
             showToast("Select a result to annotate.", "warning");
@@ -1949,6 +1981,17 @@
 
           ensureAnnotationMeta().then(() => {
             loadAnnotationsForBand(currentBand);
+          });
+        }
+
+        function setAnnotationMode(mode) {
+          const nextMode = mode === "select" ? "select" : "draw";
+          annotationState.mode = nextMode;
+          document.querySelectorAll(".eeg-annotation-mode-btn").forEach((btn) => {
+            btn.classList.toggle(
+              "is-active",
+              btn.getAttribute("data-annotation-mode") === nextMode,
+            );
           });
         }
 
@@ -2054,22 +2097,90 @@
           return Math.max(0, Math.min(img.offsetWidth, unscaledX));
         }
 
+        function getStageY(event) {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return null;
+          const rect = c.getBoundingClientRect();
+          const rawY = event.clientY - rect.top;
+          const unscaledY = (rawY - zoomState.y) / zoomState.scale;
+          return Math.max(0, Math.min(img.offsetHeight, unscaledY));
+        }
+
         function buildAnnotationHtml(annotation, options = {}) {
           const img = modalImage();
           const duration = getDurationSeconds();
           if (!img || !duration) return "";
           const width = Math.max(img.offsetWidth, 1);
+          const layer = annotationLayer();
+          const height = Math.max(layer?.offsetHeight ?? img.offsetHeight, 1);
           const start = Number(annotation.start_time_sec) || 0;
           const end = annotation.end_time_sec != null ? Number(annotation.end_time_sec) : null;
-          const label = escapeHtml(annotation.label || "Annotation");
+          const rawLabel = String(annotation.label || "Annotation");
+          const label = escapeHtml(rawLabel);
+          const notes = annotation.notes ? escapeHtml(annotation.notes) : "";
+          const clinicianNameRaw = annotation.clinician_name || "";
+          const clinicianName = clinicianNameRaw.trim() || "Unknown clinician";
+          const createdAtRaw = annotation.created_at;
+          let createdLabel = "Unknown time";
+          if (createdAtRaw) {
+            const createdDate = new Date(createdAtRaw);
+            if (!Number.isNaN(createdDate.getTime())) {
+              createdLabel = createdDate.toLocaleString();
+            }
+          }
+          const shortLimit = 18;
+          const shortLabelRaw =
+            rawLabel.length > shortLimit
+              ? `${rawLabel.slice(0, shortLimit).trim()}...`
+              : rawLabel;
+          const shortLabel = escapeHtml(shortLabelRaw);
+          const tooltipHtml = `
+            <span class="eeg-annotation-tooltip">
+              <div class="eeg-annotation-tooltip-title">${label}</div>
+              ${notes ? `<div>${notes}</div>` : ""}
+              <div>Annotator: ${escapeHtml(clinicianName)}</div>
+              <div>Created: ${escapeHtml(createdLabel)}</div>
+            </span>`;
+          const labelHtml = `
+            <span class="eeg-annotation-label" tabindex="0" aria-label="${label}">
+              <span class="eeg-annotation-label-short">${shortLabel}</span>
+              ${tooltipHtml}
+            </span>`;
           const minPx = 6;
           const startPx = (start / duration) * width;
+          const laneStartRaw = annotation.lane_start;
+          const laneEndRaw = annotation.lane_end;
+          const laneStartParsed =
+            laneStartRaw == null || laneStartRaw === "" ? null : Number(laneStartRaw);
+          const laneEndParsed =
+            laneEndRaw == null || laneEndRaw === "" ? null : Number(laneEndRaw);
+          const laneStart = Number.isFinite(laneStartParsed) ? laneStartParsed : null;
+          const laneEnd = Number.isFinite(laneEndParsed) ? laneEndParsed : null;
+          const minLanePx = 8;
+          const handleHeight = 12;
+          let laneTopPx = 0;
+          let laneHeightPx = height;
+
+          if (laneStart != null) {
+            if (laneEnd != null) {
+              const startY = Math.max(0, Math.min(height, laneStart * height));
+              const endY = Math.max(0, Math.min(height, laneEnd * height));
+              laneTopPx = Math.min(startY, endY);
+              laneHeightPx = Math.max(minLanePx, Math.abs(endY - startY));
+            } else {
+              const centerY = Math.max(0, Math.min(height, laneStart * height));
+              laneTopPx = Math.max(0, Math.min(height - handleHeight, centerY - handleHeight / 2));
+              laneHeightPx = handleHeight;
+            }
+          }
+
           if (end == null || Math.abs(end - start) * width / duration < minPx) {
             const leftPct = (startPx / width) * 100;
             const selectedClass = options.selected ? " is-selected" : "";
             return `
-              <div class="eeg-annotation eeg-annotation-point${selectedClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%;">
-                <span class="eeg-annotation-label">${label}</span>
+              <div class="eeg-annotation eeg-annotation-point${selectedClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; top:${laneTopPx}px; height:${laneHeightPx}px;">
+                ${labelHtml}
               </div>`;
           }
 
@@ -2081,51 +2192,9 @@
           const selectedClass = options.selected ? " is-selected" : "";
           const draftClass = options.draft ? " eeg-annotation-draft" : "";
           return `
-            <div class="eeg-annotation eeg-annotation-range${selectedClass}${draftClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; width:${widthPct}%;">
-              <span class="eeg-annotation-label">${label}</span>
+            <div class="eeg-annotation eeg-annotation-range${selectedClass}${draftClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; width:${widthPct}%; top:${laneTopPx}px; height:${laneHeightPx}px;">
+              ${labelHtml}
             </div>`;
-        }
-
-        function getDraggedPreview() {
-          if (!annotationState.isDragging || annotationState.dragMode !== "move") return null;
-          const duration = getDurationSeconds();
-          const img = modalImage();
-          if (!duration || !img) return null;
-          const currentX = annotationState.dragCurrentX;
-          const deltaX = currentX - annotationState.dragStartX;
-          const deltaTime = (deltaX / img.offsetWidth) * duration;
-          let nextStart = (annotationState.dragOriginStart ?? 0) + deltaTime;
-          let nextEnd =
-            annotationState.dragOriginEnd != null
-              ? annotationState.dragOriginEnd + deltaTime
-              : null;
-          if (nextStart < 0) {
-            const shift = -nextStart;
-            nextStart = 0;
-            if (nextEnd != null) nextEnd += shift;
-          }
-          if (nextEnd != null && nextEnd < 0) {
-            nextEnd = 0;
-          }
-          if (duration && nextEnd != null && nextEnd > duration) {
-            const overshoot = nextEnd - duration;
-            nextEnd = duration;
-            nextStart = Math.max(0, nextStart - overshoot);
-          }
-          if (duration && nextStart > duration) {
-            const overshoot = nextStart - duration;
-            nextStart = duration;
-            if (nextEnd != null) nextEnd = Math.max(0, nextEnd - overshoot);
-          }
-          return {
-            id: annotationState.dragAnnotationId,
-            start_time_sec: nextStart,
-            end_time_sec: nextEnd,
-            label:
-              annotationState.annotations.find(
-                (item) => item.id === annotationState.dragAnnotationId,
-              )?.label || "Annotation",
-          };
         }
 
         function renderAnnotations() {
@@ -2136,24 +2205,22 @@
             layer.innerHTML = "";
             return;
           }
-          const preview = getDraggedPreview();
+          if (layer.offsetHeight <= 1) {
+            return;
+          }
           const html = annotationState.annotations
-            .map((annotation) => {
-              if (preview && annotation.id === preview.id) {
-                return buildAnnotationHtml(preview, {
-                  selected: annotation.id === annotationState.selectedId,
-                });
-              }
-              return buildAnnotationHtml(annotation, {
+            .map((annotation) =>
+              buildAnnotationHtml(annotation, {
                 selected: annotation.id === annotationState.selectedId,
-              });
-            })
+              }),
+            )
             .join("");
 
           let draftHtml = "";
           if (annotationState.isDragging && annotationState.dragMode === "new") {
             const img = modalImage();
             if (img) {
+              const layerHeight = Math.max(layer.offsetHeight, 1);
               const width = Math.max(img.offsetWidth, 1);
               const startPx = annotationState.dragStartX;
               const endPx = annotationState.dragCurrentX;
@@ -2161,8 +2228,12 @@
               const widthPx = Math.max(4, Math.abs(endPx - startPx));
               const leftPct = (leftPx / width) * 100;
               const widthPct = (widthPx / width) * 100;
+              const startY = annotationState.dragStartY;
+              const endY = annotationState.dragCurrentY;
+              const topPx = Math.max(0, Math.min(layerHeight, Math.min(startY, endY)));
+              const heightPx = Math.max(8, Math.abs(endY - startY));
               draftHtml = `
-                <div class="eeg-annotation eeg-annotation-range eeg-annotation-draft" style="left:${leftPct}%; width:${widthPct}%;"></div>`;
+                <div class="eeg-annotation eeg-annotation-range eeg-annotation-draft" style="left:${leftPct}%; width:${widthPct}%; top:${topPx}px; height:${heightPx}px;"></div>`;
             }
           }
 
@@ -2177,29 +2248,26 @@
 
           const target = event.target.closest("[data-annotation-id]");
           const stageX = getStageX(event);
-          if (stageX == null) return;
+          const stageY = getStageY(event);
+          if (stageX == null || stageY == null) return;
 
-          if (target) {
-            const annotationId = Number(target.getAttribute("data-annotation-id"));
-            const selected = annotationState.annotations.find((item) => item.id === annotationId);
-            if (!selected) return;
-            annotationState.dragMode = "move";
-            annotationState.dragAnnotationId = annotationId;
-            annotationState.dragOriginStart = selected.start_time_sec;
-            annotationState.dragOriginEnd = selected.end_time_sec ?? null;
-            annotationState.dragStartX = stageX;
-            annotationState.dragCurrentX = stageX;
-            annotationState.isDragging = true;
-            setSelectedAnnotation(annotationId);
+          if (annotationState.mode === "select") {
+            if (target) {
+              const annotationId = Number(target.getAttribute("data-annotation-id"));
+              setSelectedAnnotation(annotationId);
+            } else {
+              setSelectedAnnotation(null);
+            }
             event.preventDefault();
             return;
           }
 
           annotationState.dragMode = "new";
           annotationState.dragStartX = stageX;
+          annotationState.dragStartY = stageY;
           annotationState.dragCurrentX = stageX;
+          annotationState.dragCurrentY = stageY;
           annotationState.isDragging = true;
-          annotationState.dragAnnotationId = null;
           setSelectedAnnotation(null);
           renderAnnotations();
           event.preventDefault();
@@ -2208,26 +2276,30 @@
         function handleAnnotatePointerMove(event) {
           if (!annotationState.isDragging) return;
           const stageX = getStageX(event);
-          if (stageX == null) return;
+          const stageY = getStageY(event);
+          if (stageX == null || stageY == null) return;
           annotationState.dragCurrentX = stageX;
+          annotationState.dragCurrentY = stageY;
           renderAnnotations();
         }
 
         async function handleAnnotatePointerUp(event) {
           if (!annotationState.isDragging) return;
           const stageX = getStageX(event);
+          const stageY = getStageY(event);
           const duration = getDurationSeconds();
           const img = modalImage();
           annotationState.isDragging = false;
           const dragMode = annotationState.dragMode;
           annotationState.dragMode = null;
 
-          if (!duration || !img || stageX == null) {
+          if (!duration || !img || stageX == null || stageY == null) {
             renderAnnotations();
             return;
           }
 
           const deltaPx = Math.abs(stageX - annotationState.dragStartX);
+          const deltaYPx = Math.abs(stageY - annotationState.dragStartY);
           const minDragPx = 4;
 
           try {
@@ -2237,30 +2309,25 @@
               const startTime = (Math.min(startPx, endPx) / img.offsetWidth) * duration;
               const endTime = (Math.max(startPx, endPx) / img.offsetWidth) * duration;
               const label = annotationLabelInput()?.value?.trim() || "Annotation";
+              const layer = annotationLayer();
+              const laneHeight = Math.max(layer?.offsetHeight ?? img.offsetHeight, 1);
+              const startLane = Math.max(0, Math.min(1, annotationState.dragStartY / laneHeight));
+              const endLane = Math.max(0, Math.min(1, stageY / laneHeight));
+              const laneStart = Math.min(startLane, endLane);
+              const laneEnd = Math.max(startLane, endLane);
+              const isPoint = deltaPx < minDragPx && deltaYPx < minDragPx;
               const payload = {
                 band_name: currentBand,
                 start_time_sec: startTime,
-                end_time_sec: deltaPx < minDragPx ? null : endTime,
+                end_time_sec: isPoint ? null : endTime,
+                lane_start: isPoint ? startLane : laneStart,
+                lane_end: isPoint ? null : laneEnd,
                 label,
               };
               const created = await createAnnotation(payload);
               if (created) {
                 await loadAnnotationsForBand(currentBand);
                 setSelectedAnnotation(created.id);
-              }
-            } else if (dragMode === "move" && annotationState.dragAnnotationId) {
-              if (deltaPx >= minDragPx) {
-                const preview = getDraggedPreview();
-                if (preview) {
-                  const updated = await updateAnnotation(annotationState.dragAnnotationId, {
-                    start_time_sec: preview.start_time_sec,
-                    end_time_sec: preview.end_time_sec,
-                  });
-                  if (updated) {
-                    await loadAnnotationsForBand(currentBand);
-                    setSelectedAnnotation(updated.id);
-                  }
-                }
               }
             }
           } catch (error) {
@@ -2309,7 +2376,7 @@
           isOpen = true;
           annotationState.durationSeconds = null;
           annotationState.panOverride = false;
-          setAnnotateMode(false);
+          setAnnotateMode(true);
           resetZoom();
 
           const ov = overlay();
@@ -2402,6 +2469,12 @@
           byId("eeg-zoom-fit-btn")?.addEventListener("click", resetZoom);
           byId("eeg-annotate-toggle-btn")?.addEventListener("click", () => {
             setAnnotateMode(!annotationState.enabled);
+          });
+          document.querySelectorAll(".eeg-annotation-mode-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const mode = btn.getAttribute("data-annotation-mode");
+              setAnnotationMode(mode);
+            });
           });
           annotationSaveBtn()?.addEventListener("click", async () => {
             const selectedId = annotationState.selectedId;
