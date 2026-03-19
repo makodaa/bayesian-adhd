@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 from os import PathLike
 from pathlib import Path
 from typing import cast
@@ -536,6 +537,14 @@ def predict():
         return jsonify({"error": "File extension not supported"}), 400
 
     try:
+        timing_start = time.perf_counter()
+        stage_start = timing_start
+
+        def log_stage(stage: str, start_time: float) -> float:
+            elapsed = time.perf_counter() - start_time
+            logger.info("Timing: %s took %.2fs", stage, elapsed)
+            return time.perf_counter()
+
         # Extract form data
         subject_code = request.form.get("subject_code")
         date_of_birth_raw = request.form.get("date_of_birth")
@@ -613,6 +622,7 @@ def predict():
         file_bytes = file.stream.read()
         df = file_service.read_csv_bytes(file_bytes, filename)
         file_service.validate_eeg_data(df)
+        stage_start = log_stage("File read/validation", stage_start)
 
         visualization_context_id: str | None = None
         try:
@@ -630,6 +640,7 @@ def predict():
                 f"Could not create visualization context during predict: {exc}",
                 exc_info=True,
             )
+        stage_start = log_stage("Visualization context", stage_start)
 
         # Get or create subject (reuse existing subject if code already exists)
         logger.info(
@@ -638,6 +649,7 @@ def predict():
         subject_id = subject_service.get_or_create_subject(
             subject_code, age_int, gender, date_of_birth
         )
+        stage_start = log_stage("Subject lookup/create", stage_start)
 
         # Create recording with environmental data
         logger.info(f"Creating recording for subject {subject_id}")
@@ -656,15 +668,18 @@ def predict():
             duration_minutes=recorded_minutes,
             notes=notes,
         )
+        stage_start = log_stage("Recording create", stage_start)
 
         # Classify and save results
         result = eeg_service.classify_and_save(
             recording_id, df, clinician_id=clinician_id
         )
+        stage_start = log_stage("Classification", stage_start)
 
         # Compute band powers and ratios for the same recording
         logger.info(f"Computing band powers for result {result['result_id']}")
         band_powers = band_analysis_service.compute_and_save(result["result_id"], df)
+        stage_start = log_stage("Band powers", stage_start)
 
         # Generate and save topographic maps
         logger.info(f"Generating topographic maps for result {result['result_id']}")
@@ -684,6 +699,7 @@ def predict():
             logger.info(f"Topographic maps saved for result {result['result_id']}")
         except Exception as e:
             logger.warning(f"Failed to generate/save topographic maps: {e}", exc_info=True)
+        stage_start = log_stage("Topographic maps", stage_start)
 
         # Generate and save temporal biomarker plots
         logger.info(f"Computing temporal biomarkers for result {result['result_id']}")
@@ -701,6 +717,7 @@ def predict():
             logger.info(f"Temporal biomarkers saved for result {result['result_id']}")
         except Exception as e:
             logger.warning(f"Failed to generate/save temporal biomarkers: {e}", exc_info=True)
+        stage_start = log_stage("Temporal biomarkers", stage_start)
 
         # Generate and persist EEG visualization images to database
         logger.info(f"Generating EEG visualizations for result {result['result_id']}")
@@ -729,6 +746,7 @@ def predict():
                 logger.info(f"Saved segment visualization for result {result['result_id']}")
         except Exception as e:
             logger.warning(f"Failed to generate/save EEG visualizations: {e}", exc_info=True)
+        stage_start = log_stage("EEG visualizations", stage_start)
 
         # Add band power summary to result
         result["band_analysis"] = {
@@ -741,6 +759,10 @@ def predict():
 
         logger.info(
             f"Classification complete: {result['classification']} ({result['confidence_score'] * 100:.2f}%)"
+        )
+        logger.info(
+            "Timing: total predict pipeline took %.2fs",
+            time.perf_counter() - timing_start,
         )
         return jsonify(
             {
