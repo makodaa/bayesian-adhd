@@ -118,7 +118,8 @@ class VisualizationService:
             np.arange(sample_count, dtype=np.float32) * (step / float(SAMPLE_RATE))
         )
 
-        offsets = np.arange(channel_count, dtype=np.float32) * 3.0
+        channel_spacing = 4.0
+        offsets = np.arange(channel_count, dtype=np.float32) * channel_spacing
         height = min(max(4.0, 1.2 + channel_count * 0.32), 14.0)
         width = min(max(10.0, time_axis[-1] / 5.0 if len(time_axis) > 1 else 10.0), 18.0)
 
@@ -237,9 +238,10 @@ class VisualizationService:
         sample_count, channel_count = normalized.shape
         time_axis = np.arange(sample_count, dtype=np.float32) * (step / float(SAMPLE_RATE))
 
-        offsets = np.arange(channel_count, dtype=np.float32) * 3.0
-        y_min = -1.5
-        y_max = float(offsets[-1]) + 1.5
+        channel_spacing = 4.0
+        offsets = np.arange(channel_count, dtype=np.float32) * channel_spacing
+        y_min = -2.0
+        y_max = float(offsets[-1]) + 2.0
 
         scale = 1.55 if is_detail else 1.0
         height = min(max(4.0, 1.2 + channel_count * 0.32) * scale, 22.0)
@@ -266,7 +268,7 @@ class VisualizationService:
             t_end = float(wp["end_time"])
             pred_class = wp["predicted_class"]
             color = self.CLASS_COLORS.get(pred_class, "#aaaaaa")
-            short = self.CLASS_SHORT_LABELS.get(pred_class, pred_class)
+            short = self.CLASS_SHORT_LABELS.get(pred_class) or str(pred_class)
 
             rect = mpatches.Rectangle(
                 (t_start, y_min), t_end - t_start, y_max - y_min,

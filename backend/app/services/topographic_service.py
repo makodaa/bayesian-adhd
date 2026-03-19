@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 import mne
 import numpy as np
 import pandas as pd
-from scipy.signal import welch
 
-from ..config import CLASSIFYING_FREQUENCY_BANDS, DISPLAY_FREQUENCY_BANDS, ELECTRODE_CHANNELS, SAMPLE_RATE
+from ..config import DISPLAY_FREQUENCY_BANDS, ELECTRODE_CHANNELS, SAMPLE_RATE
 from ..core.logging_config import get_app_logger
+from ..utils.band_power import compute_electrode_band_powers
 
 matplotlib.use("Agg")
 
@@ -74,40 +74,86 @@ class TopographicService:
             - relative_power: {electrode: {band: float}}
             - tbr: {electrode: float}  (theta/beta ratio per electrode)
         """
-        electrodes = [c for c in df.select_dtypes(include=[np.number]).columns
-                      if c in ELECTRODE_CHANNELS]
+        electrodes = [
+            c for c in df.select_dtypes(include=[np.number]).columns
+            if c in ELECTRODE_CHANNELS
+        ]
 
-        result = {
-            "absolute_power": {},
-            "relative_power": {},
-            "tbr": {},
-        }
+        powers = compute_electrode_band_powers(
+            df=df,
+            bands=DISPLAY_FREQUENCY_BANDS,
+            sample_rate=SAMPLE_RATE,
+            electrodes=electrodes,
+        )
 
-        for electrode in electrodes:
-            signal = df[electrode].to_numpy()
-            freqs, psd = welch(signal, fs=SAMPLE_RATE, nperseg=min(256, len(signal) // 4))
-
-            absolute_powers = {}
-            for band_name, (low, high) in DISPLAY_FREQUENCY_BANDS.items():
-                band_mask = (freqs >= low) & (freqs < high)
-                band_power = float(np.trapezoid(psd[band_mask], freqs[band_mask]))
-                absolute_powers[band_name] = band_power
-
-            total_power = sum(absolute_powers.values())
-            relative_powers = {
-                band: (power / total_power) if total_power > 0 else 0.0
-                for band, power in absolute_powers.items()
-            }
-
-            result["absolute_power"][electrode] = absolute_powers
-            result["relative_power"][electrode] = relative_powers
-
-            # Theta/Beta ratio per electrode
+        tbr_values: dict[str, float] = {}
+        for electrode, absolute_powers in powers["absolute_power"].items():
             theta_power = absolute_powers.get("theta", 0.0)
             beta_power = absolute_powers.get("beta", 0.0)
-            result["tbr"][electrode] = float(theta_power / beta_power) if beta_power > 0 else 0.0
+            tbr_values[electrode] = float(theta_power / beta_power) if beta_power > 0 else 0.0
 
-        return result
+        return {
+            "absolute_power": powers["absolute_power"],
+            "relative_power": powers["relative_power"],
+            "tbr": tbr_values,
+        }
+
+    def generate_topomaps_from_band_powers(self, band_powers: dict) -> dict:
+        """Generate topomaps from precomputed band power dictionaries."""
+        abs_by_electrode = band_powers.get("absolute_power", {})
+        rel_by_electrode = band_powers.get("relative_power", {})
+
+        tbr_values = {}
+        for elec in abs_by_electrode:
+            theta = abs_by_electrode[elec].get("theta", 0.0)
+            beta = abs_by_electrode[elec].get("beta", 0.0)
+            tbr_values[elec] = float(theta / beta) if beta > 0 else 0.0
+
+        absolute_maps = {}
+        relative_maps = {}
+
+        for band in DISPLAY_FREQUENCY_BANDS:
+            cmap = BAND_CMAPS.get(band, "RdYlBu_r")
+
+            abs_values = {
+                elec: abs_by_electrode[elec].get(band, 0.0)
+                for elec in abs_by_electrode
+            }
+            absolute_maps[band] = self.generate_band_topomap(
+                abs_values,
+                title=f"{band.capitalize()} - Absolute Power",
+                cmap=cmap,
+                unit="µV²/Hz",
+            )
+
+            rel_values = {
+                elec: rel_by_electrode[elec].get(band, 0.0)
+                for elec in rel_by_electrode
+            }
+            relative_maps[band] = self.generate_band_topomap(
+                rel_values,
+                title=f"{band.capitalize()} - Relative Power",
+                cmap=cmap,
+                unit="%",
+            )
+
+        tbr_map = self.generate_band_topomap(
+            tbr_values,
+            title="Theta/Beta Ratio (TBR)",
+            cmap="RdYlBu_r",
+            unit="TBR",
+        )
+
+        return {
+            "absolute_power_maps": absolute_maps,
+            "relative_power_maps": relative_maps,
+            "tbr_map": tbr_map,
+            "electrode_data": {
+                "absolute_power": abs_by_electrode,
+                "relative_power": rel_by_electrode,
+                "tbr": tbr_values,
+            },
+        }
 
     def generate_band_topomap(
         self,

@@ -385,6 +385,105 @@
         }, 6000);
       }
 
+      function sleep(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+      }
+
+      async function fetchJsonWithRetry(
+        url,
+        options = {},
+        retry = { attempts: 2, baseDelay: 1200, backoff: 1.6, retryOn: [500, 502, 503, 504] },
+      ) {
+        let attempt = 0;
+        let lastError;
+
+        while (attempt <= retry.attempts) {
+          try {
+            const res = await fetch(url, options);
+            if (!res.ok) {
+              let message = "Request failed";
+              try {
+                const payload = await res.json();
+                message = payload.error || message;
+              } catch {
+                // ignore JSON parse errors for error payloads
+              }
+              const error = new Error(message);
+              error.status = res.status;
+              if (
+                retry.retryOn.includes(res.status) &&
+                attempt < retry.attempts
+              ) {
+                attempt += 1;
+                await sleep(retry.baseDelay * retry.backoff ** (attempt - 1));
+                continue;
+              }
+              throw error;
+            }
+            return await res.json();
+          } catch (err) {
+            lastError = err;
+            const status = err?.status || 0;
+            const shouldRetry =
+              attempt < retry.attempts &&
+              (status === 0 || retry.retryOn.includes(status));
+            if (!shouldRetry) throw err;
+            attempt += 1;
+            await sleep(retry.baseDelay * retry.backoff ** (attempt - 1));
+          }
+        }
+
+        throw lastError;
+      }
+
+      async function fetchImageWithRetry(
+        url,
+        retry = { attempts: 2, baseDelay: 1200, backoff: 1.6, retryOn: [500, 502, 503, 504] },
+      ) {
+        let attempt = 0;
+        let lastError;
+
+        while (attempt <= retry.attempts) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) {
+              let message = "Image request failed";
+              try {
+                const payload = await res.json();
+                message = payload.error || message;
+              } catch {
+                // ignore JSON parse errors for error payloads
+              }
+              const error = new Error(message);
+              error.status = res.status;
+              if (
+                retry.retryOn.includes(res.status) &&
+                attempt < retry.attempts
+              ) {
+                attempt += 1;
+                await sleep(retry.baseDelay * retry.backoff ** (attempt - 1));
+                continue;
+              }
+              throw error;
+            }
+
+            const blob = await res.blob();
+            return URL.createObjectURL(blob);
+          } catch (err) {
+            lastError = err;
+            const status = err?.status || 0;
+            const shouldRetry =
+              attempt < retry.attempts &&
+              (status === 0 || retry.retryOn.includes(status));
+            if (!shouldRetry) throw err;
+            attempt += 1;
+            await sleep(retry.baseDelay * retry.backoff ** (attempt - 1));
+          }
+        }
+
+        throw lastError;
+      }
+
       // ── Shell bootstrap ──
 
       async function loadCurrentClinician() {
@@ -629,6 +728,7 @@
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");
         resetDrawerPosition(drawer, backdrop);
+        resetEegVizState();
       }
 
       function positionDrawerInView(drawer, backdrop, appMain) {
@@ -768,6 +868,258 @@
         beta: "#FF9800",
         gamma: "#F44336",
       };
+
+      const EEG_BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
+      const eegVizState = {
+        contextId: null,
+        bands: [],
+        imageCache: new Map(),
+        inFlight: new Map(),
+        currentBand: "raw",
+        bandQuality: {},
+        warmupTimer: null,
+        warmupTriggered: false,
+        activeRequestId: 0,
+        detailFallbackTimers: new Map(),
+      };
+
+      function resetEegVizState() {
+        eegVizState.contextId = null;
+        eegVizState.bands = [];
+        eegVizState.currentBand = "raw";
+        eegVizState.bandQuality = {};
+        eegVizState.warmupTriggered = false;
+        eegVizState.activeRequestId = 0;
+        if (eegVizState.warmupTimer) {
+          window.clearTimeout(eegVizState.warmupTimer);
+          eegVizState.warmupTimer = null;
+        }
+        eegVizState.detailFallbackTimers.forEach((timerId) => window.clearTimeout(timerId));
+        eegVizState.detailFallbackTimers.clear();
+        eegVizState.inFlight.clear();
+        eegVizState.imageCache.forEach((url) => URL.revokeObjectURL(url));
+        eegVizState.imageCache.clear();
+      }
+
+      function isMobilePointer() {
+        return window.matchMedia && window.matchMedia("(hover: none)").matches;
+      }
+
+      function buildVizUrl(contextId, band, quality) {
+        return `/api/eeg_visualizations/${contextId}/${band}.png?quality=${quality}`;
+      }
+
+      function setVizStatus(text) {
+        const status = byId("drawer-eeg-viz-status");
+        if (status) status.textContent = text;
+      }
+
+      function setVizLoading(isLoading) {
+        const loading = byId("drawer-eeg-viz-media-loading");
+        if (loading) loading.classList.toggle("hidden", !isLoading);
+      }
+
+      function showVizError(message) {
+        const error = byId("drawer-eeg-viz-error");
+        const media = byId("drawer-eeg-viz-image");
+        if (media) media.classList.add("hidden");
+        if (error) {
+          error.textContent = message;
+          error.classList.remove("hidden");
+        }
+      }
+
+      function clearVizError() {
+        const error = byId("drawer-eeg-viz-error");
+        if (error) error.classList.add("hidden");
+      }
+
+      function setVizImage(url) {
+        const img = byId("drawer-eeg-viz-image");
+        if (!img) return;
+        img.src = url;
+        img.classList.remove("hidden");
+      }
+
+      function updateDetailButton() {
+        const btn = byId("drawer-eeg-viz-detail-btn");
+        if (!btn) return;
+        const band = eegVizState.currentBand;
+        const quality = eegVizState.bandQuality[band] || "preview";
+        btn.textContent = quality === "detail" ? "View preview" : "View detail";
+      }
+
+      function renderEegVizShell(bands) {
+        const toggle = byId("drawer-eeg-viz-toggle");
+        const container = byId("drawer-eeg-viz-container");
+        if (!toggle || !container) return;
+
+        toggle.innerHTML = bands
+          .map(
+            (band, i) =>
+              `<button class="topo-type-btn${i === 0 ? " active" : ""}" data-eeg-band="${band}">${band.charAt(0).toUpperCase() + band.slice(1)}</button>`,
+          )
+          .join("");
+
+        container.innerHTML = `
+          <div class="eeg-viz-card">
+            <div class="eeg-viz-media" id="drawer-eeg-viz-media">
+              <div class="loading-state eeg-viz-loading" id="drawer-eeg-viz-media-loading">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+              </div>
+              <img id="drawer-eeg-viz-image" class="hidden" alt="EEG visualization" />
+              <div id="drawer-eeg-viz-error" class="eeg-viz-error hidden"></div>
+            </div>
+            <div class="eeg-viz-meta">
+              <span id="drawer-eeg-viz-status" class="eeg-viz-status">Preview</span>
+              <div class="eeg-viz-actions">
+                <button id="drawer-eeg-viz-detail-btn" type="button" class="btn-secondary-app btn-compact">View detail</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        toggle.querySelectorAll("[data-eeg-band]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const band = btn.getAttribute("data-eeg-band");
+            if (!band) return;
+            toggle.querySelectorAll("[data-eeg-band]").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            eegVizState.currentBand = band;
+            const quality = eegVizState.bandQuality[band] || "preview";
+            loadEegVisualization(band, quality, { setActive: true });
+          });
+        });
+
+        byId("drawer-eeg-viz-detail-btn")?.addEventListener("click", () => {
+          const band = eegVizState.currentBand;
+          const quality = eegVizState.bandQuality[band] || "preview";
+          const nextQuality = quality === "detail" ? "preview" : "detail";
+          loadEegVisualization(band, nextQuality, { setActive: true, userInitiated: true });
+        });
+
+        const media = byId("drawer-eeg-viz-media");
+        if (media && !isMobilePointer()) {
+          media.addEventListener("mouseenter", () => {
+            maybeWarmupDetail();
+          });
+        }
+      }
+
+      async function loadEegVisualization(
+        band,
+        quality,
+        { setActive = true, userInitiated = false, preserveActive = false } = {},
+      ) {
+        if (!eegVizState.contextId) return;
+        const key = `${band}|${quality}`;
+        const requestId = setActive
+          ? preserveActive
+            ? eegVizState.activeRequestId
+            : ++eegVizState.activeRequestId
+          : eegVizState.activeRequestId;
+
+        if (setActive && !preserveActive) {
+          const existingTimer = eegVizState.detailFallbackTimers.get(band);
+          if (existingTimer) window.clearTimeout(existingTimer);
+          eegVizState.detailFallbackTimers.delete(band);
+        }
+
+        if (eegVizState.imageCache.has(key)) {
+          if (setActive) {
+            clearVizError();
+            setVizImage(eegVizState.imageCache.get(key));
+            eegVizState.bandQuality[band] = quality;
+            setVizStatus(quality === "detail" ? "Detail view" : "Preview view");
+            updateDetailButton();
+          }
+          return;
+        }
+
+        if (eegVizState.inFlight.has(key)) {
+          return;
+        }
+
+        clearVizError();
+        if (setActive) {
+          setVizLoading(true);
+          setVizStatus(quality === "detail" ? "Rendering detail..." : "Loading preview...");
+          updateDetailButton();
+        }
+
+        if (setActive && quality === "detail") {
+          const fallbackTimer = window.setTimeout(() => {
+            if (
+              eegVizState.activeRequestId === requestId &&
+              eegVizState.currentBand === band &&
+              !eegVizState.imageCache.has(`${band}|detail`)
+            ) {
+              setVizStatus("Preview (detail rendering...)");
+              loadEegVisualization(band, "preview", {
+                setActive: true,
+                preserveActive: true,
+              });
+            }
+          }, 1800);
+          eegVizState.detailFallbackTimers.set(band, fallbackTimer);
+        }
+
+        const url = buildVizUrl(eegVizState.contextId, band, quality);
+        const promise = fetchImageWithRetry(url)
+          .then((objectUrl) => {
+            eegVizState.imageCache.set(key, objectUrl);
+            eegVizState.bandQuality[band] = quality;
+            if (setActive) {
+              if (
+                eegVizState.activeRequestId !== requestId ||
+                eegVizState.currentBand !== band
+              ) {
+                return;
+              }
+              const fallbackTimer = eegVizState.detailFallbackTimers.get(band);
+              if (fallbackTimer) {
+                window.clearTimeout(fallbackTimer);
+                eegVizState.detailFallbackTimers.delete(band);
+              }
+              setVizImage(objectUrl);
+              setVizStatus(quality === "detail" ? "Detail view" : "Preview view");
+              updateDetailButton();
+            }
+          })
+          .catch((err) => {
+            if (setActive) {
+              if (
+                eegVizState.activeRequestId !== requestId ||
+                eegVizState.currentBand !== band
+              ) {
+                return;
+              }
+              const message = err?.status === 404
+                ? "Visualization not available."
+                : `Could not load visualization: ${escapeHtml(err.message)}`;
+              showVizError(message);
+              setVizStatus("Unavailable");
+            }
+            if (userInitiated) {
+              showToast("Detail rendering failed. Please try again.", "error");
+            }
+          })
+          .finally(() => {
+            eegVizState.inFlight.delete(key);
+            if (setActive) setVizLoading(false);
+          });
+
+        eegVizState.inFlight.set(key, promise);
+      }
+
+      function maybeWarmupDetail() {
+        if (eegVizState.warmupTriggered) return;
+        if (!eegVizState.contextId) return;
+        eegVizState.warmupTriggered = true;
+        loadEegVisualization("raw", "detail", { setActive: false });
+      }
 
       // ── Result detail rendering ──
 
@@ -1112,67 +1464,45 @@
         const container = byId("drawer-eeg-viz-container");
         if (!container) return;
 
+        if (loading) loading.classList.remove("hidden");
+        if (toggle) toggle.innerHTML = "";
+        container.innerHTML = "";
+        resetEegVizState();
+
         try {
-          const res = await fetch(`/api/eeg_visualizations/${resultId}`);
-          if (!res.ok) throw new Error((await res.json()).error || "Failed");
-          const data = await res.json();
-          const viz = data.visualizations || {};
-
-          const BANDS = [
-            ["raw", "Raw"],
-            ["filtered", "Filtered"],
-            ["delta", "Delta"],
-            ["theta", "Theta"],
-            ["alpha", "Alpha"],
-            ["beta", "Beta"],
-            ["gamma", "Gamma"],
-            ["segments", "Segments"],
-          ];
-
-          const available = BANDS.filter(([key]) => viz[key]);
-          if (available.length === 0) {
+          const context = await fetchJsonWithRetry(
+            `/api/eeg_visualization_context/result/${resultId}`,
+          );
+          const bands = EEG_BANDS.slice();
+          if (!context.context_id) {
             container.innerHTML =
               '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No EEG visualizations available.</p>';
             return;
           }
 
-          // Build toggle buttons
-          toggle.innerHTML = available
-            .map(
-              ([key, label], i) =>
-                `<button class="topo-type-btn${i === 0 ? " active" : ""}" data-eeg-viz="${key}">${label}</button>`,
-            )
-            .join("");
+          eegVizState.contextId = context.context_id;
+          eegVizState.bands = bands;
+          eegVizState.currentBand = bands[0] || "raw";
 
-          // Build image containers
-          container.innerHTML = available
-            .map(
-              ([key], i) =>
-                `<div id="drawer-eeg-viz-${key}" class="${i > 0 ? "hidden" : ""}" style="text-align:center">
-                  <img src="${viz[key]}" alt="${key} EEG" style="width:100%;height:auto;border-radius:var(--radius-xs)" loading="lazy" />
-                </div>`,
-            )
-            .join("");
+          renderEegVizShell(bands);
+          loadEegVisualization(eegVizState.currentBand, "preview", { setActive: true });
+          setVizStatus("Preview view");
+          updateDetailButton();
 
-          // Wire toggle behavior
-          document.querySelectorAll("[data-eeg-viz]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              const band = btn.getAttribute("data-eeg-viz");
-              document
-                .querySelectorAll("[data-eeg-viz]")
-                .forEach((b) => b.classList.remove("active"));
-              btn.classList.add("active");
-              available.forEach(([k]) => {
-                const el = byId(`drawer-eeg-viz-${k}`);
-                if (el) el.classList.toggle("hidden", k !== band);
-              });
-            });
-          });
+          if (eegVizState.currentBand === "raw") {
+            eegVizState.warmupTimer = window.setTimeout(() => {
+              maybeWarmupDetail();
+            }, 4000);
+          }
         } catch (err) {
-          if (container)
+          if (err?.status === 404) {
+            container.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No EEG visualizations available.</p>';
+          } else {
             container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load EEG visualizations: ${escapeHtml(err.message)}</p>`;
+          }
         } finally {
-          if (loading) loading.remove();
+          if (loading) loading.classList.add("hidden");
         }
       }
 
@@ -1183,10 +1513,13 @@
         const tbrDiv = byId("drawer-topo-tbr");
         if (!absGrid) return;
 
+        if (loading) loading.classList.remove("hidden");
+        absGrid.innerHTML = "";
+        if (relGrid) relGrid.innerHTML = "";
+        if (tbrDiv) tbrDiv.innerHTML = "";
+
         try {
-          const res = await fetch(`/api/topographic_maps/${resultId}`);
-          if (!res.ok) throw new Error((await res.json()).error || "Failed");
-          const data = await res.json();
+          const data = await fetchJsonWithRetry(`/api/topographic_maps/${resultId}`);
           const BAND_ORDER = ["delta", "theta", "alpha", "beta", "gamma"];
 
           let absHtml = "";
@@ -1214,10 +1547,14 @@
               '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No TBR map</p>';
           }
         } catch (err) {
-          if (absGrid)
+          if (err?.status === 404) {
+            absGrid.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No topographic maps available.</p>';
+          } else {
             absGrid.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load maps: ${escapeHtml(err.message)}</p>`;
+          }
         } finally {
-          if (loading) loading.remove();
+          if (loading) loading.classList.add("hidden");
         }
       }
 
@@ -1228,10 +1565,11 @@
         const container = byId("drawer-temporal-plots");
         if (!container) return;
 
+        if (loading) loading.classList.remove("hidden");
+        container.innerHTML = "";
+
         try {
-          const res = await fetch(`/api/temporal_biomarkers/${resultId}`);
-          if (!res.ok) throw new Error((await res.json()).error || "Failed");
-          const data = await res.json();
+          const data = await fetchJsonWithRetry(`/api/temporal_biomarkers/${resultId}`);
 
           if (!data.plots || data.plots.length === 0) {
             container.innerHTML =
@@ -1254,10 +1592,14 @@
               .join("");
           }
         } catch (err) {
-          if (container)
+          if (err?.status === 404) {
+            container.innerHTML =
+              '<p style="font-size:0.84rem;color:var(--text-700);margin:0">No temporal plots available.</p>';
+          } else {
             container.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">Could not load temporal biomarkers: ${escapeHtml(err.message)}</p>`;
+          }
         } finally {
-          if (loading) loading.remove();
+          if (loading) loading.classList.add("hidden");
         }
       }
 

@@ -16,6 +16,7 @@ ALLOWED_EXTENSIONS = {"csv"}
 
 # Visualization cache defaults
 VIZ_CACHE_TTL_SECONDS = 6 * 60 * 60
+VIZ_CACHE_DETAIL_TTL_SECONDS = 24 * 60 * 60
 VIZ_CACHE_MAX_BYTES = 1024 * 1024 * 1024
 VIZ_CACHE_DIR = "/tmp/bayesian_adhd_viz_cache"
 
