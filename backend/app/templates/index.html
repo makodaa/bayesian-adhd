@@ -828,179 +828,185 @@
           <div class="drawer-body">
             <form id="analysis-form" enctype="multipart/form-data" novalidate>
               <section class="drawer-step" data-step="1">
-                <div class="form-panel">
-                  <h3>Subject Details</h3>
-                  <div class="form-grid">
-                    <div class="field-wrap full">
-                      <label for="subject-code">Subject Code <span class="required-indicator">*</span></label>
-                      <input
-                        type="text"
-                        id="subject-code"
-                        list="subject-list"
-                        placeholder="e.g., SUB001"
-                        maxlength="60"
-                        required
-                      />
-                      <datalist id="subject-list"></datalist>
-                      <p class="hint">Select an existing subject code or enter a new one.</p>
-                      <p class="field-error hidden" data-error-for="subject-code"></p>
+                <div class="assessment-form-columns">
+                  <div class="assessment-form-column assessment-form-column--left">
+                    <div class="form-panel">
+                      <h3>Subject Details</h3>
+                      <div class="form-grid">
+                        <div class="field-wrap full">
+                          <label for="subject-code">Subject Code <span class="required-indicator">*</span></label>
+                          <input
+                            type="text"
+                            id="subject-code"
+                            list="subject-list"
+                            placeholder="e.g., SUB001"
+                            maxlength="60"
+                            required
+                          />
+                          <datalist id="subject-list"></datalist>
+                          <p class="hint">Select an existing subject code or enter a new one.</p>
+                          <p class="field-error hidden" data-error-for="subject-code"></p>
+                        </div>
+                        <div class="field-wrap">
+                          <label for="date-of-birth">Date of Birth <span class="required-indicator">*</span></label>
+                          <input type="date" id="date-of-birth" required />
+                          <p class="field-error hidden" data-error-for="date-of-birth"></p>
+                        </div>
+                        <div class="field-wrap">
+                          <label for="gender">Gender <span class="required-indicator">*</span></label>
+                          <select id="gender" required>
+                            <option value="" selected disabled>Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                          </select>
+                          <p class="field-error hidden" data-error-for="gender"></p>
+                        </div>
+                      </div>
                     </div>
-                    <div class="field-wrap">
-                      <label for="date-of-birth">Date of Birth <span class="required-indicator">*</span></label>
-                      <input type="date" id="date-of-birth" required />
-                      <p class="field-error hidden" data-error-for="date-of-birth"></p>
+
+                    <div class="form-panel">
+                      <h3>Clinician of Record</h3>
+                      <div class="form-grid">
+                        <div class="field-wrap">
+                          <label for="clinician-input">Clinician Name</label>
+                          <input type="text" id="clinician-input" name="clinician_name" readonly />
+                        </div>
+                        <div class="field-wrap">
+                          <label for="occupation">Occupation</label>
+                          <input type="text" id="occupation" name="occupation" readonly />
+                        </div>
+                      </div>
                     </div>
-                    <div class="field-wrap">
-                      <label for="gender">Gender <span class="required-indicator">*</span></label>
-                      <select id="gender" required>
-                        <option value="" selected disabled>Select gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                      </select>
-                      <p class="field-error hidden" data-error-for="gender"></p>
+
+                    <div class="form-panel">
+                      <h3>Referral Information</h3>
+                      <div class="form-grid">
+                        <div class="field-wrap">
+                          <label for="referral-name">Referral Name</label>
+                          <input
+                            type="text"
+                            id="referral-name"
+                            placeholder="Referring clinician"
+                            maxlength="60"
+                          />
+                        </div>
+                        <div class="field-wrap">
+                          <label for="referral-institution">Referral Institution</label>
+                          <input
+                            type="text"
+                            id="referral-institution"
+                            placeholder="Clinic or institution"
+                            maxlength="60"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="form-panel">
-                  <h3>Clinician of Record</h3>
-                  <div class="form-grid">
-                    <div class="field-wrap">
-                      <label for="clinician-input">Clinician Name</label>
-                      <input type="text" id="clinician-input" name="clinician_name" readonly />
-                    </div>
-                    <div class="field-wrap">
-                      <label for="occupation">Occupation</label>
-                      <input type="text" id="occupation" name="occupation" readonly />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-panel">
-                  <h3>Referral Information</h3>
-                  <div class="form-grid">
-                    <div class="field-wrap">
-                      <label for="referral-name">Referral Name</label>
-                      <input
-                        type="text"
-                        id="referral-name"
-                        placeholder="Referring clinician"
-                        maxlength="60"
-                      />
-                    </div>
-                    <div class="field-wrap">
-                      <label for="referral-institution">Referral Institution</label>
-                      <input
-                        type="text"
-                        id="referral-institution"
-                        placeholder="Clinic or institution"
-                        maxlength="60"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-panel">
-                  <h3>
-                    Recording Context
-                    <span class="tooltip-anchor">
-                      <span
-                        class="tooltip-trigger"
-                        role="button"
-                        tabindex="0"
-                        aria-label="Recording context definition"
-                      >
-                        i
-                      </span>
-                      <span class="tooltip-bubble" role="tooltip">
-                        <div>Captured to interpret EEG responses.</div>
-                        <ul>
-                          <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
-                        </ul>
-                      </span>
-                    </span>
-                  </h3>
-                  <div class="form-grid">
-                    <div class="field-wrap">
-                      <label for="technician-name">Technician</label>
-                      <input
-                        type="text"
-                        id="technician-name"
-                        placeholder="Technician name"
-                        maxlength="60"
-                      />
-                    </div>
-                    <div class="field-wrap">
-                      <label for="sleep-hours">Sleep Hours <span class="required-indicator">*</span></label>
-                      <input
-                        type="number"
-                        id="sleep-hours"
-                        min="0"
-                        max="99.99"
-                        step="0.5"
-                        placeholder="Hours slept"
-                        required
-                      />
-                      <p class="field-error hidden" data-error-for="sleep-hours"></p>
-                    </div>
-                    <div class="field-wrap">
-                      <label for="coffee-hours-ago">Time since caffeine intake (hours) <span class="required-indicator">*</span></label>
-                      <input
-                        type="number"
-                        id="coffee-hours-ago"
-                        min="1"
-                        max="99"
-                        step="1"
-                        placeholder="1-99; 99 means no record"
-                        required
-                      />
-                      <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
-                    </div>
-                    <div class="field-wrap">
-                      <label for="drugs-hours-ago">Time since drug intake (hours) <span class="required-indicator">*</span></label>
-                      <input
-                        type="number"
-                        id="drugs-hours-ago"
-                        min="1"
-                        max="99"
-                        step="1"
-                        placeholder="1-99; 99 means no record"
-                        required
-                      />
-                      <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
-                    </div>
-                    <div class="field-wrap">
-                      <label for="meal-hours-ago">Time since last meal (hours) <span class="required-indicator">*</span></label>
-                      <input
-                        type="number"
-                        id="meal-hours-ago"
-                        min="0"
-                        max="99"
-                        step="1"
-                        placeholder="Hours since last meal"
-                        required
-                      />
-                      <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
-                    </div>
-                    <div class="field-wrap full">
-                      <label for="medication">Medication Details</label>
-                      <textarea
-                        id="medication"
-                        rows="2"
-                        placeholder="List medications or dosing notes"
-                        maxlength="255"
-                      ></textarea>
-                    </div>
-                    <div class="field-wrap full">
-                      <label for="notes">Clinical Notes</label>
-                      <textarea
-                        id="notes"
-                        rows="3"
-                        placeholder="Add recording context notes (optional)"
-                        maxlength="255"
-                      ></textarea>
+                  <div class="assessment-form-column assessment-form-column--right">
+                    <div class="form-panel">
+                      <h3>
+                        Recording Context
+                        <span class="tooltip-anchor">
+                          <span
+                            class="tooltip-trigger"
+                            role="button"
+                            tabindex="0"
+                            aria-label="Recording context definition"
+                          >
+                            i
+                          </span>
+                          <span class="tooltip-bubble" role="tooltip">
+                            <div>Captured to interpret EEG responses.</div>
+                            <ul>
+                              <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
+                            </ul>
+                          </span>
+                        </span>
+                      </h3>
+                      <div class="form-grid">
+                        <div class="field-wrap">
+                          <label for="technician-name">Technician</label>
+                          <input
+                            type="text"
+                            id="technician-name"
+                            placeholder="Technician name"
+                            maxlength="60"
+                          />
+                        </div>
+                        <div class="field-wrap">
+                          <label for="sleep-hours">Sleep Hours <span class="required-indicator">*</span></label>
+                          <input
+                            type="number"
+                            id="sleep-hours"
+                            min="0"
+                            max="99.99"
+                            step="0.5"
+                            placeholder="Hours slept"
+                            required
+                          />
+                          <p class="field-error hidden" data-error-for="sleep-hours"></p>
+                        </div>
+                        <div class="field-wrap">
+                          <label for="coffee-hours-ago">Time since caffeine intake (hours) <span class="required-indicator">*</span></label>
+                          <input
+                            type="number"
+                            id="coffee-hours-ago"
+                            min="1"
+                            max="99"
+                            step="1"
+                            placeholder="1-99; 99 means no record"
+                            required
+                          />
+                          <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
+                        </div>
+                        <div class="field-wrap">
+                          <label for="drugs-hours-ago">Time since drug intake (hours) <span class="required-indicator">*</span></label>
+                          <input
+                            type="number"
+                            id="drugs-hours-ago"
+                            min="1"
+                            max="99"
+                            step="1"
+                            placeholder="1-99; 99 means no record"
+                            required
+                          />
+                          <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
+                        </div>
+                        <div class="field-wrap">
+                          <label for="meal-hours-ago">Time since last meal (hours) <span class="required-indicator">*</span></label>
+                          <input
+                            type="number"
+                            id="meal-hours-ago"
+                            min="0"
+                            max="99"
+                            step="1"
+                            placeholder="Hours since last meal"
+                            required
+                          />
+                          <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
+                        </div>
+                        <div class="field-wrap full">
+                          <label for="medication">Medication Details</label>
+                          <textarea
+                            id="medication"
+                            rows="2"
+                            placeholder="List medications or dosing notes"
+                            maxlength="255"
+                          ></textarea>
+                        </div>
+                        <div class="field-wrap full">
+                          <label for="notes">Clinical Notes</label>
+                          <textarea
+                            id="notes"
+                            rows="3"
+                            placeholder="Add recording context notes (optional)"
+                            maxlength="255"
+                          ></textarea>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
