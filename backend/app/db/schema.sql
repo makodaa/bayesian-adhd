@@ -117,9 +117,26 @@ CREATE TABLE eeg_visualizations (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE eeg_annotations (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE,
+    clinician_id INTEGER REFERENCES clinicians(id) ON DELETE SET NULL,
+    band_name VARCHAR(50) NOT NULL,
+    start_time_sec FLOAT NOT NULL,
+    end_time_sec FLOAT,
+    label VARCHAR(100) NOT NULL,
+    notes VARCHAR(255),
+    color VARCHAR(20),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_temporal_plots_result ON temporal_plots(result_id);
 CREATE INDEX IF NOT EXISTS idx_temporal_summaries_result ON temporal_summaries(result_id);
 CREATE INDEX IF NOT EXISTS idx_topographic_maps_result ON topographic_maps(result_id);
 CREATE INDEX IF NOT EXISTS idx_eeg_visualizations_result ON eeg_visualizations(result_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_eeg_visualizations_result_band
     ON eeg_visualizations(result_id, band_name);
+CREATE INDEX IF NOT EXISTS idx_eeg_annotations_result ON eeg_annotations(result_id);
+CREATE INDEX IF NOT EXISTS idx_eeg_annotations_result_band
+    ON eeg_annotations(result_id, band_name);

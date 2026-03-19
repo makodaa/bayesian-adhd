@@ -321,6 +321,81 @@
             </button>
           </div>
         </aside>
+        <!-- EEG Annotation Modal -->
+        <div
+          id="eeg-modal-overlay"
+          class="eeg-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="eeg-modal-title"
+          aria-hidden="true"
+        >
+          <div class="eeg-modal" id="eeg-modal">
+            <div class="eeg-modal-header">
+              <h2 class="eeg-modal-title" id="eeg-modal-title">
+                EEG Waveform — <span id="eeg-modal-band-label">Raw</span>
+              </h2>
+              <div class="eeg-modal-band-switcher" role="group" aria-label="Select EEG band">
+                <button class="eeg-modal-band-btn active" data-modal-band="raw" type="button">Raw</button>
+                <button class="eeg-modal-band-btn" data-modal-band="filtered" type="button">Filtered</button>
+                <button class="eeg-modal-band-btn" data-modal-band="delta" type="button">Delta</button>
+                <button class="eeg-modal-band-btn" data-modal-band="theta" type="button">Theta</button>
+                <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">Alpha</button>
+                <button class="eeg-modal-band-btn" data-modal-band="beta" type="button">Beta</button>
+                <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">Gamma</button>
+              </div>
+              <button
+                class="eeg-modal-close-btn"
+                id="eeg-modal-close-btn"
+                type="button"
+                aria-label="Close EEG viewer"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="eeg-modal-body">
+              <div class="eeg-modal-canvas" id="eeg-modal-canvas"></div>
+            </div>
+            <div class="eeg-modal-footer">
+              <div class="eeg-modal-controls" role="group" aria-label="Waveform zoom controls">
+                <button id="eeg-zoom-out-btn" type="button" class="eeg-modal-control-btn">Zoom −</button>
+                <button id="eeg-zoom-in-btn" type="button" class="eeg-modal-control-btn">Zoom +</button>
+                <button id="eeg-zoom-reset-btn" type="button" class="eeg-modal-control-btn">Reset</button>
+                <button id="eeg-zoom-fit-btn" type="button" class="eeg-modal-control-btn">Fit</button>
+                <span id="eeg-modal-zoom-readout" class="eeg-modal-zoom-readout">100%</span>
+                <button id="eeg-annotate-toggle-btn" type="button" class="eeg-modal-control-btn">Annotate</button>
+              </div>
+              <div class="eeg-modal-annotation-editor hidden" id="eeg-annotation-editor">
+                <span class="annotation-editor-label">Annotation</span>
+                <input id="eeg-annotation-label" type="text" maxlength="100" placeholder="Label" />
+                <button id="eeg-annotation-save-btn" type="button" class="eeg-modal-control-btn">Update</button>
+                <button id="eeg-annotation-delete-btn" type="button" class="eeg-modal-control-btn">Delete</button>
+              </div>
+              <div class="eeg-modal-hints">
+                Press <kbd>Esc</kbd> to close
+                <span class="eeg-modal-footer-sep">·</span>
+                <kbd>←</kbd> <kbd>→</kbd> to switch bands
+                <span class="eeg-modal-footer-sep">·</span>
+                <kbd>+</kbd> <kbd>−</kbd> to zoom
+                <span class="eeg-modal-footer-sep">·</span>
+                <kbd>A</kbd> annotate
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -909,6 +984,28 @@
         return `/api/eeg_visualizations/${contextId}/${band}.png?quality=${quality}`;
       }
 
+      const vizMetaCache = new Map();
+
+      async function fetchVisualizationMeta(contextId) {
+        if (!contextId) return null;
+        if (vizMetaCache.has(contextId)) return vizMetaCache.get(contextId);
+        try {
+          const response = await fetch(
+            `/api/eeg_visualization_meta/${encodeURIComponent(contextId)}`,
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to load visualization metadata");
+          }
+          const meta = await response.json();
+          vizMetaCache.set(contextId, meta);
+          return meta;
+        } catch (error) {
+          showToast(error.message || "Unable to load visualization metadata.", "warning");
+          return null;
+        }
+      }
+
       function setVizStatus(text) {
         const status = byId("drawer-eeg-viz-status");
         if (status) status.textContent = text;
@@ -976,6 +1073,7 @@
               <span id="drawer-eeg-viz-status" class="eeg-viz-status">Preview</span>
               <div class="eeg-viz-actions">
                 <button id="drawer-eeg-viz-detail-btn" type="button" class="btn-secondary-app btn-compact">View detail</button>
+                <button id="drawer-eeg-annotate-btn" type="button" class="eeg-annotate-launch-btn">Annotate</button>
               </div>
             </div>
           </div>
@@ -998,6 +1096,17 @@
           const quality = eegVizState.bandQuality[band] || "preview";
           const nextQuality = quality === "detail" ? "preview" : "detail";
           loadEegVisualization(band, nextQuality, { setActive: true, userInitiated: true });
+        });
+        byId("drawer-eeg-annotate-btn")?.addEventListener("click", () => {
+          if (!currentResultId) {
+            showToast("Select a result to annotate.", "warning");
+            return;
+          }
+          if (!eegVizState.contextId) {
+            showToast("No EEG visualization context available.", "warning");
+            return;
+          }
+          eegAnnotateModal.open(eegVizState.currentBand);
         });
 
         const media = byId("drawer-eeg-viz-media");
@@ -1603,6 +1712,749 @@
         }
       }
 
+      // ── EEG annotation modal ──
+
+      const eegAnnotateModal = (() => {
+        const BANDS = EEG_BANDS.slice();
+        const BAND_LABELS = {
+          raw: "Raw",
+          filtered: "Filtered",
+          delta: "Delta",
+          theta: "Theta",
+          alpha: "Alpha",
+          beta: "Beta",
+          gamma: "Gamma",
+        };
+
+        let currentBand = BANDS[0] || "raw";
+        let isOpen = false;
+
+        const zoomState = {
+          scale: 1,
+          x: 0,
+          y: 0,
+          minScale: 1,
+          maxScale: 6,
+          isPanning: false,
+          startX: 0,
+          startY: 0,
+          startTranslateX: 0,
+          startTranslateY: 0,
+        };
+
+        const annotationState = {
+          enabled: false,
+          isDragging: false,
+          dragMode: null,
+          dragStartX: 0,
+          dragCurrentX: 0,
+          dragAnnotationId: null,
+          dragOriginStart: 0,
+          dragOriginEnd: null,
+          selectedId: null,
+          annotations: [],
+          durationSeconds: null,
+          panOverride: false,
+        };
+
+        const overlay = () => byId("eeg-modal-overlay");
+        const canvas = () => byId("eeg-modal-canvas");
+        const bandLabel = () => byId("eeg-modal-band-label");
+        const modalImage = () => byId("eeg-modal-img");
+        const modalStage = () => byId("eeg-modal-stage");
+        const annotationLayer = () => byId("eeg-modal-annotation-layer");
+        const annotateToggleBtn = () => byId("eeg-annotate-toggle-btn");
+        const annotationEditor = () => byId("eeg-annotation-editor");
+        const annotationLabelInput = () => byId("eeg-annotation-label");
+        const annotationSaveBtn = () => byId("eeg-annotation-save-btn");
+        const annotationDeleteBtn = () => byId("eeg-annotation-delete-btn");
+
+        function updateBandButtons(band) {
+          document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+            const b = btn.getAttribute("data-modal-band");
+            btn.classList.toggle("active", b === band);
+            btn.disabled = !BANDS.includes(b);
+            btn.style.display = BANDS.includes(b) ? "inline-flex" : "none";
+          });
+        }
+
+        function showSkeleton() {
+          const c = canvas();
+          if (!c) return;
+          c.innerHTML = `
+            <div class="loading-state" style="width:100%;max-width:520px;">
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+            </div>`;
+        }
+
+        function showPreviewImage(src, band) {
+          const c = canvas();
+          if (!c) return;
+          c.innerHTML = `
+            <div class="eeg-modal-stage" id="eeg-modal-stage">
+              <img src="${src}" alt="${escapeHtml(BAND_LABELS[band] || band)} EEG waveform" id="eeg-modal-img" />
+              <div class="eeg-modal-annotation-layer" id="eeg-modal-annotation-layer"></div>
+            </div>`;
+          applyTransform();
+          renderAnnotations();
+        }
+
+        function updateZoomReadout() {
+          const readout = byId("eeg-modal-zoom-readout");
+          if (readout) readout.textContent = `${Math.round(zoomState.scale * 100)}%`;
+        }
+
+        function clampPan() {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return;
+          const scaledWidth = img.offsetWidth * zoomState.scale;
+          const scaledHeight = img.offsetHeight * zoomState.scale;
+          const minX = Math.min(0, c.clientWidth - scaledWidth);
+          const minY = Math.min(0, c.clientHeight - scaledHeight);
+          zoomState.x = Math.min(0, Math.max(minX, zoomState.x));
+          zoomState.y = Math.min(0, Math.max(minY, zoomState.y));
+        }
+
+        function applyTransform() {
+          const stage = modalStage();
+          const c = canvas();
+          if (!c) return;
+          if (!stage) {
+            updateZoomReadout();
+            c.classList.remove("is-zoomed", "is-panning");
+            return;
+          }
+          if (zoomState.scale <= 1) {
+            zoomState.x = 0;
+            zoomState.y = 0;
+          }
+          clampPan();
+          stage.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+          c.classList.toggle("is-zoomed", zoomState.scale > 1.01);
+          c.classList.toggle("is-panning", zoomState.isPanning);
+          updateZoomReadout();
+        }
+
+        function setScale(newScale, originX, originY) {
+          const clamped = Math.min(zoomState.maxScale, Math.max(zoomState.minScale, newScale));
+          if (clamped === zoomState.scale) return;
+          if (originX == null || originY == null) {
+            zoomState.scale = clamped;
+            applyTransform();
+            return;
+          }
+          const ratio = clamped / zoomState.scale;
+          zoomState.x = originX - (originX - zoomState.x) * ratio;
+          zoomState.y = originY - (originY - zoomState.y) * ratio;
+          zoomState.scale = clamped;
+          applyTransform();
+        }
+
+        function zoomByFactor(factor, originEvent) {
+          const c = canvas();
+          if (!c) return;
+          const rect = c.getBoundingClientRect();
+          const originX = originEvent ? originEvent.clientX - rect.left : c.clientWidth / 2;
+          const originY = originEvent ? originEvent.clientY - rect.top : c.clientHeight / 2;
+          setScale(zoomState.scale * factor, originX, originY);
+        }
+
+        function resetZoom() {
+          zoomState.scale = 1;
+          zoomState.x = 0;
+          zoomState.y = 0;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function handleZoomWheel(event) {
+          if (!isOpen) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+          zoomByFactor(factor, event);
+        }
+
+        function startPan(event) {
+          if (!isOpen) return;
+          if (event.button !== 0) return;
+          if (annotationState.enabled && !annotationState.panOverride) return;
+          if (zoomState.scale <= 1) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          zoomState.isPanning = true;
+          zoomState.startX = event.clientX;
+          zoomState.startY = event.clientY;
+          zoomState.startTranslateX = zoomState.x;
+          zoomState.startTranslateY = zoomState.y;
+          applyTransform();
+        }
+
+        function handlePan(event) {
+          if (!isOpen || !zoomState.isPanning) return;
+          const dx = event.clientX - zoomState.startX;
+          const dy = event.clientY - zoomState.startY;
+          zoomState.x = zoomState.startTranslateX + dx;
+          zoomState.y = zoomState.startTranslateY + dy;
+          applyTransform();
+        }
+
+        function endPan() {
+          if (!zoomState.isPanning) return;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function getDurationSeconds() {
+          if (Number.isFinite(annotationState.durationSeconds)) {
+            return annotationState.durationSeconds;
+          }
+          return null;
+        }
+
+        async function ensureAnnotationMeta() {
+          if (!eegVizState.contextId) return null;
+          const meta = await fetchVisualizationMeta(eegVizState.contextId);
+          annotationState.durationSeconds = meta?.duration_seconds ?? null;
+          return annotationState.durationSeconds;
+        }
+
+        function setAnnotateMode(enabled) {
+          annotationState.enabled = enabled;
+          const btn = annotateToggleBtn();
+          if (btn) btn.classList.toggle("is-active", enabled);
+          const c = canvas();
+          if (c) c.classList.toggle("annotation-mode", enabled);
+          const editor = annotationEditor();
+          if (editor) editor.classList.toggle("hidden", !enabled);
+
+          if (!enabled) {
+            annotationState.selectedId = null;
+            annotationState.isDragging = false;
+            annotationState.dragMode = null;
+            annotationState.dragAnnotationId = null;
+            updateAnnotationEditor();
+            renderAnnotations();
+            return;
+          }
+
+          if (!currentResultId) {
+            showToast("Select a result to annotate.", "warning");
+            setAnnotateMode(false);
+            return;
+          }
+
+          ensureAnnotationMeta().then(() => {
+            loadAnnotationsForBand(currentBand);
+          });
+        }
+
+        function updateAnnotationEditor() {
+          const input = annotationLabelInput();
+          const saveBtn = annotationSaveBtn();
+          const deleteBtn = annotationDeleteBtn();
+          const selected = annotationState.annotations.find(
+            (item) => item.id === annotationState.selectedId,
+          );
+          if (input) input.value = selected ? selected.label || "" : "";
+          const hasSelection = Boolean(selected);
+          if (saveBtn) saveBtn.disabled = !hasSelection;
+          if (deleteBtn) deleteBtn.disabled = !hasSelection;
+        }
+
+        function setSelectedAnnotation(annotationId) {
+          annotationState.selectedId = annotationId;
+          updateAnnotationEditor();
+          renderAnnotations();
+        }
+
+        async function loadAnnotationsForBand(band) {
+          if (!currentResultId || !band) {
+            annotationState.annotations = [];
+            annotationState.selectedId = null;
+            renderAnnotations();
+            updateAnnotationEditor();
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/api/results/${currentResultId}/annotations?band=${encodeURIComponent(band)}`,
+            );
+            if (!response.ok) {
+              const err = await response.json().catch(() => ({}));
+              throw new Error(err.error || "Failed to load annotations");
+            }
+            const data = await response.json();
+            annotationState.annotations = Array.isArray(data.annotations)
+              ? data.annotations
+              : [];
+            annotationState.selectedId = null;
+            updateAnnotationEditor();
+            renderAnnotations();
+          } catch (error) {
+            showToast(error.message || "Failed to load annotations.", "warning");
+          }
+        }
+
+        async function createAnnotation(payload) {
+          if (!currentResultId) return null;
+          const response = await fetch(`/api/results/${currentResultId}/annotations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to create annotation");
+          }
+          const data = await response.json();
+          return data.annotation || null;
+        }
+
+        async function updateAnnotation(annotationId, payload) {
+          if (!currentResultId) return null;
+          const response = await fetch(
+            `/api/results/${currentResultId}/annotations/${annotationId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            },
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to update annotation");
+          }
+          const data = await response.json();
+          return data.annotation || null;
+        }
+
+        async function deleteAnnotation(annotationId) {
+          if (!currentResultId) return;
+          const response = await fetch(
+            `/api/results/${currentResultId}/annotations/${annotationId}`,
+            { method: "DELETE" },
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to delete annotation");
+          }
+        }
+
+        function getStageX(event) {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return null;
+          const rect = c.getBoundingClientRect();
+          const rawX = event.clientX - rect.left;
+          const unscaledX = (rawX - zoomState.x) / zoomState.scale;
+          return Math.max(0, Math.min(img.offsetWidth, unscaledX));
+        }
+
+        function buildAnnotationHtml(annotation, options = {}) {
+          const img = modalImage();
+          const duration = getDurationSeconds();
+          if (!img || !duration) return "";
+          const width = Math.max(img.offsetWidth, 1);
+          const start = Number(annotation.start_time_sec) || 0;
+          const end = annotation.end_time_sec != null ? Number(annotation.end_time_sec) : null;
+          const label = escapeHtml(annotation.label || "Annotation");
+          const minPx = 6;
+          const startPx = (start / duration) * width;
+          if (end == null || Math.abs(end - start) * width / duration < minPx) {
+            const leftPct = (startPx / width) * 100;
+            const selectedClass = options.selected ? " is-selected" : "";
+            return `
+              <div class="eeg-annotation eeg-annotation-point${selectedClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%;">
+                <span class="eeg-annotation-label">${label}</span>
+              </div>`;
+          }
+
+          const endPx = (end / duration) * width;
+          const leftPx = Math.min(startPx, endPx);
+          const widthPx = Math.max(minPx, Math.abs(endPx - startPx));
+          const leftPct = (leftPx / width) * 100;
+          const widthPct = (widthPx / width) * 100;
+          const selectedClass = options.selected ? " is-selected" : "";
+          const draftClass = options.draft ? " eeg-annotation-draft" : "";
+          return `
+            <div class="eeg-annotation eeg-annotation-range${selectedClass}${draftClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; width:${widthPct}%;">
+              <span class="eeg-annotation-label">${label}</span>
+            </div>`;
+        }
+
+        function getDraggedPreview() {
+          if (!annotationState.isDragging || annotationState.dragMode !== "move") return null;
+          const duration = getDurationSeconds();
+          const img = modalImage();
+          if (!duration || !img) return null;
+          const currentX = annotationState.dragCurrentX;
+          const deltaX = currentX - annotationState.dragStartX;
+          const deltaTime = (deltaX / img.offsetWidth) * duration;
+          let nextStart = (annotationState.dragOriginStart ?? 0) + deltaTime;
+          let nextEnd =
+            annotationState.dragOriginEnd != null
+              ? annotationState.dragOriginEnd + deltaTime
+              : null;
+          if (nextStart < 0) {
+            const shift = -nextStart;
+            nextStart = 0;
+            if (nextEnd != null) nextEnd += shift;
+          }
+          if (nextEnd != null && nextEnd < 0) {
+            nextEnd = 0;
+          }
+          if (duration && nextEnd != null && nextEnd > duration) {
+            const overshoot = nextEnd - duration;
+            nextEnd = duration;
+            nextStart = Math.max(0, nextStart - overshoot);
+          }
+          if (duration && nextStart > duration) {
+            const overshoot = nextStart - duration;
+            nextStart = duration;
+            if (nextEnd != null) nextEnd = Math.max(0, nextEnd - overshoot);
+          }
+          return {
+            id: annotationState.dragAnnotationId,
+            start_time_sec: nextStart,
+            end_time_sec: nextEnd,
+            label:
+              annotationState.annotations.find(
+                (item) => item.id === annotationState.dragAnnotationId,
+              )?.label || "Annotation",
+          };
+        }
+
+        function renderAnnotations() {
+          const layer = annotationLayer();
+          if (!layer) return;
+          const duration = getDurationSeconds();
+          if (!duration) {
+            layer.innerHTML = "";
+            return;
+          }
+          const preview = getDraggedPreview();
+          const html = annotationState.annotations
+            .map((annotation) => {
+              if (preview && annotation.id === preview.id) {
+                return buildAnnotationHtml(preview, {
+                  selected: annotation.id === annotationState.selectedId,
+                });
+              }
+              return buildAnnotationHtml(annotation, {
+                selected: annotation.id === annotationState.selectedId,
+              });
+            })
+            .join("");
+
+          let draftHtml = "";
+          if (annotationState.isDragging && annotationState.dragMode === "new") {
+            const img = modalImage();
+            if (img) {
+              const width = Math.max(img.offsetWidth, 1);
+              const startPx = annotationState.dragStartX;
+              const endPx = annotationState.dragCurrentX;
+              const leftPx = Math.min(startPx, endPx);
+              const widthPx = Math.max(4, Math.abs(endPx - startPx));
+              const leftPct = (leftPx / width) * 100;
+              const widthPct = (widthPx / width) * 100;
+              draftHtml = `
+                <div class="eeg-annotation eeg-annotation-range eeg-annotation-draft" style="left:${leftPct}%; width:${widthPct}%;"></div>`;
+            }
+          }
+
+          layer.innerHTML = html + draftHtml;
+        }
+
+        function handleAnnotatePointerDown(event) {
+          if (!annotationState.enabled || annotationState.panOverride) return;
+          if (event.button !== 0) return;
+          const img = modalImage();
+          if (!img) return;
+
+          const target = event.target.closest("[data-annotation-id]");
+          const stageX = getStageX(event);
+          if (stageX == null) return;
+
+          if (target) {
+            const annotationId = Number(target.getAttribute("data-annotation-id"));
+            const selected = annotationState.annotations.find((item) => item.id === annotationId);
+            if (!selected) return;
+            annotationState.dragMode = "move";
+            annotationState.dragAnnotationId = annotationId;
+            annotationState.dragOriginStart = selected.start_time_sec;
+            annotationState.dragOriginEnd = selected.end_time_sec ?? null;
+            annotationState.dragStartX = stageX;
+            annotationState.dragCurrentX = stageX;
+            annotationState.isDragging = true;
+            setSelectedAnnotation(annotationId);
+            event.preventDefault();
+            return;
+          }
+
+          annotationState.dragMode = "new";
+          annotationState.dragStartX = stageX;
+          annotationState.dragCurrentX = stageX;
+          annotationState.isDragging = true;
+          annotationState.dragAnnotationId = null;
+          setSelectedAnnotation(null);
+          renderAnnotations();
+          event.preventDefault();
+        }
+
+        function handleAnnotatePointerMove(event) {
+          if (!annotationState.isDragging) return;
+          const stageX = getStageX(event);
+          if (stageX == null) return;
+          annotationState.dragCurrentX = stageX;
+          renderAnnotations();
+        }
+
+        async function handleAnnotatePointerUp(event) {
+          if (!annotationState.isDragging) return;
+          const stageX = getStageX(event);
+          const duration = getDurationSeconds();
+          const img = modalImage();
+          annotationState.isDragging = false;
+          const dragMode = annotationState.dragMode;
+          annotationState.dragMode = null;
+
+          if (!duration || !img || stageX == null) {
+            renderAnnotations();
+            return;
+          }
+
+          const deltaPx = Math.abs(stageX - annotationState.dragStartX);
+          const minDragPx = 4;
+
+          try {
+            if (dragMode === "new") {
+              const startPx = annotationState.dragStartX;
+              const endPx = stageX;
+              const startTime = (Math.min(startPx, endPx) / img.offsetWidth) * duration;
+              const endTime = (Math.max(startPx, endPx) / img.offsetWidth) * duration;
+              const label = annotationLabelInput()?.value?.trim() || "Annotation";
+              const payload = {
+                band_name: currentBand,
+                start_time_sec: startTime,
+                end_time_sec: deltaPx < minDragPx ? null : endTime,
+                label,
+              };
+              const created = await createAnnotation(payload);
+              if (created) {
+                await loadAnnotationsForBand(currentBand);
+                setSelectedAnnotation(created.id);
+              }
+            } else if (dragMode === "move" && annotationState.dragAnnotationId) {
+              if (deltaPx >= minDragPx) {
+                const preview = getDraggedPreview();
+                if (preview) {
+                  const updated = await updateAnnotation(annotationState.dragAnnotationId, {
+                    start_time_sec: preview.start_time_sec,
+                    end_time_sec: preview.end_time_sec,
+                  });
+                  if (updated) {
+                    await loadAnnotationsForBand(currentBand);
+                    setSelectedAnnotation(updated.id);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            showToast(error.message || "Failed to save annotation.", "error");
+          } finally {
+            renderAnnotations();
+          }
+        }
+
+        async function fetchBandVisualization(band) {
+          if (!eegVizState.contextId) return;
+          showSkeleton();
+          const url = buildVizUrl(eegVizState.contextId, band, "detail");
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(errText || "Failed to load visualization");
+            }
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            showPreviewImage(objectUrl, band);
+          } catch (error) {
+            const c = canvas();
+            if (c) {
+              c.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">${escapeHtml(error.message || "Failed to load visualization")}</p>`;
+            }
+          }
+        }
+
+        function switchBand(band) {
+          if (!BANDS.includes(band)) return;
+          currentBand = band;
+          updateBandButtons(band);
+          if (bandLabel()) bandLabel().textContent = BAND_LABELS[band] || band;
+          resetZoom();
+          fetchBandVisualization(band);
+          if (annotationState.enabled) {
+            loadAnnotationsForBand(band);
+          }
+        }
+
+        function open(band) {
+          if (!eegVizState.contextId) return;
+          currentBand = band || currentBand;
+          isOpen = true;
+          annotationState.durationSeconds = null;
+          annotationState.panOverride = false;
+          setAnnotateMode(false);
+          resetZoom();
+
+          const ov = overlay();
+          if (!ov) return;
+          ov.classList.add("is-open");
+          ov.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+
+          updateBandButtons(currentBand);
+          if (bandLabel()) bandLabel().textContent = BAND_LABELS[currentBand] || currentBand;
+          fetchBandVisualization(currentBand);
+
+          document.addEventListener("keydown", handleKeydown);
+          document.addEventListener("keyup", handleKeyup);
+          window.addEventListener("resize", applyTransform);
+        }
+
+        function close() {
+          isOpen = false;
+          setAnnotateMode(false);
+          endPan();
+          const ov = overlay();
+          if (ov) {
+            ov.classList.remove("is-open");
+            ov.setAttribute("aria-hidden", "true");
+          }
+          document.body.style.overflow = "";
+          document.removeEventListener("keydown", handleKeydown);
+          document.removeEventListener("keyup", handleKeyup);
+          window.removeEventListener("resize", applyTransform);
+        }
+
+        function handleKeydown(event) {
+          if (!isOpen) return;
+          const tagName = event.target?.tagName || "";
+          const isTextInput = ["INPUT", "TEXTAREA"].includes(tagName);
+          if ((event.key === "a" || event.key === "A") && !isTextInput) {
+            event.preventDefault();
+            setAnnotateMode(!annotationState.enabled);
+            return;
+          }
+          if (event.code === "Space" && annotationState.enabled) {
+            event.preventDefault();
+            annotationState.panOverride = true;
+            return;
+          }
+          if (event.key === "Escape") {
+            close();
+            return;
+          }
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            zoomByFactor(1.2);
+            return;
+          }
+          if (event.key === "-") {
+            event.preventDefault();
+            zoomByFactor(1 / 1.2);
+            return;
+          }
+          if (event.key === "0" || event.key === "f" || event.key === "F") {
+            event.preventDefault();
+            resetZoom();
+            return;
+          }
+          if (event.key === "ArrowRight") {
+            const idx = BANDS.indexOf(currentBand);
+            switchBand(BANDS[(idx + 1) % BANDS.length]);
+            return;
+          }
+          if (event.key === "ArrowLeft") {
+            const idx = BANDS.indexOf(currentBand);
+            switchBand(BANDS[(idx - 1 + BANDS.length) % BANDS.length]);
+            return;
+          }
+        }
+
+        function handleKeyup(event) {
+          if (!isOpen) return;
+          if (event.code === "Space") {
+            annotationState.panOverride = false;
+          }
+        }
+
+        function init() {
+          byId("eeg-modal-close-btn")?.addEventListener("click", close);
+          byId("eeg-zoom-in-btn")?.addEventListener("click", () => zoomByFactor(1.2));
+          byId("eeg-zoom-out-btn")?.addEventListener("click", () => zoomByFactor(1 / 1.2));
+          byId("eeg-zoom-reset-btn")?.addEventListener("click", resetZoom);
+          byId("eeg-zoom-fit-btn")?.addEventListener("click", resetZoom);
+          byId("eeg-annotate-toggle-btn")?.addEventListener("click", () => {
+            setAnnotateMode(!annotationState.enabled);
+          });
+          annotationSaveBtn()?.addEventListener("click", async () => {
+            const selectedId = annotationState.selectedId;
+            if (!selectedId) return;
+            const label = annotationLabelInput()?.value?.trim() || "Annotation";
+            try {
+              await updateAnnotation(selectedId, { label });
+              await loadAnnotationsForBand(currentBand);
+              setSelectedAnnotation(selectedId);
+            } catch (error) {
+              showToast(error.message || "Failed to update annotation.", "error");
+            }
+          });
+          annotationDeleteBtn()?.addEventListener("click", async () => {
+            const selectedId = annotationState.selectedId;
+            if (!selectedId) return;
+            try {
+              await deleteAnnotation(selectedId);
+              await loadAnnotationsForBand(currentBand);
+              setSelectedAnnotation(null);
+            } catch (error) {
+              showToast(error.message || "Failed to delete annotation.", "error");
+            }
+          });
+          annotationLabelInput()?.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              annotationSaveBtn()?.click();
+            }
+          });
+
+          overlay()?.addEventListener("click", (event) => {
+            if (event.target === overlay()) close();
+          });
+          canvas()?.addEventListener("wheel", handleZoomWheel, { passive: false });
+          canvas()?.addEventListener("mousedown", startPan);
+          canvas()?.addEventListener("mousedown", handleAnnotatePointerDown);
+          window.addEventListener("mousemove", handlePan);
+          window.addEventListener("mouseup", endPan);
+          window.addEventListener("mousemove", handleAnnotatePointerMove);
+          window.addEventListener("mouseup", handleAnnotatePointerUp);
+
+          document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const band = btn.getAttribute("data-modal-band");
+              if (band) switchBand(band);
+            });
+          });
+        }
+
+        return { init, open, close };
+      })();
+
       // ── View result ──
 
       async function viewResult(resultId) {
@@ -1669,6 +2521,7 @@
       async function initializePage() {
         await loadCurrentClinician();
         await loadResults();
+        eegAnnotateModal.init();
         const q = new URLSearchParams(location.search).get("search");
         if (q) {
           const s = byId("search-results");

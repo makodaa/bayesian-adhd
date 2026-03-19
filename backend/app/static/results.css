@@ -447,6 +447,27 @@
   gap: 0.35rem;
 }
 
+.eeg-annotate-launch-btn {
+  border: 1px solid var(--border-soft);
+  background: #f5fafc;
+  color: var(--text-700);
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.26rem 0.56rem;
+  cursor: pointer;
+  transition:
+    background 130ms ease-out,
+    color 130ms ease-out,
+    border-color 130ms ease-out;
+}
+
+.eeg-annotate-launch-btn:hover {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-color: var(--brand-500);
+}
+
 .btn-compact {
   padding: 0.28rem 0.6rem;
   font-size: 0.75rem;
@@ -455,6 +476,327 @@
 .eeg-viz-error {
   font-size: 0.82rem;
   color: #9f5d24;
+}
+
+/* ─── EEG annotation modal ──────────────────────────────────────────────── */
+
+.eeg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  background: rgba(14, 28, 36, 0.72);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-out;
+}
+
+.eeg-modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.eeg-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #f8fbfc;
+  overflow: hidden;
+}
+
+.eeg-modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem 0.65rem 1.25rem;
+  border-bottom: 1px solid var(--border-card);
+  background: var(--surface-card);
+}
+
+.eeg-modal-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--text-900);
+  flex: 1;
+  min-width: 0;
+}
+
+.eeg-modal-band-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.eeg-modal-band-btn {
+  border: 1px solid var(--border-card);
+  background: #f5fafc;
+  color: var(--text-700);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 400;
+  padding: 0.28rem 0.58rem;
+  cursor: pointer;
+  transition:
+    background 130ms ease-out,
+    color 130ms ease-out,
+    border-color 130ms ease-out;
+  white-space: nowrap;
+}
+
+.eeg-modal-band-btn:hover {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-color: var(--brand-500);
+}
+
+.eeg-modal-band-btn.active {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #f2fbff;
+}
+
+.eeg-modal-close-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-card);
+  background: var(--surface-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-500);
+  cursor: pointer;
+  transition:
+    background 130ms ease-out,
+    color 130ms ease-out;
+}
+
+.eeg-modal-close-btn:hover {
+  background: #fdecea;
+  color: var(--error-600);
+  border-color: #e8b8bb;
+}
+
+.eeg-modal-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  background: #f2f6f8;
+}
+
+.eeg-modal-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-soft);
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.eeg-modal-canvas.is-zoomed {
+  cursor: grab;
+}
+
+.eeg-modal-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.eeg-modal-canvas.annotation-mode {
+  cursor: crosshair;
+}
+
+.eeg-modal-stage {
+  position: relative;
+  width: 100%;
+  height: auto;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.eeg-modal-stage img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+.eeg-modal-annotation-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.eeg-modal-canvas.annotation-mode .eeg-modal-annotation-layer {
+  pointer-events: auto;
+}
+
+.eeg-annotation {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: auto;
+}
+
+.eeg-annotation-range {
+  background: rgba(78, 132, 187, 0.22);
+  border: 1px solid rgba(78, 132, 187, 0.6);
+  border-radius: 6px;
+}
+
+.eeg-annotation-point {
+  width: 0;
+  border-left: 2px solid rgba(78, 132, 187, 0.9);
+}
+
+.eeg-annotation-label {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  background: rgba(12, 28, 38, 0.7);
+  color: #f3f8fb;
+  font-size: 0.7rem;
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+  max-width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eeg-annotation-point .eeg-annotation-label {
+  left: 0.5rem;
+}
+
+.eeg-annotation.is-selected {
+  box-shadow: 0 0 0 2px rgba(35, 121, 193, 0.45);
+  z-index: 3;
+}
+
+.eeg-annotation-draft {
+  background: rgba(96, 170, 120, 0.25);
+  border: 1px dashed rgba(96, 170, 120, 0.7);
+}
+
+.eeg-modal-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.25rem;
+  border-top: 1px solid var(--border-card);
+  background: var(--surface-card);
+  font-size: 0.78rem;
+  color: var(--text-500);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.eeg-modal-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.eeg-modal-control-btn {
+  border: 1px solid var(--border-card);
+  background: #f5fafc;
+  color: var(--text-700);
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.26rem 0.56rem;
+  cursor: pointer;
+  transition:
+    background 130ms ease-out,
+    color 130ms ease-out,
+    border-color 130ms ease-out;
+}
+
+.eeg-modal-control-btn:hover {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-color: var(--brand-500);
+}
+
+.eeg-modal-control-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eeg-modal-control-btn.is-active {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #f2fbff;
+}
+
+.eeg-modal-annotation-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.eeg-modal-annotation-editor .annotation-editor-label {
+  font-size: 0.72rem;
+  color: var(--text-600);
+}
+
+.eeg-modal-annotation-editor input {
+  border: 1px solid var(--border-card);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.5rem;
+  font-size: 0.74rem;
+  min-width: 160px;
+}
+
+.eeg-modal-zoom-readout {
+  font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+  color: var(--text-700);
+  font-size: 0.74rem;
+  padding: 0 0.2rem;
+}
+
+.eeg-modal-hints {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.eeg-modal-footer kbd {
+  display: inline-block;
+  padding: 0.1em 0.4em;
+  font-size: 0.71rem;
+  font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+  background: #eaf2f6;
+  border: 1px solid #c8d8e2;
+  border-radius: var(--radius-xs);
+  color: var(--text-700);
+  line-height: 1.4;
+}
+
+.eeg-modal-footer-sep {
+  color: var(--border-card);
+  margin: 0 0.2rem;
 }
 
 /* Temporal plot cards */
