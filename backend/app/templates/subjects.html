@@ -23,7 +23,6 @@
       aria-atomic="true"
     ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-    <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -279,60 +278,61 @@
             </div>
           </section>
         </main>
+
+        <div id="detail-backdrop" class="detail-backdrop"></div>
+        <aside
+          class="subject-detail-drawer"
+          id="subject-detail-drawer"
+          aria-hidden="true"
+          aria-labelledby="subject-detail-title"
+        >
+          <div class="detail-header">
+            <div>
+              <h2 id="subject-detail-title">Subject Details</h2>
+              <p id="subject-detail-subtitle">Review demographics and assessment timeline.</p>
+            </div>
+            <button
+              id="close-detail-btn"
+              class="icon-button"
+              type="button"
+              aria-label="Close subject details"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="detail-body" id="subject-detail-body">
+            <section class="detail-section">
+              <h3>Subject Information</h3>
+              <ul class="detail-list" id="subject-detail-list"></ul>
+            </section>
+            <section class="detail-section">
+              <h3>Assessment Timeline</h3>
+              <div id="subject-assessment-timeline" class="timeline-list"></div>
+            </section>
+          </div>
+          <div class="detail-footer">
+            <button id="detail-view-results-btn" type="button" class="btn-secondary-app">
+              View Assessments
+            </button>
+            <button id="detail-new-assessment-btn" type="button" class="btn-primary-app">
+              New Assessment
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
-
-    <aside
-      class="subject-detail-drawer"
-      id="subject-detail-drawer"
-      aria-hidden="true"
-      aria-labelledby="subject-detail-title"
-    >
-      <div class="detail-header">
-        <div>
-          <h2 id="subject-detail-title">Subject Details</h2>
-          <p id="subject-detail-subtitle">Review demographics and assessment timeline.</p>
-        </div>
-        <button
-          id="close-detail-btn"
-          class="icon-button"
-          type="button"
-          aria-label="Close subject details"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="detail-body" id="subject-detail-body">
-        <section class="detail-section">
-          <h3>Subject Information</h3>
-          <ul class="detail-list" id="subject-detail-list"></ul>
-        </section>
-        <section class="detail-section">
-          <h3>Assessment Timeline</h3>
-          <div id="subject-assessment-timeline" class="timeline-list"></div>
-        </section>
-      </div>
-      <div class="detail-footer">
-        <button id="detail-view-results-btn" type="button" class="btn-secondary-app">
-          View Assessments
-        </button>
-        <button id="detail-new-assessment-btn" type="button" class="btn-primary-app">
-          New Assessment
-        </button>
-      </div>
-    </aside>
 
     <script>
       const appState = {
@@ -395,12 +395,13 @@
       function openDetailDrawer() {
         const drawer = byId("subject-detail-drawer");
         const backdrop = byId("detail-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) {
           return;
         }
 
         appState.isDetailDrawerOpen = true;
-        document.body.classList.add("drawer-open");
+        if (appMain) appMain.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -409,12 +410,13 @@
       function closeDetailDrawer() {
         const drawer = byId("subject-detail-drawer");
         const backdrop = byId("detail-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) {
           return;
         }
 
         appState.isDetailDrawerOpen = false;
-        document.body.classList.remove("drawer-open");
+        if (appMain) appMain.classList.remove("drawer-open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");

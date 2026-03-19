@@ -151,7 +151,7 @@
 
 /* Detail drawer */
 .detail-backdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(15, 32, 40, 0.45);
   opacity: 0;
@@ -166,12 +166,12 @@
 }
 
 .result-detail-drawer {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background: #f8fbfc;
   box-shadow: none;
   transform: translateX(100%);

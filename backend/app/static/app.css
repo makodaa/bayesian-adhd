@@ -65,9 +65,7 @@ body {
   background: #ffffff;
 }
 
-body.drawer-open {
-  overflow: hidden;
-}
+
 
 button,
 input,
@@ -572,6 +570,11 @@ a:focus-visible {
   min-width: 0;
   max-height: 100vh;
   overflow: auto;
+  position: relative;
+}
+
+.app-main.drawer-open {
+  overflow: hidden;
 }
 
 .page-header {

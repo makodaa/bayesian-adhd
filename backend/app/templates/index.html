@@ -23,7 +23,6 @@
       aria-atomic="true"
     ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-    <div id="assessment-backdrop" class="assessment-backdrop"></div>
 
     <div class="app-shell">
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -774,6 +773,321 @@
             </div>
           </section>
         </main>
+
+        <div id="assessment-backdrop" class="assessment-backdrop"></div>
+        <aside
+          class="assessment-drawer"
+          id="assessment-drawer"
+          aria-hidden="true"
+          aria-labelledby="assessment-drawer-title"
+        >
+          <div class="drawer-header">
+            <div>
+              <h2 id="assessment-drawer-title">New Assessment</h2>
+              <p>
+                Follow the step-by-step workflow to submit an EEG assessment without leaving this page.
+              </p>
+            </div>
+            <button
+              id="close-assessment-btn"
+              class="icon-button"
+              type="button"
+              aria-label="Close assessment drawer"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="drawer-stepper" aria-label="Assessment steps">
+            <div class="step-item is-active" id="step-item-1">
+              <span class="step-dot">1</span>
+              <span class="step-text">Subject & Metadata</span>
+            </div>
+            <div class="step-item" id="step-item-2">
+              <span class="step-dot">2</span>
+              <span class="step-text">EEG Upload</span>
+            </div>
+            <div class="step-item" id="step-item-3">
+              <span class="step-dot">3</span>
+              <span class="step-text">Review & Submit</span>
+            </div>
+          </div>
+
+          <div class="drawer-body">
+            <form id="analysis-form" enctype="multipart/form-data" novalidate>
+              <section class="drawer-step" data-step="1">
+                <div class="form-panel">
+                  <h3>Subject Details</h3>
+                  <div class="form-grid">
+                    <div class="field-wrap full">
+                      <label for="subject-code">Subject Code <span class="required-indicator">*</span></label>
+                      <input
+                        type="text"
+                        id="subject-code"
+                        list="subject-list"
+                        placeholder="e.g., SUB001"
+                        maxlength="60"
+                        required
+                      />
+                      <datalist id="subject-list"></datalist>
+                      <p class="hint">Select an existing subject code or enter a new one.</p>
+                      <p class="field-error hidden" data-error-for="subject-code"></p>
+                    </div>
+                    <div class="field-wrap">
+                      <label for="date-of-birth">Date of Birth <span class="required-indicator">*</span></label>
+                      <input type="date" id="date-of-birth" required />
+                      <p class="field-error hidden" data-error-for="date-of-birth"></p>
+                    </div>
+                    <div class="field-wrap">
+                      <label for="gender">Gender <span class="required-indicator">*</span></label>
+                      <select id="gender" required>
+                        <option value="" selected disabled>Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                      </select>
+                      <p class="field-error hidden" data-error-for="gender"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-panel">
+                  <h3>Clinician of Record</h3>
+                  <div class="form-grid">
+                    <div class="field-wrap">
+                      <label for="clinician-input">Clinician Name</label>
+                      <input type="text" id="clinician-input" name="clinician_name" readonly />
+                    </div>
+                    <div class="field-wrap">
+                      <label for="occupation">Occupation</label>
+                      <input type="text" id="occupation" name="occupation" readonly />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-panel">
+                  <h3>Referral Information</h3>
+                  <div class="form-grid">
+                    <div class="field-wrap">
+                      <label for="referral-name">Referral Name</label>
+                      <input
+                        type="text"
+                        id="referral-name"
+                        placeholder="Referring clinician"
+                        maxlength="60"
+                      />
+                    </div>
+                    <div class="field-wrap">
+                      <label for="referral-institution">Referral Institution</label>
+                      <input
+                        type="text"
+                        id="referral-institution"
+                        placeholder="Clinic or institution"
+                        maxlength="60"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-panel">
+                  <h3>
+                    Recording Context
+                    <span class="tooltip-anchor">
+                      <span
+                        class="tooltip-trigger"
+                        role="button"
+                        tabindex="0"
+                        aria-label="Recording context definition"
+                      >
+                        i
+                      </span>
+                      <span class="tooltip-bubble" role="tooltip">
+                        <div>Captured to interpret EEG responses.</div>
+                        <ul>
+                          <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
+                        </ul>
+                      </span>
+                    </span>
+                  </h3>
+                  <div class="form-grid">
+                    <div class="field-wrap">
+                      <label for="technician-name">Technician</label>
+                      <input
+                        type="text"
+                        id="technician-name"
+                        placeholder="Technician name"
+                        maxlength="60"
+                      />
+                    </div>
+                    <div class="field-wrap">
+                      <label for="sleep-hours">Sleep Hours <span class="required-indicator">*</span></label>
+                      <input
+                        type="number"
+                        id="sleep-hours"
+                        min="0"
+                        max="99.99"
+                        step="0.5"
+                        placeholder="Hours slept"
+                        required
+                      />
+                      <p class="field-error hidden" data-error-for="sleep-hours"></p>
+                    </div>
+                    <div class="field-wrap">
+                      <label for="coffee-hours-ago">Time since caffeine intake (hours) <span class="required-indicator">*</span></label>
+                      <input
+                        type="number"
+                        id="coffee-hours-ago"
+                        min="1"
+                        max="99"
+                        step="1"
+                        placeholder="1-99; 99 means no record"
+                        required
+                      />
+                      <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
+                    </div>
+                    <div class="field-wrap">
+                      <label for="drugs-hours-ago">Time since drug intake (hours) <span class="required-indicator">*</span></label>
+                      <input
+                        type="number"
+                        id="drugs-hours-ago"
+                        min="1"
+                        max="99"
+                        step="1"
+                        placeholder="1-99; 99 means no record"
+                        required
+                      />
+                      <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
+                    </div>
+                    <div class="field-wrap">
+                      <label for="meal-hours-ago">Time since last meal (hours) <span class="required-indicator">*</span></label>
+                      <input
+                        type="number"
+                        id="meal-hours-ago"
+                        min="0"
+                        max="99"
+                        step="1"
+                        placeholder="Hours since last meal"
+                        required
+                      />
+                      <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
+                    </div>
+                    <div class="field-wrap full">
+                      <label for="medication">Medication Details</label>
+                      <textarea
+                        id="medication"
+                        rows="2"
+                        placeholder="List medications or dosing notes"
+                        maxlength="255"
+                      ></textarea>
+                    </div>
+                    <div class="field-wrap full">
+                      <label for="notes">Clinical Notes</label>
+                      <textarea
+                        id="notes"
+                        rows="3"
+                        placeholder="Add recording context notes (optional)"
+                        maxlength="255"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="drawer-step hidden" data-step="2">
+                <div class="form-panel">
+                  <h3>Upload EEG CSV <span class="required-indicator">*</span></h3>
+                  <label class="upload-dropzone" id="file-dropzone" for="file">
+                    <strong id="file-dropzone-title">Drag and drop CSV file</strong>
+                    <small id="file-dropzone-subtitle"
+                      >or click to choose a file from your device</small
+                    >
+                    <input type="file" id="file" name="file" accept=".csv" class="hidden" />
+                  </label>
+                  <p class="field-error hidden" data-error-for="file"></p>
+                </div>
+
+                <div class="form-panel">
+                  <h3>
+                    Channel Validation (10-20 set)
+                    <span class="tooltip-anchor">
+                      <span
+                        class="tooltip-trigger"
+                        role="button"
+                        tabindex="0"
+                        aria-label="Channel validation definition"
+                      >
+                        i
+                      </span>
+                      <span class="tooltip-bubble" role="tooltip">
+                        <div>Confirms standard 19-channel montage for analysis.</div>
+                      </span>
+                    </span>
+                  </h3>
+                  <p class="hint" id="channel-status">
+                    Upload a CSV file to validate channel coverage.
+                  </p>
+                  <div id="channel-grid" class="channel-grid"></div>
+                </div>
+
+                <div class="form-panel">
+                  <h3>Recording File Summary</h3>
+                  <div id="file-meta" class="metadata-panel">
+                    <div class="metadata-row"><span>Filename</span><span>Not selected</span></div>
+                    <div class="metadata-row"><span>Rows</span><span>-</span></div>
+                    <div class="metadata-row"><span>Columns</span><span>-</span></div>
+                    <div class="metadata-row"><span>Estimated Duration</span><span>-</span></div>
+                    <div class="metadata-row">
+                      <span>Sampling Rate</span><span>128 Hz reference</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="drawer-step hidden" data-step="3">
+                <div class="form-panel">
+                  <h3>Review Summary</h3>
+                  <div id="review-summary" class="review-summary"></div>
+                </div>
+
+                <div class="disclaimer-note">
+                  This assessment report is generated by an automated support system. Findings should be
+                  interpreted alongside clinical history, behavioral assessments, and professional
+                  judgment.
+                </div>
+              </section>
+
+              <div class="drawer-actions" id="drawer-actions">
+                <button type="button" class="btn-secondary-app" id="step-back-btn">Back</button>
+                <button type="button" class="btn-primary-app" id="step-next-btn">Next</button>
+                <button type="submit" class="btn-primary-app hidden" id="analyze-btn">
+                  Run Assessment
+                </button>
+              </div>
+            </form>
+
+            <div id="drawer-processing" class="processing-panel hidden">
+              <h3>Processing Assessment</h3>
+              <p id="processing-status">Preparing analysis...</p>
+              <div class="processing-track">
+                <div id="processing-progress" class="processing-fill"></div>
+              </div>
+              <ul id="processing-list" class="processing-list"></ul>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
@@ -844,325 +1158,6 @@
       </div>
     </div>
 
-    <aside
-      class="assessment-drawer"
-      id="assessment-drawer"
-      aria-hidden="true"
-      aria-labelledby="assessment-drawer-title"
-    >
-      <div class="drawer-header">
-        <div>
-          <h2 id="assessment-drawer-title">New Assessment</h2>
-          <p>
-            Follow the step-by-step workflow to submit an EEG assessment without leaving this page.
-          </p>
-        </div>
-        <button
-          id="close-assessment-btn"
-          class="icon-button"
-          type="button"
-          aria-label="Close assessment drawer"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="drawer-stepper" aria-label="Assessment steps">
-        <div class="step-item is-active" id="step-item-1">
-          <span class="step-dot">1</span>
-          <span class="step-text">Subject & Metadata</span>
-        </div>
-        <div class="step-item" id="step-item-2">
-          <span class="step-dot">2</span>
-          <span class="step-text">EEG Upload</span>
-        </div>
-        <div class="step-item" id="step-item-3">
-          <span class="step-dot">3</span>
-          <span class="step-text">Review & Submit</span>
-        </div>
-      </div>
-
-      <div class="drawer-body">
-        <form id="analysis-form" enctype="multipart/form-data" novalidate>
-          <section class="drawer-step" data-step="1">
-            <div class="form-panel">
-              <h3>Subject Details</h3>
-              <div class="form-grid">
-                <div class="field-wrap full">
-                  <label for="subject-code">Subject Code <span class="required-indicator">*</span></label>
-                  <input
-                    type="text"
-                    id="subject-code"
-                    list="subject-list"
-                    placeholder="e.g., SUB001"
-                    maxlength="60"
-                    required
-                  />
-                  <datalist id="subject-list"></datalist>
-                  <p class="hint">Select an existing subject code or enter a new one.</p>
-                  <p class="field-error hidden" data-error-for="subject-code"></p>
-                </div>
-                <div class="field-wrap">
-                  <label for="date-of-birth">Date of Birth <span class="required-indicator">*</span></label>
-                  <input
-                    type="date"
-                    id="date-of-birth"
-                    required
-                  />
-                  <p class="field-error hidden" data-error-for="date-of-birth"></p>
-                </div>
-                <div class="field-wrap">
-                  <label for="gender">Gender <span class="required-indicator">*</span></label>
-                  <select id="gender" required>
-                    <option value="" selected disabled>Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                  </select>
-                  <p class="field-error hidden" data-error-for="gender"></p>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-panel">
-              <h3>Clinician of Record</h3>
-              <div class="form-grid">
-                <div class="field-wrap">
-                  <label for="clinician-input">Clinician Name</label>
-                  <input type="text" id="clinician-input" name="clinician_name" readonly />
-                </div>
-                <div class="field-wrap">
-                  <label for="occupation">Occupation</label>
-                  <input type="text" id="occupation" name="occupation" readonly />
-                </div>
-              </div>
-            </div>
-
-            <div class="form-panel">
-              <h3>Referral Information</h3>
-              <div class="form-grid">
-                <div class="field-wrap">
-                  <label for="referral-name">Referral Name</label>
-                  <input
-                    type="text"
-                    id="referral-name"
-                    placeholder="Referring clinician"
-                    maxlength="60"
-                  />
-                </div>
-                <div class="field-wrap">
-                  <label for="referral-institution">Referral Institution</label>
-                  <input
-                    type="text"
-                    id="referral-institution"
-                    placeholder="Clinic or institution"
-                    maxlength="60"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="form-panel">
-              <h3>
-                Recording Context
-                <span class="tooltip-anchor">
-                  <span
-                    class="tooltip-trigger"
-                    role="button"
-                    tabindex="0"
-                    aria-label="Recording context definition"
-                  >
-                    i
-                  </span>
-                  <span class="tooltip-bubble" role="tooltip">
-                    <div>Captured to interpret EEG responses.</div>
-                    <ul>
-                      <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
-                    </ul>
-                  </span>
-                </span>
-              </h3>
-              <div class="form-grid">
-                <div class="field-wrap">
-                  <label for="technician-name">Technician</label>
-                  <input
-                    type="text"
-                    id="technician-name"
-                    placeholder="Technician name"
-                    maxlength="60"
-                  />
-                </div>
-                <div class="field-wrap">
-                  <label for="sleep-hours">Sleep Hours <span class="required-indicator">*</span></label>
-                  <input
-                    type="number"
-                    id="sleep-hours"
-                    min="0"
-                    max="99.99"
-                    step="0.5"
-                    placeholder="Hours slept"
-                    required
-                  />
-                  <p class="field-error hidden" data-error-for="sleep-hours"></p>
-                </div>
-                <div class="field-wrap">
-                  <label for="coffee-hours-ago">Time since caffeine intake (hours) <span class="required-indicator">*</span></label>
-                  <input
-                    type="number"
-                    id="coffee-hours-ago"
-                    min="1"
-                    max="99"
-                    step="1"
-                    placeholder="1-99; 99 means no record"
-                    required
-                  />
-                  <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
-                </div>
-                <div class="field-wrap">
-                  <label for="drugs-hours-ago">Time since drug intake (hours) <span class="required-indicator">*</span></label>
-                  <input
-                    type="number"
-                    id="drugs-hours-ago"
-                    min="1"
-                    max="99"
-                    step="1"
-                    placeholder="1-99; 99 means no record"
-                    required
-                  />
-                  <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
-                </div>
-                <div class="field-wrap">
-                  <label for="meal-hours-ago">Time since last meal (hours) <span class="required-indicator">*</span></label>
-                  <input
-                    type="number"
-                    id="meal-hours-ago"
-                    min="0"
-                    max="99"
-                    step="1"
-                    placeholder="Hours since last meal"
-                    required
-                  />
-                  <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
-                </div>
-                <div class="field-wrap full">
-                  <label for="medication">Medication Details</label>
-                  <textarea
-                    id="medication"
-                    rows="2"
-                    placeholder="List medications or dosing notes"
-                    maxlength="255"
-                  ></textarea>
-                </div>
-                <div class="field-wrap full">
-                  <label for="notes">Clinical Notes</label>
-                  <textarea
-                    id="notes"
-                    rows="3"
-                    placeholder="Add recording context notes (optional)"
-                    maxlength="255"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="drawer-step hidden" data-step="2">
-            <div class="form-panel">
-              <h3>Upload EEG CSV <span class="required-indicator">*</span></h3>
-              <label class="upload-dropzone" id="file-dropzone" for="file">
-                <strong id="file-dropzone-title">Drag and drop CSV file</strong>
-                <small id="file-dropzone-subtitle"
-                  >or click to choose a file from your device</small
-                >
-                <input type="file" id="file" name="file" accept=".csv" class="hidden" />
-              </label>
-              <p class="field-error hidden" data-error-for="file"></p>
-            </div>
-
-            <div class="form-panel">
-              <h3>
-                Channel Validation (10-20 set)
-                <span class="tooltip-anchor">
-                  <span
-                    class="tooltip-trigger"
-                    role="button"
-                    tabindex="0"
-                    aria-label="Channel validation definition"
-                  >
-                    i
-                  </span>
-                  <span class="tooltip-bubble" role="tooltip">
-                    <div>Confirms standard 19-channel montage for analysis.</div>
-                  </span>
-                </span>
-              </h3>
-              <p class="hint" id="channel-status">
-                Upload a CSV file to validate channel coverage.
-              </p>
-              <div id="channel-grid" class="channel-grid"></div>
-            </div>
-
-            <div class="form-panel">
-              <h3>Recording File Summary</h3>
-              <div id="file-meta" class="metadata-panel">
-                <div class="metadata-row"><span>Filename</span><span>Not selected</span></div>
-                <div class="metadata-row"><span>Rows</span><span>-</span></div>
-                <div class="metadata-row"><span>Columns</span><span>-</span></div>
-                <div class="metadata-row"><span>Estimated Duration</span><span>-</span></div>
-                <div class="metadata-row">
-                  <span>Sampling Rate</span><span>128 Hz reference</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="drawer-step hidden" data-step="3">
-            <div class="form-panel">
-              <h3>Review Summary</h3>
-              <div id="review-summary" class="review-summary"></div>
-            </div>
-
-            <div class="disclaimer-note">
-              This assessment report is generated by an automated support system. Findings should be
-              interpreted alongside clinical history, behavioral assessments, and professional
-              judgment.
-            </div>
-          </section>
-
-
-          <div class="drawer-actions" id="drawer-actions">
-            <button type="button" class="btn-secondary-app" id="step-back-btn">Back</button>
-            <button type="button" class="btn-primary-app" id="step-next-btn">Next</button>
-            <button type="submit" class="btn-primary-app hidden" id="analyze-btn">
-              Run Assessment
-            </button>
-          </div>
-        </form>
-
-        <div id="drawer-processing" class="processing-panel hidden">
-          <h3>Processing Assessment</h3>
-          <p id="processing-status">Preparing analysis...</p>
-          <div class="processing-track">
-            <div id="processing-progress" class="processing-fill"></div>
-          </div>
-          <ul id="processing-list" class="processing-list"></ul>
-        </div>
-      </div>
-    </aside>
-
     <script>
       const EEG_BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma", "segments"];
       const ELECTRODE_CHANNELS = [
@@ -1229,6 +1224,9 @@
         windowPredictions: null,
       };
 
+      const ASSESSMENT_DRAFT_KEY = "draft:assessment-form";
+      const ASSESSMENT_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
       const biomarkerLabels = {
         theta_beta_ratio: "Theta/Beta",
         theta_alpha_ratio: "Theta/Alpha",
@@ -1256,6 +1254,104 @@
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
       }
+
+      function debounce(callback, delay = 400) {
+        let timeoutId = null;
+        return (...args) => {
+          if (timeoutId) window.clearTimeout(timeoutId);
+          timeoutId = window.setTimeout(() => callback(...args), delay);
+        };
+      }
+
+      function collectAssessmentDraftFields() {
+        return {
+          subjectCode: byId("subject-code")?.value || "",
+          dateOfBirth: byId("date-of-birth")?.value || "",
+          gender: byId("gender")?.value || "",
+          sleepHours: byId("sleep-hours")?.value || "",
+          coffeeHoursAgo: byId("coffee-hours-ago")?.value || "",
+          drugsHoursAgo: byId("drugs-hours-ago")?.value || "",
+          mealHoursAgo: byId("meal-hours-ago")?.value || "",
+          medication: byId("medication")?.value || "",
+          technicianName: byId("technician-name")?.value || "",
+          referralName: byId("referral-name")?.value || "",
+          referralInstitution: byId("referral-institution")?.value || "",
+          notes: byId("notes")?.value || "",
+        };
+      }
+
+      function hasAssessmentDraftValues(draft) {
+        return Object.values(draft).some((value) => Boolean(String(value || "").trim()));
+      }
+
+      function saveAssessmentDraft() {
+        try {
+          const draft = collectAssessmentDraftFields();
+          if (!hasAssessmentDraftValues(draft)) {
+            localStorage.removeItem(ASSESSMENT_DRAFT_KEY);
+            return;
+          }
+          localStorage.setItem(
+            ASSESSMENT_DRAFT_KEY,
+            JSON.stringify({ updatedAt: Date.now(), data: draft }),
+          );
+        } catch (error) {
+          console.warn("Failed to save assessment draft", error);
+        }
+      }
+
+      function loadAssessmentDraft() {
+        try {
+          const raw = localStorage.getItem(ASSESSMENT_DRAFT_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!parsed || !parsed.data || !parsed.updatedAt) return null;
+          if (Date.now() - parsed.updatedAt > ASSESSMENT_DRAFT_TTL_MS) {
+            localStorage.removeItem(ASSESSMENT_DRAFT_KEY);
+            return null;
+          }
+          return parsed.data;
+        } catch (error) {
+          console.warn("Failed to load assessment draft", error);
+          return null;
+        }
+      }
+
+      function clearAssessmentDraft() {
+        try {
+          localStorage.removeItem(ASSESSMENT_DRAFT_KEY);
+        } catch (error) {
+          console.warn("Failed to clear assessment draft", error);
+        }
+      }
+
+      function applyAssessmentDraft(draft) {
+        if (!draft) return false;
+        const setField = (id, value) => {
+          const el = byId(id);
+          if (!el || value === undefined || value === null) return;
+          if (String(el.value) === String(value)) return;
+          el.value = value;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        setField("subject-code", draft.subjectCode);
+        setField("date-of-birth", draft.dateOfBirth);
+        setField("gender", draft.gender);
+        setField("sleep-hours", draft.sleepHours);
+        setField("coffee-hours-ago", draft.coffeeHoursAgo);
+        setField("drugs-hours-ago", draft.drugsHoursAgo);
+        setField("meal-hours-ago", draft.mealHoursAgo);
+        setField("medication", draft.medication);
+        setField("technician-name", draft.technicianName);
+        setField("referral-name", draft.referralName);
+        setField("referral-institution", draft.referralInstitution);
+        setField("notes", draft.notes);
+        return true;
+      }
+
+      const debouncedSaveAssessmentDraft = debounce(saveAssessmentDraft, 450);
 
       function showToast(message, variant = "error") {
         const container = byId("toast-container");
@@ -1293,10 +1389,11 @@
       function openAssessmentDrawer() {
         const drawer = byId("assessment-drawer");
         const backdrop = byId("assessment-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) return;
 
         appState.isDrawerOpen = true;
-        document.body.classList.add("drawer-open");
+        if (appMain) appMain.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -1309,10 +1406,11 @@
 
         const drawer = byId("assessment-drawer");
         const backdrop = byId("assessment-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) return;
 
         appState.isDrawerOpen = false;
-        document.body.classList.remove("drawer-open");
+        if (appMain) appMain.classList.remove("drawer-open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");
@@ -3003,6 +3101,7 @@
           updateFileDropzone(null);
           renderFileMetadata(null);
           resetChannelGridStatus();
+          clearAssessmentDraft();
           updateDraftIndicator();
         } catch (error) {
           leaveProcessingMode();
@@ -3305,6 +3404,8 @@
         ].forEach((id) => {
           byId(id)?.addEventListener("input", updateDraftIndicator);
           byId(id)?.addEventListener("change", updateDraftIndicator);
+          byId(id)?.addEventListener("input", debouncedSaveAssessmentDraft);
+          byId(id)?.addEventListener("change", debouncedSaveAssessmentDraft);
         });
 
         [
@@ -3679,6 +3780,10 @@
 
         await loadCurrentClinician();
         await loadSubjects();
+        const appliedDraft = applyAssessmentDraft(loadAssessmentDraft());
+        if (appliedDraft) {
+          showToast("Draft assessment restored.", "success");
+        }
         updateDraftIndicator();
       }
 

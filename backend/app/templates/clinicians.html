@@ -23,7 +23,6 @@
       aria-atomic="true"
     ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-    <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -230,222 +229,223 @@
             </div>
           </section>
         </main>
+
+        <div id="detail-backdrop" class="detail-backdrop"></div>
+        <!-- Clinician Detail Drawer -->
+        <aside
+          class="app-drawer"
+          id="clinician-detail-drawer"
+          aria-hidden="true"
+          aria-labelledby="clinician-detail-title"
+        >
+          <div class="detail-header">
+            <div>
+              <h2 id="clinician-detail-title">Clinician Profile</h2>
+              <p id="clinician-detail-subtitle">Loading...</p>
+            </div>
+            <button
+              id="close-clinician-detail-btn"
+              class="icon-button"
+              type="button"
+              aria-label="Close clinician details"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="detail-body" id="clinician-detail-body">
+            <!-- populated by JS -->
+          </div>
+          <div class="detail-footer">
+            <button id="close-clinician-detail-footer-btn" type="button" class="btn-secondary-app">
+              Close
+            </button>
+          </div>
+        </aside>
+
+        <!-- Add Clinician Drawer -->
+        <aside
+          class="app-drawer"
+          id="add-clinician-drawer"
+          aria-hidden="true"
+          aria-labelledby="add-clinician-title"
+        >
+          <div class="detail-header">
+            <div>
+              <h2 id="add-clinician-title">Add Clinician</h2>
+              <p>Create a new clinician account.</p>
+            </div>
+            <button
+              id="close-add-clinician-btn"
+              class="icon-button"
+              type="button"
+              aria-label="Close add clinician"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="detail-body">
+            <form id="add-clinician-form" novalidate>
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="ac-first-name">First Name</label>
+                  <input type="text" id="ac-first-name" autocomplete="given-name" maxlength="50" />
+                  <span class="field-error" id="ac-first-name-error">First name is required.</span>
+                </div>
+                <div class="form-field">
+                  <label for="ac-last-name">Last Name</label>
+                  <input type="text" id="ac-last-name" autocomplete="family-name" maxlength="50" />
+                  <span class="field-error" id="ac-last-name-error">Last name is required.</span>
+                </div>
+                <div class="form-field">
+                  <label for="ac-occupation">Occupation</label>
+                  <input type="text" id="ac-occupation" placeholder="e.g. Neurologist" maxlength="50" />
+                  <span class="field-error" id="ac-occupation-error">Occupation is required.</span>
+                </div>
+                <div class="form-field">
+                  <label for="ac-password">Password</label>
+                  <div class="password-input-wrapper">
+                    <input type="password" id="ac-password" autocomplete="new-password" />
+                    <button
+                      type="button"
+                      class="pw-toggle-btn"
+                      id="ac-password-toggle"
+                      aria-label="Show password"
+                    >
+                      <svg
+                        id="ac-password-eye"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg
+                        id="ac-password-eye-off"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="display: none"
+                      >
+                        <path
+                          d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                        ></path>
+                        <path
+                          d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                        ></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <ul class="password-criteria" id="ac-password-criteria">
+                    <li id="pw-length">At least 8 characters</li>
+                    <li id="pw-uppercase">At least one uppercase letter</li>
+                    <li id="pw-lowercase">At least one lowercase letter</li>
+                    <li id="pw-number">At least one number</li>
+                    <li id="pw-special">At least one special character (!@#$%^&* etc.)</li>
+                  </ul>
+                  <span class="field-error" id="ac-password-error"
+                    >Password does not meet all requirements.</span
+                  >
+                </div>
+                <div class="form-field">
+                  <label for="ac-confirm-password">Confirm Password</label>
+                  <div class="password-input-wrapper">
+                    <input type="password" id="ac-confirm-password" autocomplete="new-password" />
+                    <button
+                      type="button"
+                      class="pw-toggle-btn"
+                      id="ac-confirm-password-toggle"
+                      aria-label="Show password"
+                    >
+                      <svg
+                        id="ac-confirm-password-eye"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg
+                        id="ac-confirm-password-eye-off"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="display: none"
+                      >
+                        <path
+                          d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                        ></path>
+                        <path
+                          d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                        ></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <span class="field-error" id="ac-confirm-password-error"
+                    >Passwords do not match.</span
+                  >
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="detail-footer">
+            <button id="submit-add-clinician-btn" type="button" class="btn-primary-app">
+              Create Account
+            </button>
+            <button id="cancel-add-clinician-btn" type="button" class="btn-secondary-app">
+              Cancel
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
-
-    <!-- Clinician Detail Drawer -->
-    <aside
-      class="app-drawer"
-      id="clinician-detail-drawer"
-      aria-hidden="true"
-      aria-labelledby="clinician-detail-title"
-    >
-      <div class="detail-header">
-        <div>
-          <h2 id="clinician-detail-title">Clinician Profile</h2>
-          <p id="clinician-detail-subtitle">Loading...</p>
-        </div>
-        <button
-          id="close-clinician-detail-btn"
-          class="icon-button"
-          type="button"
-          aria-label="Close clinician details"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="detail-body" id="clinician-detail-body">
-        <!-- populated by JS -->
-      </div>
-      <div class="detail-footer">
-        <button id="close-clinician-detail-footer-btn" type="button" class="btn-secondary-app">
-          Close
-        </button>
-      </div>
-    </aside>
-
-    <!-- Add Clinician Drawer -->
-    <aside
-      class="app-drawer"
-      id="add-clinician-drawer"
-      aria-hidden="true"
-      aria-labelledby="add-clinician-title"
-    >
-      <div class="detail-header">
-        <div>
-          <h2 id="add-clinician-title">Add Clinician</h2>
-          <p>Create a new clinician account.</p>
-        </div>
-        <button
-          id="close-add-clinician-btn"
-          class="icon-button"
-          type="button"
-          aria-label="Close add clinician"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="detail-body">
-        <form id="add-clinician-form" novalidate>
-          <div class="form-grid">
-            <div class="form-field">
-              <label for="ac-first-name">First Name</label>
-              <input type="text" id="ac-first-name" autocomplete="given-name" maxlength="50" />
-              <span class="field-error" id="ac-first-name-error">First name is required.</span>
-            </div>
-            <div class="form-field">
-              <label for="ac-last-name">Last Name</label>
-              <input type="text" id="ac-last-name" autocomplete="family-name" maxlength="50" />
-              <span class="field-error" id="ac-last-name-error">Last name is required.</span>
-            </div>
-            <div class="form-field">
-              <label for="ac-occupation">Occupation</label>
-              <input type="text" id="ac-occupation" placeholder="e.g. Neurologist" maxlength="50" />
-              <span class="field-error" id="ac-occupation-error">Occupation is required.</span>
-            </div>
-            <div class="form-field">
-              <label for="ac-password">Password</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="ac-password" autocomplete="new-password" />
-                <button
-                  type="button"
-                  class="pw-toggle-btn"
-                  id="ac-password-toggle"
-                  aria-label="Show password"
-                >
-                  <svg
-                    id="ac-password-eye"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg
-                    id="ac-password-eye-off"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    style="display: none"
-                  >
-                    <path
-                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
-                    ></path>
-                    <path
-                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
-                    ></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-              <ul class="password-criteria" id="ac-password-criteria">
-                <li id="pw-length">At least 8 characters</li>
-                <li id="pw-uppercase">At least one uppercase letter</li>
-                <li id="pw-lowercase">At least one lowercase letter</li>
-                <li id="pw-number">At least one number</li>
-                <li id="pw-special">At least one special character (!@#$%^&* etc.)</li>
-              </ul>
-              <span class="field-error" id="ac-password-error"
-                >Password does not meet all requirements.</span
-              >
-            </div>
-            <div class="form-field">
-              <label for="ac-confirm-password">Confirm Password</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="ac-confirm-password" autocomplete="new-password" />
-                <button
-                  type="button"
-                  class="pw-toggle-btn"
-                  id="ac-confirm-password-toggle"
-                  aria-label="Show password"
-                >
-                  <svg
-                    id="ac-confirm-password-eye"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg
-                    id="ac-confirm-password-eye-off"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    style="display: none"
-                  >
-                    <path
-                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
-                    ></path>
-                    <path
-                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
-                    ></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-              <span class="field-error" id="ac-confirm-password-error"
-                >Passwords do not match.</span
-              >
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="detail-footer">
-        <button id="submit-add-clinician-btn" type="button" class="btn-primary-app">
-          Create Account
-        </button>
-        <button id="cancel-add-clinician-btn" type="button" class="btn-secondary-app">
-          Cancel
-        </button>
-      </div>
-    </aside>
 
     <script>
       // ── Utilities ──
@@ -476,6 +476,88 @@
           window.setTimeout(() => toast.remove(), 180);
         }, 6000);
       }
+
+      const ADD_CLINICIAN_DRAFT_KEY = "draft:add-clinician";
+      const ADD_CLINICIAN_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+      function debounce(callback, delay = 400) {
+        let timeoutId = null;
+        return (...args) => {
+          if (timeoutId) window.clearTimeout(timeoutId);
+          timeoutId = window.setTimeout(() => callback(...args), delay);
+        };
+      }
+
+      function collectAddClinicianDraft() {
+        return {
+          firstName: byId("ac-first-name")?.value || "",
+          lastName: byId("ac-last-name")?.value || "",
+          occupation: byId("ac-occupation")?.value || "",
+        };
+      }
+
+      function hasAddClinicianDraftValues(draft) {
+        return Object.values(draft).some((value) => Boolean(String(value || "").trim()));
+      }
+
+      function saveAddClinicianDraft() {
+        try {
+          const draft = collectAddClinicianDraft();
+          if (!hasAddClinicianDraftValues(draft)) {
+            localStorage.removeItem(ADD_CLINICIAN_DRAFT_KEY);
+            return;
+          }
+          localStorage.setItem(
+            ADD_CLINICIAN_DRAFT_KEY,
+            JSON.stringify({ updatedAt: Date.now(), data: draft }),
+          );
+        } catch (error) {
+          console.warn("Failed to save add clinician draft", error);
+        }
+      }
+
+      function loadAddClinicianDraft() {
+        try {
+          const raw = localStorage.getItem(ADD_CLINICIAN_DRAFT_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!parsed || !parsed.data || !parsed.updatedAt) return null;
+          if (Date.now() - parsed.updatedAt > ADD_CLINICIAN_DRAFT_TTL_MS) {
+            localStorage.removeItem(ADD_CLINICIAN_DRAFT_KEY);
+            return null;
+          }
+          return parsed.data;
+        } catch (error) {
+          console.warn("Failed to load add clinician draft", error);
+          return null;
+        }
+      }
+
+      function clearAddClinicianDraft() {
+        try {
+          localStorage.removeItem(ADD_CLINICIAN_DRAFT_KEY);
+        } catch (error) {
+          console.warn("Failed to clear add clinician draft", error);
+        }
+      }
+
+      function applyAddClinicianDraft(draft) {
+        if (!draft) return false;
+        const setField = (id, value) => {
+          const el = byId(id);
+          if (!el || value === undefined || value === null) return;
+          if (String(el.value) === String(value)) return;
+          el.value = value;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+        };
+
+        setField("ac-first-name", draft.firstName);
+        setField("ac-last-name", draft.lastName);
+        setField("ac-occupation", draft.occupation);
+        return true;
+      }
+
+      const debouncedSaveAddClinicianDraft = debounce(saveAddClinicianDraft, 450);
 
       // ── Shell bootstrap ──
 
@@ -532,7 +614,8 @@
         const drawer = byId(drawerId);
         const backdrop = byId("detail-backdrop");
         if (!drawer || !backdrop) return;
-        document.body.classList.add("drawer-open");
+        const appMain = document.querySelector(".app-main");
+        if (appMain) appMain.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -543,12 +626,13 @@
         if (!activeDrawer) return;
         const drawer = byId(activeDrawer);
         const backdrop = byId("detail-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (drawer) {
           drawer.classList.remove("open");
           drawer.setAttribute("aria-hidden", "true");
         }
         if (backdrop) backdrop.classList.remove("open");
-        document.body.classList.remove("drawer-open");
+        if (appMain) appMain.classList.remove("drawer-open");
         activeDrawer = null;
       }
 
@@ -832,6 +916,11 @@
         if (allMet) clearFieldError("ac-password", "ac-password-error");
       });
 
+      ["ac-first-name", "ac-last-name", "ac-occupation"].forEach((id) => {
+        byId(id)?.addEventListener("input", debouncedSaveAddClinicianDraft);
+        byId(id)?.addEventListener("change", debouncedSaveAddClinicianDraft);
+      });
+
       function showFieldError(inputId, errorId, message) {
         const input = byId(inputId);
         const error = byId(errorId);
@@ -924,6 +1013,10 @@
 
       byId("open-add-clinician-btn")?.addEventListener("click", () => {
         clearAddClinicianForm();
+        const appliedDraft = applyAddClinicianDraft(loadAddClinicianDraft());
+        if (appliedDraft) {
+          showToast("Draft clinician form restored.", "success");
+        }
         openDrawer("add-clinician-drawer");
       });
 
@@ -951,6 +1044,7 @@
             return;
           }
           showToast("Clinician account created successfully.", "success");
+          clearAddClinicianDraft();
           closeActiveDrawer();
           await loadClinicians();
         } catch {

@@ -23,7 +23,6 @@
       aria-atomic="true"
     ></div>
     <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-    <div id="detail-backdrop" class="detail-backdrop"></div>
 
     <div class="app-shell">
       <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
@@ -275,54 +274,55 @@
             </div>
           </section>
         </main>
+
+        <div id="detail-backdrop" class="detail-backdrop"></div>
+        <!-- Result Detail Drawer -->
+        <aside
+          class="result-detail-drawer"
+          id="result-detail-drawer"
+          aria-hidden="true"
+          aria-labelledby="result-detail-title"
+        >
+          <div class="detail-header">
+            <div>
+              <h2 id="result-detail-title">Result Details</h2>
+              <p id="result-detail-subtitle">Loading assessment record...</p>
+            </div>
+            <button
+              id="close-result-detail-btn"
+              class="icon-button"
+              type="button"
+              aria-label="Close result details"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="detail-body" id="result-detail-body">
+            <!-- populated by JS -->
+          </div>
+          <div class="detail-footer">
+            <button id="result-download-pdf-btn" type="button" class="btn-primary-app" disabled>
+              Download PDF Report
+            </button>
+            <button id="close-result-detail-footer-btn" type="button" class="btn-secondary-app">
+              Close
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
-
-    <!-- Result Detail Drawer -->
-    <aside
-      class="result-detail-drawer"
-      id="result-detail-drawer"
-      aria-hidden="true"
-      aria-labelledby="result-detail-title"
-    >
-      <div class="detail-header">
-        <div>
-          <h2 id="result-detail-title">Result Details</h2>
-          <p id="result-detail-subtitle">Loading assessment record...</p>
-        </div>
-        <button
-          id="close-result-detail-btn"
-          class="icon-button"
-          type="button"
-          aria-label="Close result details"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="detail-body" id="result-detail-body">
-        <!-- populated by JS -->
-      </div>
-      <div class="detail-footer">
-        <button id="result-download-pdf-btn" type="button" class="btn-primary-app" disabled>
-          Download PDF Report
-        </button>
-        <button id="close-result-detail-footer-btn" type="button" class="btn-secondary-app">
-          Close
-        </button>
-      </div>
-    </aside>
 
     <script>
       // ── Utilities ──
@@ -610,8 +610,9 @@
       function openResultDrawer() {
         const drawer = byId("result-detail-drawer");
         const backdrop = byId("detail-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) return;
-        document.body.classList.add("drawer-open");
+        if (appMain) appMain.classList.add("drawer-open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -620,8 +621,9 @@
       function closeResultDrawer() {
         const drawer = byId("result-detail-drawer");
         const backdrop = byId("detail-backdrop");
+        const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) return;
-        document.body.classList.remove("drawer-open");
+        if (appMain) appMain.classList.remove("drawer-open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         backdrop.classList.remove("open");
