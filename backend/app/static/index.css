@@ -1493,17 +1493,6 @@
   word-break: break-word;
 }
 
-.review-summary {
-  border: 1px solid #d8e3e8;
-  border-radius: var(--radius-sm);
-  background: #ffffff;
-  padding: 0.65rem;
-  display: grid;
-  gap: 0.38rem;
-  font-size: 0.82rem;
-  color: var(--text-700);
-}
-
 .review-item {
   display: flex;
   justify-content: space-between;
@@ -1519,6 +1508,13 @@
   font-weight: 600;
   text-align: right;
   word-break: break-word;
+}
+
+.drawer-step[data-step="3"] .detail-list {
+  background: transparent;
+  border: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .disclaimer-note {

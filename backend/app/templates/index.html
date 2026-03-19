@@ -1075,7 +1075,7 @@
               <section class="drawer-step hidden" data-step="3">
                 <div class="form-panel">
                   <h3>Review Summary</h3>
-                  <div id="review-summary" class="review-summary"></div>
+                  <div id="review-summary" class="detail-list"></div>
                 </div>
 
                 <div class="disclaimer-note">
@@ -1988,7 +1988,7 @@
         summary.innerHTML = rows
           .map(
             ([label, value]) =>
-              `<div class="review-item"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`,
+              `<li class="review-item"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></li>`,
           )
           .join("");
       }
