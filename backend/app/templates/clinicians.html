@@ -616,6 +616,7 @@
         if (!drawer || !backdrop) return;
         const appMain = document.querySelector(".app-main");
         if (appMain) appMain.classList.add("drawer-open");
+        positionDrawerInView(drawer, backdrop, appMain);
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
         backdrop.classList.add("open");
@@ -633,7 +634,26 @@
         }
         if (backdrop) backdrop.classList.remove("open");
         if (appMain) appMain.classList.remove("drawer-open");
+        resetDrawerPosition(drawer, backdrop);
         activeDrawer = null;
+      }
+
+      function positionDrawerInView(drawer, backdrop, appMain) {
+        if (!drawer || !backdrop || !appMain) return;
+        const scrollTop = appMain.scrollTop || 0;
+        const height = appMain.clientHeight || 0;
+        [drawer, backdrop].forEach((el) => {
+          el.style.top = `${scrollTop}px`;
+          el.style.height = `${height}px`;
+        });
+      }
+
+      function resetDrawerPosition(drawer, backdrop) {
+        [drawer, backdrop].forEach((el) => {
+          if (!el) return;
+          el.style.top = "";
+          el.style.height = "";
+        });
       }
 
       byId("close-clinician-detail-btn")?.addEventListener("click", closeActiveDrawer);
