@@ -328,12 +328,10 @@
                 </div>
 
                 <div id="results-loading" class="loading-block hidden">
-                  <div class="skeleton-row"></div>
-                  <div class="skeleton-row" style="width: 70%"></div>
-                  <div class="skeleton-row"></div>
-                  <div class="skeleton-row" style="width: 85%"></div>
-                  <div class="skeleton-row large"></div>
-                  <div class="skeleton-row" style="width: 60%"></div>
+                  <div class="skeleton-row single-wide"></div>
+                  <div class="skeleton-row single-tight"></div>
+                  <div class="skeleton-row skeleton-row--double"></div>
+                  <div class="skeleton-row single-wide"></div>
                 </div>
 
                 <div id="results-content" class="results-content hidden">
@@ -1077,10 +1075,12 @@
 
               <div class="drawer-actions" id="drawer-actions">
                 <button type="button" class="btn-secondary-app" id="step-back-btn">Back</button>
-                <button type="button" class="btn-primary-app" id="step-next-btn">Next</button>
-                <button type="submit" class="btn-primary-app hidden" id="analyze-btn">
-                  Run Assessment
-                </button>
+                <div class="drawer-action-group">
+                  <button type="button" class="btn-primary-app" id="step-next-btn">Next</button>
+                  <button type="submit" class="btn-primary-app hidden" id="analyze-btn">
+                    Run Assessment
+                  </button>
+                </div>
               </div>
             </form>
 
@@ -1218,6 +1218,7 @@
         subjectLookup: new Map(),
         isDrawerOpen: false,
         isProcessing: false,
+        submissionInFlight: false,
         currentBandData: null,
         bandView: "average",
         latestResult: null,
@@ -1846,11 +1847,14 @@
             String(appState.latestAssessmentContext.subjectCode || "").trim(),
         );
 
-        if (hasCompletedAssessment) {
+        const shouldShowCompleted = appState.submissionInFlight || hasCompletedAssessment;
+        const shouldShowDraft = !shouldShowCompleted && hasDraft;
+
+        if (shouldShowCompleted) {
           indicator.textContent = "Assessment completed";
           indicator.classList.add("complete");
           setHidden("draft-indicator", false);
-        } else if (hasDraft) {
+        } else if (shouldShowDraft) {
           indicator.textContent = "Draft assessment in progress";
           indicator.classList.remove("complete");
           setHidden("draft-indicator", false);
@@ -1860,10 +1864,10 @@
         }
 
         if (openButton) {
-          openButton.textContent = hasDraft ? "Continue Assessment" : "New Assessment";
+          openButton.textContent = shouldShowDraft ? "Continue Assessment" : "New Assessment";
         }
 
-        if (hasDraft) {
+        if (shouldShowDraft) {
           const draftContext = collectAssessmentContext();
           const alignedWithLatest = !appState.file && isContextAlignedWithLatest(draftContext);
           renderSubjectSummary(draftContext, alignedWithLatest ? appState.latestResult : null);
@@ -1873,6 +1877,13 @@
 
         renderSubjectSummary(appState.latestAssessmentContext, appState.latestResult);
         renderPrepChecklist(appState.latestResult);
+      }
+
+      function setAssessmentLoadingState(isLoading) {
+        const openButton = byId("open-assessment-btn");
+        if (!openButton) return;
+        openButton.disabled = isLoading;
+        openButton.setAttribute("aria-disabled", isLoading ? "true" : "false");
       }
 
       function collectAssessmentContext() {
@@ -1897,6 +1908,28 @@
           recordedMinutes,
           fileMeta: appState.fileMeta,
         };
+      }
+
+      function resetAssessmentFormFields() {
+        [
+          "subject-code",
+          "date-of-birth",
+          "gender",
+          "technician-name",
+          "referral-name",
+          "referral-institution",
+          "sleep-hours",
+          "coffee-hours-ago",
+          "drugs-hours-ago",
+          "meal-hours-ago",
+          "medication",
+          "notes",
+        ].forEach((id) => {
+          const field = byId(id);
+          if (!field) return;
+          field.value = "";
+          clearFieldError(id);
+        });
       }
 
       function renderReviewSummary(context) {
@@ -3072,11 +3105,14 @@
 
         enterProcessingMode();
         closeAssessmentDrawer(true);
+        appState.submissionInFlight = true;
         setHidden("results-empty-state", true);
         setHidden("results-content", true);
         setHidden("results-loading", false);
-        scrollToAssessmentFindings();
+        setAssessmentLoadingState(true);
         appState.currentStep = 1;
+        applyAssessmentPriorityDisclosure();
+        updateDraftIndicator();
 
         try {
           const formData = buildFormDataFromContext(context);
@@ -3111,8 +3147,11 @@
 
           setHidden("results-loading", true);
           setHidden("results-content", false);
+          setAssessmentLoadingState(false);
           setHidden("export-bar", false);
           updateExportControls();
+          scrollToAssessmentFindings();
+          appState.submissionInFlight = false;
 
           // Load visualizations after core results render
           await ensureVisualizationContext(result);
@@ -3123,7 +3162,6 @@
 
           leaveProcessingMode();
           setStep(1);
-          applyAssessmentPriorityDisclosure();
 
           const fileInput = byId("file");
           if (fileInput) fileInput.value = "";
@@ -3133,11 +3171,16 @@
           renderFileMetadata(null);
           resetChannelGridStatus();
           clearAssessmentDraft();
+          resetAssessmentFormFields();
           updateDraftIndicator();
+          applyAssessmentPriorityDisclosure();
         } catch (error) {
+          appState.submissionInFlight = false;
+          updateDraftIndicator();
           leaveProcessingMode();
           setHidden("results-loading", true);
           setHidden("results-empty-state", false);
+          setAssessmentLoadingState(false);
           setStep(3);
           showToast(
             error.message || "An unexpected error occurred while running assessment.",
