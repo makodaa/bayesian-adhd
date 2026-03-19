@@ -1795,6 +1795,7 @@
 
       function updateDraftIndicator() {
         const indicator = byId("draft-indicator");
+        const openButton = byId("open-assessment-btn");
         if (!indicator) return;
 
         const fields = [
@@ -1819,17 +1820,21 @@
             String(appState.latestAssessmentContext.subjectCode || "").trim(),
         );
 
-        if (hasDraft) {
-          indicator.textContent = "Draft assessment in progress";
-          indicator.classList.remove("complete");
-          setHidden("draft-indicator", false);
-        } else if (hasCompletedAssessment) {
+        if (hasCompletedAssessment) {
           indicator.textContent = "Assessment completed";
           indicator.classList.add("complete");
+          setHidden("draft-indicator", false);
+        } else if (hasDraft) {
+          indicator.textContent = "Draft assessment in progress";
+          indicator.classList.remove("complete");
           setHidden("draft-indicator", false);
         } else {
           indicator.classList.remove("complete");
           setHidden("draft-indicator", true);
+        }
+
+        if (openButton) {
+          openButton.textContent = hasDraft ? "Continue Assessment" : "New Assessment";
         }
 
         if (hasDraft) {
