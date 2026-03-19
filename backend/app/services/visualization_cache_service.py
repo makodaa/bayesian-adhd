@@ -7,7 +7,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..config import VIZ_CACHE_DIR, VIZ_CACHE_MAX_BYTES, VIZ_CACHE_TTL_SECONDS
+from ..config import (
+    SAMPLE_RATE,
+    VIZ_CACHE_DETAIL_TTL_SECONDS,
+    VIZ_CACHE_DIR,
+    VIZ_CACHE_MAX_BYTES,
+    VIZ_CACHE_TTL_SECONDS,
+)
 from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
@@ -32,19 +38,23 @@ class ContextAccessError(VisualizationCacheError):
 class VisualizationCacheService:
     """Filesystem cache for uploaded EEG files and generated band images."""
 
-    CACHE_PROFILE = "preview_v1"
-    DETAIL_CACHE_PROFILE = "detail_v1"
+    CACHE_PROFILE = f"preview_v1_sr{SAMPLE_RATE}"
+    DETAIL_CACHE_PROFILE = f"detail_v1_sr{SAMPLE_RATE}"
     CONTEXT_SUFFIX = ".context.json"
 
     def __init__(
         self,
         cache_dir: str | None = None,
         ttl_seconds: int = VIZ_CACHE_TTL_SECONDS,
+        detail_ttl_seconds: int = VIZ_CACHE_DETAIL_TTL_SECONDS,
         max_bytes: int = VIZ_CACHE_MAX_BYTES,
     ):
         cache_root = os.getenv("VIZ_CACHE_DIR", cache_dir or VIZ_CACHE_DIR)
         self.cache_dir = Path(cache_root)
         self.ttl_seconds = int(os.getenv("VIZ_CACHE_TTL_SECONDS", str(ttl_seconds)))
+        self.detail_ttl_seconds = int(
+            os.getenv("VIZ_CACHE_DETAIL_TTL_SECONDS", str(detail_ttl_seconds))
+        )
         self.max_bytes = int(os.getenv("VIZ_CACHE_MAX_BYTES", str(max_bytes)))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -81,10 +91,16 @@ class VisualizationCacheService:
         with open(path, "r", encoding="utf-8") as handle:
             return json.load(handle)
 
-    def _touch_context(self, context_id: str, meta: dict[str, Any]) -> dict[str, Any]:
+    def _touch_context(
+        self,
+        context_id: str,
+        meta: dict[str, Any],
+        ttl_seconds: int | None = None,
+    ) -> dict[str, Any]:
         now = self._now()
+        ttl = ttl_seconds if ttl_seconds is not None else self.ttl_seconds
         meta["updated_at"] = now
-        meta["expires_at"] = now + self.ttl_seconds
+        meta["expires_at"] = max(int(meta.get("expires_at", 0)), now + ttl)
         self._write_json_atomic(self._context_path(context_id), meta)
         return meta
 
@@ -107,11 +123,28 @@ class VisualizationCacheService:
         return meta
 
     def _remove_context(self, context_id: str) -> None:
+        result_id = None
+        meta_path = self._context_path(context_id)
+        if meta_path.exists():
+            try:
+                meta = self._read_json(meta_path)
+                result_id = meta.get("result_id")
+            except (json.JSONDecodeError, OSError):
+                result_id = None
         for path in self.cache_dir.glob(f"{context_id}*"):
             try:
                 path.unlink(missing_ok=True)
             except OSError:
                 logger.warning(f"Failed to remove cached file: {path}")
+        if result_id is not None:
+            result_path = self._result_index_path(int(result_id))
+            try:
+                result_path.unlink(missing_ok=True)
+            except OSError:
+                logger.warning(f"Failed to remove result index file: {result_path}")
+
+    def _result_index_path(self, result_id: int) -> Path:
+        return self.cache_dir / f"result_{result_id}.json"
 
     def _context_size_bytes(self, context_id: str) -> int:
         total = 0
@@ -180,6 +213,28 @@ class VisualizationCacheService:
 
         self._enforce_size_limit()
 
+        for result_path in self.cache_dir.glob("result_*.json"):
+            try:
+                payload = self._read_json(result_path)
+            except (json.JSONDecodeError, OSError):
+                payload = {}
+
+            context_id = str(payload.get("context_id", "")).strip()
+            if not context_id:
+                try:
+                    result_path.unlink(missing_ok=True)
+                except OSError:
+                    continue
+                continue
+
+            meta_path = self._context_path(context_id)
+            if not meta_path.exists():
+                try:
+                    result_path.unlink(missing_ok=True)
+                except OSError:
+                    continue
+                continue
+
     def create_or_refresh_context(
         self,
         file_bytes: bytes,
@@ -242,6 +297,60 @@ class VisualizationCacheService:
             "created": True,
         }
 
+    def link_result_to_context(
+        self, context_id: str, clinician_id: int, result_id: int
+    ) -> dict[str, Any]:
+        """Associate a cached context with a result for later retrieval."""
+        meta = self._load_meta(context_id)
+        if str(meta.get("clinician_id")) != str(clinician_id):
+            raise ContextAccessError("Not authorized for visualization context")
+
+        meta["result_id"] = int(result_id)
+        self._touch_context(context_id, meta)
+
+        payload = {
+            "result_id": int(result_id),
+            "context_id": context_id,
+            "clinician_id": str(clinician_id),
+            "expires_at": meta.get("expires_at"),
+        }
+        self._write_json_atomic(self._result_index_path(int(result_id)), payload)
+        return payload
+
+    def get_context_by_result(
+        self, result_id: int, clinician_id: int
+    ) -> dict[str, Any]:
+        """Look up an existing cache context by result ID."""
+        result_path = self._result_index_path(int(result_id))
+        if not result_path.exists():
+            raise ContextNotFoundError("Visualization context not found")
+
+        try:
+            payload = self._read_json(result_path)
+        except (json.JSONDecodeError, OSError) as exc:
+            result_path.unlink(missing_ok=True)
+            raise ContextNotFoundError("Visualization context is invalid") from exc
+
+        context_id = str(payload.get("context_id", "")).strip()
+        if not context_id:
+            result_path.unlink(missing_ok=True)
+            raise ContextNotFoundError("Visualization context not found")
+
+        try:
+            meta = self._load_meta(context_id)
+        except ContextExpiredError as exc:
+            result_path.unlink(missing_ok=True)
+            raise exc
+        if str(meta.get("clinician_id")) != str(clinician_id):
+            raise ContextAccessError("Not authorized for visualization context")
+
+        self._touch_context(context_id, meta)
+        return {
+            "context_id": context_id,
+            "bands": meta.get("bands", []),
+            "expires_at": meta.get("expires_at"),
+        }
+
     def read_context_csv(self, context_id: str, clinician_id: int) -> bytes:
         """Read cached CSV bytes for a context after access checks."""
         meta = self._load_meta(context_id)
@@ -271,7 +380,10 @@ class VisualizationCacheService:
 
         image_path = self._image_path(context_id, band, quality)
         if image_path.exists():
-            self._touch_context(context_id, meta)
+            ttl_override = (
+                self.detail_ttl_seconds if quality == "detail" else self.ttl_seconds
+            )
+            self._touch_context(context_id, meta, ttl_seconds=ttl_override)
             return image_path
         return None
 
@@ -297,6 +409,9 @@ class VisualizationCacheService:
         bands = set(meta.get("bands", []))
         bands.add(band)
         meta["bands"] = sorted(bands)
-        self._touch_context(context_id, meta)
+        ttl_override = (
+            self.detail_ttl_seconds if quality == "detail" else self.ttl_seconds
+        )
+        self._touch_context(context_id, meta, ttl_seconds=ttl_override)
         self._enforce_size_limit()
         return image_path

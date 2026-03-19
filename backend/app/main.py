@@ -2,6 +2,7 @@ from datetime import datetime
 import time
 from os import PathLike
 from pathlib import Path
+from threading import Lock
 from typing import cast
 
 import matplotlib
@@ -60,6 +61,18 @@ from .services.visualization_cache_service import (
 matplotlib.use("Agg")  # Non-GUI backend
 
 logger = get_app_logger(__name__)
+
+VIZ_RENDER_LOCKS: dict[tuple[str, str, str], Lock] = {}
+VIZ_RENDER_LOCKS_GUARD = Lock()
+
+
+def _get_viz_lock(key: tuple[str, str, str]) -> Lock:
+    with VIZ_RENDER_LOCKS_GUARD:
+        lock = VIZ_RENDER_LOCKS.get(key)
+        if lock is None:
+            lock = Lock()
+            VIZ_RENDER_LOCKS[key] = lock
+        return lock
 
 # Initialize the Flask app with explicit template/static folders
 _here = Path(__file__).parent
@@ -370,6 +383,32 @@ def create_eeg_visualization_context():
         return jsonify({"error": "Failed to create visualization context"}), 500
 
 
+@app.route("/api/eeg_visualization_context/result/<int:result_id>", methods=["GET"])
+@login_required
+def get_eeg_visualization_context_for_result(result_id: int):
+    """Fetch an existing visualization cache context for a result."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    try:
+        context = visualization_cache_service.get_context_by_result(
+            result_id=result_id,
+            clinician_id=clinician_id,
+        )
+        return jsonify(context), 200
+    except ContextAccessError:
+        return jsonify({"error": "Not authorized for this visualization context"}), 403
+    except (ContextNotFoundError, ContextExpiredError) as exc:
+        return jsonify({"error": str(exc)}), 404
+    except Exception as e:
+        logger.error(
+            f"Error fetching visualization context for result {result_id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to load visualization context"}), 500
+
+
 @app.route("/api/eeg_visualizations/<context_id>/<band>.png", methods=["GET"])
 @login_required
 def get_eeg_visualization_image(context_id: str, band: str):
@@ -390,57 +429,71 @@ def get_eeg_visualization_image(context_id: str, band: str):
             f"Visualization request: clinician={clinician_id}, context={context_id}, "
             f"band={band}, quality={quality}"
         )
-        cached_path = visualization_cache_service.get_cached_image_path(
-            context_id=context_id,
-            clinician_id=clinician_id,
-            band=band,
-            quality=quality,
-        )
-        if cached_path is not None:
+        max_age = 3600 if quality == "preview" else 21600
+        lock_key = (context_id, band, quality)
+        lock = _get_viz_lock(lock_key)
+        with lock:
+            cached_path = visualization_cache_service.get_cached_image_path(
+                context_id=context_id,
+                clinician_id=clinician_id,
+                band=band,
+                quality=quality,
+            )
+            if cached_path is not None:
+                logger.info(
+                    f"Visualization cache HIT for context={context_id}, band={band}, quality={quality}"
+                )
+                response = send_file(cached_path, mimetype="image/png", conditional=True)
+                response.headers["X-Visualization-Cache"] = "HIT"
+                response.headers["X-Visualization-Quality"] = quality
+                response.headers["Cache-Control"] = f"private, max-age={max_age}"
+                return response
+
+            render_start = time.perf_counter()
+            csv_bytes = visualization_cache_service.read_context_csv(
+                context_id=context_id,
+                clinician_id=clinician_id,
+            )
+            df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
+            file_service.validate_eeg_data(df)
+
+            if quality == "detail":
+                image_bytes = visualization_service.render_detail_png(
+                    df,
+                    cast(BandFilter, band),
+                )
+            else:
+                image_bytes = visualization_service.render_preview_png(
+                    df,
+                    cast(BandFilter, band),
+                )
+
+            image_path = visualization_cache_service.store_image(
+                context_id=context_id,
+                clinician_id=clinician_id,
+                band=band,
+                image_bytes=image_bytes,
+                quality=quality,
+            )
+
+            render_elapsed = time.perf_counter() - render_start
             logger.info(
-                f"Visualization cache HIT for context={context_id}, band={band}, quality={quality}"
+                "Visualization render completed in %.2fs (context=%s, band=%s, quality=%s)",
+                render_elapsed,
+                context_id,
+                band,
+                quality,
             )
-            response = send_file(cached_path, mimetype="image/png", conditional=True)
-            response.headers["X-Visualization-Cache"] = "HIT"
+
+            logger.info(
+                f"Visualization cache MISS for context={context_id}, band={band}, quality={quality}"
+            )
+
+            response = send_file(image_path, mimetype="image/png", conditional=True)
+            response.headers["X-Visualization-Cache"] = "MISS"
             response.headers["X-Visualization-Quality"] = quality
-            response.headers["Cache-Control"] = "private, max-age=3600"
+            response.headers["Cache-Control"] = f"private, max-age={max_age}"
             return response
-
-        csv_bytes = visualization_cache_service.read_context_csv(
-            context_id=context_id,
-            clinician_id=clinician_id,
-        )
-        df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
-        file_service.validate_eeg_data(df)
-
-        if quality == "detail":
-            image_bytes = visualization_service.render_detail_png(
-                df,
-                cast(BandFilter, band),
-            )
-        else:
-            image_bytes = visualization_service.render_preview_png(
-                df,
-                cast(BandFilter, band),
-            )
-
-        image_path = visualization_cache_service.store_image(
-            context_id=context_id,
-            clinician_id=clinician_id,
-            band=band,
-            image_bytes=image_bytes,
-            quality=quality,
-        )
-
-        logger.info(
-            f"Visualization cache MISS for context={context_id}, band={band}, quality={quality}"
-        )
-
-        response = send_file(image_path, mimetype="image/png", conditional=True)
-        response.headers["X-Visualization-Cache"] = "MISS"
-        response.headers["X-Visualization-Quality"] = quality
-        response.headers["Cache-Control"] = "private, max-age=3600"
-        return response
     except ContextAccessError:
         return jsonify({"error": "Not authorized for this visualization context"}), 403
     except (ContextNotFoundError, ContextExpiredError) as exc:
@@ -488,6 +541,7 @@ def get_eeg_segment_visualization(context_id: str):
             response.headers["X-Visualization-Quality"] = quality
             return response
 
+        render_start = time.perf_counter()
         csv_bytes = visualization_cache_service.read_context_csv(
             context_id=context_id,
             clinician_id=clinician_id,
@@ -505,6 +559,14 @@ def get_eeg_segment_visualization(context_id: str):
             band=band_key,
             image_bytes=image_bytes,
             quality=quality,
+        )
+
+        render_elapsed = time.perf_counter() - render_start
+        logger.info(
+            "Segment visualization render completed in %.2fs (context=%s, quality=%s)",
+            render_elapsed,
+            context_id,
+            quality,
         )
 
         response = send_file(image_path, mimetype="image/png", conditional=True)
@@ -719,34 +781,26 @@ def predict():
             logger.warning(f"Failed to generate/save temporal biomarkers: {e}", exc_info=True)
         stage_start = log_stage("Temporal biomarkers", stage_start)
 
-        # Generate and persist EEG visualization images to database
-        logger.info(f"Generating EEG visualizations for result {result['result_id']}")
-        try:
-            import base64
-
-            viz_bands = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"]
-            for band_name in viz_bands:
-                img_bytes = visualization_service.render_detail_png(df, band_name)
-                b64 = "data:image/png;base64," + base64.b64encode(img_bytes).decode("ascii")
-                eeg_visualizations_repo.create_visualization(
-                    result["result_id"], band_name, b64
+        if visualization_context_id:
+            try:
+                visualization_cache_service.link_result_to_context(
+                    visualization_context_id,
+                    clinician_id,
+                    result["result_id"],
                 )
-            logger.info(f"Saved {len(viz_bands)} band visualizations for result {result['result_id']}")
-
-            # Segment visualization (requires window_predictions)
-            window_preds = result.get("window_predictions", [])
-            if window_preds:
-                seg_bytes = visualization_service.render_segment_png(
-                    df, window_preds, quality="detail"
+                logger.info(
+                    "Linked visualization context %s to result %s",
+                    visualization_context_id,
+                    result["result_id"],
                 )
-                seg_b64 = "data:image/png;base64," + base64.b64encode(seg_bytes).decode("ascii")
-                eeg_visualizations_repo.create_visualization(
-                    result["result_id"], "segments", seg_b64
+            except Exception as exc:
+                logger.warning(
+                    "Failed to link visualization context to result %s: %s",
+                    result["result_id"],
+                    exc,
+                    exc_info=True,
                 )
-                logger.info(f"Saved segment visualization for result {result['result_id']}")
-        except Exception as e:
-            logger.warning(f"Failed to generate/save EEG visualizations: {e}", exc_info=True)
-        stage_start = log_stage("EEG visualizations", stage_start)
+        stage_start = log_stage("Visualization cache linking", stage_start)
 
         # Add band power summary to result
         result["band_analysis"] = {
