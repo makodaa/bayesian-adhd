@@ -669,7 +669,9 @@ def predict():
         # Generate and save topographic maps
         logger.info(f"Generating topographic maps for result {result['result_id']}")
         try:
-            topo_data = topographic_service.generate_all_topomaps(df)
+            topo_data = topographic_service.generate_topomaps_from_band_powers(
+                band_powers
+            )
             # Save absolute power maps
             for band, image in topo_data.get("absolute_power_maps", {}).items():
                 topographic_maps_repo.create_map(result["result_id"], "absolute", band, image)

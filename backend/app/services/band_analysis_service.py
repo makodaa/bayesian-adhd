@@ -1,11 +1,12 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from scipy.signal import welch
-
 from ..config import CLASSIFYING_FREQUENCY_BANDS, SAMPLE_RATE
 from ..core.logging_config import get_app_logger
 from ..db.repositories.band_powers import BandPowersRepository
 from ..db.repositories.ratios import RatiosRepository
+from ..utils.band_power import compute_electrode_band_powers
 
 logger = get_app_logger(__name__)
 
@@ -37,41 +38,14 @@ class BandAnalysisService:
         logger.info(f"Computing band powers for {len(df)} samples")
         electrodes = df.select_dtypes(include=[np.number]).columns.tolist()
         logger.debug(f"Processing {len(electrodes)} electrodes: {electrodes}")
-        result = {
-            "absolute_power": {},
-            "relative_power": {},
-            "total_power": {},
-            "band_ratios": {},
-        }
-
-        for electrode in electrodes:
-            signal = df[electrode].to_numpy()
-
-            # Compute power spectral density (PSD) using Welch's method
-            freqs, psd = welch(
-                signal, fs=SAMPLE_RATE, nperseg=min(256, len(signal) // 4)
+        result: dict[str, Any] = dict(
+            compute_electrode_band_powers(
+            df=df,
+            bands=CLASSIFYING_FREQUENCY_BANDS,
+            sample_rate=SAMPLE_RATE,
+            electrodes=electrodes,
             )
-
-            # Compute absolute power for each band
-            absolute_powers = {}
-            for band_name, (low, high) in CLASSIFYING_FREQUENCY_BANDS.items():
-                band_mask = (freqs >= low) & (freqs < high)
-                band_power = np.trapezoid(psd[band_mask], freqs[band_mask])
-                absolute_powers[band_name] = float(band_power)
-
-            # Compute total power across all bands
-            total_power = sum(absolute_powers.values())
-
-            # Compute relative power (as fraction of total)
-            relative_powers = {
-                band_name: (power / total_power) if total_power > 0 else 0.0
-                for band_name, power in absolute_powers.items()
-            }
-
-            # Store results for this electrode
-            result["absolute_power"][electrode] = absolute_powers
-            result["relative_power"][electrode] = relative_powers
-            result["total_power"][electrode] = float(total_power)
+        )
 
         from ..config import DISPLAY_FREQUENCY_BANDS
 
