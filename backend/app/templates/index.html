@@ -1169,9 +1169,31 @@
         </div>
 
         <div class="eeg-modal-footer">
-          Press <kbd>Esc</kbd> to close
-          <span class="eeg-modal-footer-sep">·</span>
-          <kbd>←</kbd> <kbd>→</kbd> to switch bands
+          <div class="eeg-modal-controls" role="group" aria-label="Waveform zoom controls">
+            <button id="eeg-zoom-out-btn" type="button" class="eeg-modal-control-btn">
+              Zoom −
+            </button>
+            <button id="eeg-zoom-in-btn" type="button" class="eeg-modal-control-btn">
+              Zoom +
+            </button>
+            <button id="eeg-zoom-reset-btn" type="button" class="eeg-modal-control-btn">
+              Reset
+            </button>
+            <button id="eeg-zoom-fit-btn" type="button" class="eeg-modal-control-btn">
+              Fit
+            </button>
+            <span id="eeg-modal-zoom-readout" class="eeg-modal-zoom-readout">100%</span>
+            <button id="eeg-download-btn" type="button" class="eeg-modal-control-btn">
+              Download
+            </button>
+          </div>
+          <div class="eeg-modal-hints">
+            Press <kbd>Esc</kbd> to close
+            <span class="eeg-modal-footer-sep">·</span>
+            <kbd>←</kbd> <kbd>→</kbd> to switch bands
+            <span class="eeg-modal-footer-sep">·</span>
+            <kbd>+</kbd> <kbd>−</kbd> to zoom
+          </div>
         </div>
       </div>
     </div>
@@ -3545,10 +3567,25 @@
         let isOpen = false;
         let triggerElement = null;
         let hqAbortController = null;
+        let isDownloading = false;
+
+        const zoomState = {
+          scale: 1,
+          x: 0,
+          y: 0,
+          minScale: 1,
+          maxScale: 6,
+          isPanning: false,
+          startX: 0,
+          startY: 0,
+          startTranslateX: 0,
+          startTranslateY: 0,
+        };
 
         const overlay = () => byId("eeg-modal-overlay");
         const canvas = () => byId("eeg-modal-canvas");
         const bandLabel = () => byId("eeg-modal-band-label");
+        const modalImage = () => byId("eeg-modal-img");
 
         function getFocusableElements() {
           const modal = byId("eeg-modal");
@@ -3585,6 +3622,26 @@
           if (!isOpen) return;
           if (event.key === "Escape") {
             close();
+            return;
+          }
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            zoomByFactor(1.2);
+            return;
+          }
+          if (event.key === "-") {
+            event.preventDefault();
+            zoomByFactor(1 / 1.2);
+            return;
+          }
+          if (event.key === "0") {
+            event.preventDefault();
+            resetZoom();
+            return;
+          }
+          if (event.key === "f" || event.key === "F") {
+            event.preventDefault();
+            resetZoom();
             return;
           }
           if (event.key === "ArrowRight") {
@@ -3625,6 +3682,178 @@
           if (!c) return;
           c.innerHTML = `
                     <img src="${src}" alt="${escapeHtml(BAND_LABELS[band] || band)} EEG waveform" id="eeg-modal-img" />`;
+          applyTransform();
+        }
+
+        function updateZoomReadout() {
+          const readout = byId("eeg-modal-zoom-readout");
+          if (readout) readout.textContent = `${Math.round(zoomState.scale * 100)}%`;
+        }
+
+        function clampPan() {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return;
+
+          const scaledWidth = img.offsetWidth * zoomState.scale;
+          const scaledHeight = img.offsetHeight * zoomState.scale;
+          const minX = Math.min(0, c.clientWidth - scaledWidth);
+          const minY = Math.min(0, c.clientHeight - scaledHeight);
+
+          zoomState.x = Math.min(0, Math.max(minX, zoomState.x));
+          zoomState.y = Math.min(0, Math.max(minY, zoomState.y));
+        }
+
+        function applyTransform() {
+          const img = modalImage();
+          const c = canvas();
+          if (!c) return;
+
+          if (!img) {
+            updateZoomReadout();
+            c.classList.remove("is-zoomed", "is-panning");
+            return;
+          }
+
+          if (zoomState.scale <= 1) {
+            zoomState.x = 0;
+            zoomState.y = 0;
+          }
+
+          clampPan();
+          img.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+          c.classList.toggle("is-zoomed", zoomState.scale > 1.01);
+          c.classList.toggle("is-panning", zoomState.isPanning);
+          updateZoomReadout();
+        }
+
+        function setScale(newScale, originX, originY) {
+          const clamped = Math.min(zoomState.maxScale, Math.max(zoomState.minScale, newScale));
+          if (clamped === zoomState.scale) return;
+
+          if (originX == null || originY == null) {
+            zoomState.scale = clamped;
+            applyTransform();
+            return;
+          }
+
+          const ratio = clamped / zoomState.scale;
+          zoomState.x = originX - (originX - zoomState.x) * ratio;
+          zoomState.y = originY - (originY - zoomState.y) * ratio;
+          zoomState.scale = clamped;
+          applyTransform();
+        }
+
+        function zoomByFactor(factor, originEvent) {
+          const c = canvas();
+          if (!c) return;
+          const rect = c.getBoundingClientRect();
+          const originX = originEvent ? originEvent.clientX - rect.left : c.clientWidth / 2;
+          const originY = originEvent ? originEvent.clientY - rect.top : c.clientHeight / 2;
+          setScale(zoomState.scale * factor, originX, originY);
+        }
+
+        function resetZoom() {
+          zoomState.scale = 1;
+          zoomState.x = 0;
+          zoomState.y = 0;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function handleZoomWheel(event) {
+          if (!isOpen) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+          zoomByFactor(factor, event);
+        }
+
+        function startPan(event) {
+          if (!isOpen) return;
+          if (event.button !== 0) return;
+          if (zoomState.scale <= 1) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          zoomState.isPanning = true;
+          zoomState.startX = event.clientX;
+          zoomState.startY = event.clientY;
+          zoomState.startTranslateX = zoomState.x;
+          zoomState.startTranslateY = zoomState.y;
+          applyTransform();
+        }
+
+        function handlePan(event) {
+          if (!isOpen || !zoomState.isPanning) return;
+          const dx = event.clientX - zoomState.startX;
+          const dy = event.clientY - zoomState.startY;
+          zoomState.x = zoomState.startTranslateX + dx;
+          zoomState.y = zoomState.startTranslateY + dy;
+          applyTransform();
+        }
+
+        function endPan() {
+          if (!zoomState.isPanning) return;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function handleDoubleClick(event) {
+          if (!isOpen) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          const factor = event.shiftKey ? 1 / 1.35 : 1.35;
+          zoomByFactor(factor, event);
+        }
+
+        function getHqCacheKey(band) {
+          return `hq_${band}`;
+        }
+
+        async function fetchHQImage(band, { signal } = {}) {
+          if (!appState.visualizationContextId) {
+            throw new Error("Visualization context is missing.");
+          }
+
+          const hqKey = getHqCacheKey(band);
+          const cachedHqUrl = appState.visualizations[hqKey];
+          if (cachedHqUrl) return cachedHqUrl;
+
+          const contextId = appState.visualizationContextId;
+          let response;
+
+          if (band === "segments") {
+            const wp = appState.windowPredictions;
+            if (!wp || wp.length === 0) {
+              throw new Error("No classification window data available.");
+            }
+            response = await fetch(
+              `/api/eeg_segment_visualization/${encodeURIComponent(contextId)}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ window_predictions: wp, quality: "detail" }),
+                signal,
+              },
+            );
+          } else {
+            const url = `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${band}.png?quality=detail`;
+            response = await fetch(url, { signal, cache: "no-store" });
+          }
+
+          if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || "Failed to load high-quality waveform.");
+          }
+
+          const blob = await response.blob();
+          if (!blob.type.includes("image")) {
+            throw new Error("Unexpected response type for high-quality waveform.");
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+          appState.visualizations[hqKey] = objectUrl;
+          return objectUrl;
         }
 
         function switchBand(band) {
@@ -3637,6 +3866,7 @@
           currentBand = band;
           updateBandButtons(band);
           if (bandLabel()) bandLabel().textContent = BAND_LABELS[band] || band;
+          resetZoom();
 
           // Show preview immediately if available, otherwise skeleton
           const previewUrl = appState.visualizations[band];
@@ -3659,56 +3889,14 @@
         // Iteration 3: fetch high-quality render and swap in
         async function requestHQImage(band) {
           if (!appState.visualizationContextId) return;
-          const contextId = appState.visualizationContextId;
           const thisBand = band;
-          const hqKey = `hq_${thisBand}`;
-
-          // If already cached, swap in immediately without a network request
-          const cachedHqUrl = appState.visualizations[hqKey];
-          if (cachedHqUrl) {
-            const img = byId("eeg-modal-img");
-            if (img && img.src !== cachedHqUrl) {
-              img.style.opacity = "0";
-              img.src = cachedHqUrl;
-              requestAnimationFrame(() => {
-                img.style.transition = "opacity 220ms ease-out";
-                img.style.opacity = "1";
-              });
-            }
-            return;
-          }
 
           hqAbortController = new AbortController();
           const signal = hqAbortController.signal;
 
           try {
-            let response;
-            if (thisBand === "segments") {
-              // Segments uses a POST endpoint with window predictions
-              const wp = appState.windowPredictions;
-              if (!wp || wp.length === 0) return;
-              response = await fetch(
-                `/api/eeg_segment_visualization/${encodeURIComponent(contextId)}`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ window_predictions: wp, quality: "detail" }),
-                  signal,
-                },
-              );
-            } else {
-              const url = `/api/eeg_visualizations/${encodeURIComponent(contextId)}/${thisBand}.png?quality=detail`;
-              response = await fetch(url, { signal, cache: "no-store" });
-            }
-            if (!response.ok || signal.aborted) return;
-
-            const blob = await response.blob();
-            if (!blob.type.includes("image") || signal.aborted) return;
-
-            if (currentBand !== thisBand || !isOpen) return;
-
-            const objectUrl = URL.createObjectURL(blob);
-            appState.visualizations[hqKey] = objectUrl;
+            const objectUrl = await fetchHQImage(thisBand, { signal });
+            if (signal.aborted || currentBand !== thisBand || !isOpen) return;
 
             // Progressive swap: replace image src smoothly
             const img = byId("eeg-modal-img");
@@ -3739,6 +3927,7 @@
           if (!appState.visualizationContextId) return;
           currentBand = band || getActiveBand();
           isOpen = true;
+          resetZoom();
 
           const ov = overlay();
           if (!ov) return;
@@ -3770,6 +3959,7 @@
           });
 
           document.addEventListener("keydown", handleKeydown);
+          window.addEventListener("resize", applyTransform);
         }
 
         function close() {
@@ -3778,6 +3968,7 @@
             hqAbortController.abort();
             hqAbortController = null;
           }
+          endPan();
 
           const ov = overlay();
           if (ov) {
@@ -3786,6 +3977,7 @@
           }
           document.body.style.overflow = "";
           document.removeEventListener("keydown", handleKeydown);
+          window.removeEventListener("resize", applyTransform);
 
           // Restore focus to trigger element
           if (triggerElement && triggerElement.focus) {
@@ -3807,10 +3999,48 @@
           // Close button
           byId("eeg-modal-close-btn")?.addEventListener("click", close);
 
+          // Zoom control buttons
+          byId("eeg-zoom-in-btn")?.addEventListener("click", () => zoomByFactor(1.2));
+          byId("eeg-zoom-out-btn")?.addEventListener("click", () => zoomByFactor(1 / 1.2));
+          byId("eeg-zoom-reset-btn")?.addEventListener("click", resetZoom);
+          byId("eeg-zoom-fit-btn")?.addEventListener("click", resetZoom);
+          byId("eeg-download-btn")?.addEventListener("click", async () => {
+            if (isDownloading) return;
+            if (!appState.visualizationContextId) {
+              showToast("No waveform is available to download.", "warning");
+              return;
+            }
+            isDownloading = true;
+            const btn = byId("eeg-download-btn");
+            if (btn) btn.disabled = true;
+            try {
+              const url = await fetchHQImage(currentBand);
+              const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+              const filename = `eeg_${currentBand}_${stamp}.png`;
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = filename;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            } catch (err) {
+              showToast(err?.message || "Failed to download waveform image.", "error");
+            } finally {
+              isDownloading = false;
+              if (btn) btn.disabled = false;
+            }
+          });
+
           // Overlay click outside modal content
           overlay()?.addEventListener("click", (e) => {
             if (e.target === overlay()) close();
           });
+
+          canvas()?.addEventListener("wheel", handleZoomWheel, { passive: false });
+          canvas()?.addEventListener("mousedown", startPan);
+          canvas()?.addEventListener("dblclick", handleDoubleClick);
+          window.addEventListener("mousemove", handlePan);
+          window.addEventListener("mouseup", endPan);
 
           // Band switcher buttons in modal
           document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
