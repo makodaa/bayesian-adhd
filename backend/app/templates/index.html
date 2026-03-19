@@ -810,16 +810,22 @@
 
           <div class="drawer-stepper" aria-label="Assessment steps">
             <div class="step-item is-active" id="step-item-1">
-              <span class="step-dot">1</span>
-              <span class="step-text">Subject & Metadata</span>
+              <span class="step-item-inner">
+                <span class="step-dot">1</span>
+                <span class="step-text">Subject & Metadata</span>
+              </span>
             </div>
             <div class="step-item" id="step-item-2">
-              <span class="step-dot">2</span>
-              <span class="step-text">EEG Upload</span>
+              <span class="step-item-inner">
+                <span class="step-dot">2</span>
+                <span class="step-text">EEG Upload</span>
+              </span>
             </div>
             <div class="step-item" id="step-item-3">
-              <span class="step-dot">3</span>
-              <span class="step-text">Review & Submit</span>
+              <span class="step-item-inner">
+                <span class="step-dot">3</span>
+                <span class="step-text">Review & Submit</span>
+              </span>
             </div>
           </div>
 
@@ -1011,50 +1017,56 @@
               </section>
 
               <section class="drawer-step hidden" data-step="2">
-                <div class="form-panel">
-                  <h3>Upload EEG CSV <span class="required-indicator">*</span></h3>
-                  <label class="upload-dropzone" id="file-dropzone" for="file">
-                    <strong id="file-dropzone-title">Drag and drop CSV file</strong>
-                    <small id="file-dropzone-subtitle"
-                      >or click to choose a file from your device</small
-                    >
-                    <input type="file" id="file" name="file" accept=".csv" class="hidden" />
-                  </label>
-                  <p class="field-error hidden" data-error-for="file"></p>
-                </div>
+                <div class="assessment-form-columns">
+                  <div class="assessment-form-column assessment-form-column--left">
+                    <div class="form-panel">
+                      <h3>Upload EEG CSV <span class="required-indicator">*</span></h3>
+                      <label class="upload-dropzone" id="file-dropzone" for="file">
+                        <strong id="file-dropzone-title">Drag and drop CSV file</strong>
+                        <small id="file-dropzone-subtitle"
+                          >or click to choose a file from your device</small
+                        >
+                        <input type="file" id="file" name="file" accept=".csv" class="hidden" />
+                      </label>
+                      <p class="field-error hidden" data-error-for="file"></p>
+                    </div>
 
-                <div class="form-panel">
-                  <h3>
-                    Channel Validation (10-20 set)
-                    <span class="tooltip-anchor">
-                      <span
-                        class="tooltip-trigger"
-                        role="button"
-                        tabindex="0"
-                        aria-label="Channel validation definition"
-                      >
-                        i
-                      </span>
-                      <span class="tooltip-bubble" role="tooltip">
-                        <div>Confirms standard 19-channel montage for analysis.</div>
-                      </span>
-                    </span>
-                  </h3>
-                  <p class="hint" id="channel-status">
-                    Upload a CSV file to validate channel coverage.
-                  </p>
-                  <div id="channel-grid" class="channel-grid"></div>
-                </div>
+                    <div class="form-panel">
+                      <h3>
+                        Channel Validation (10-20 set)
+                        <span class="tooltip-anchor">
+                          <span
+                            class="tooltip-trigger"
+                            role="button"
+                            tabindex="0"
+                            aria-label="Channel validation definition"
+                          >
+                            i
+                          </span>
+                          <span class="tooltip-bubble" role="tooltip">
+                            <div>Confirms standard 19-channel montage for analysis.</div>
+                          </span>
+                        </span>
+                      </h3>
+                      <p class="hint" id="channel-status">
+                        Upload a CSV file to validate channel coverage.
+                      </p>
+                      <div id="channel-grid" class="channel-grid"></div>
+                    </div>
+                  </div>
 
-                <div class="form-panel">
-                  <h3>Recording File Summary</h3>
-                  <div id="file-meta" class="metadata-panel">
-                    <div class="metadata-row"><span>Filename</span><span>Not selected</span></div>
-                    <div class="metadata-row"><span>Rows</span><span>-</span></div>
-                    <div class="metadata-row"><span>Columns</span><span>-</span></div>
-                    <div class="metadata-row"><span>Estimated Duration</span><span>-</span></div>
-                    <div class="metadata-row">
-                      <span>Sampling Rate</span><span>128 Hz reference</span>
+                  <div class="assessment-form-column assessment-form-column--right">
+                    <div class="form-panel">
+                      <h3>Recording File Summary</h3>
+                      <div id="file-meta" class="metadata-panel">
+                        <div class="metadata-row"><span>Filename</span><span>Not selected</span></div>
+                        <div class="metadata-row"><span>Rows</span><span>-</span></div>
+                        <div class="metadata-row"><span>Columns</span><span>-</span></div>
+                        <div class="metadata-row"><span>Estimated Duration</span><span>-</span></div>
+                        <div class="metadata-row">
+                          <span>Sampling Rate</span><span>128 Hz reference</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
