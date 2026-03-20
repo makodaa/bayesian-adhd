@@ -29,8 +29,10 @@ from .db.repositories.temporal_plots import TemporalPlotsRepository
 from .db.repositories.temporal_summaries import TemporalSummariesRepository
 from .db.repositories.topographic_maps import TopographicMapsRepository
 from .db.repositories.eeg_visualizations import EEGVisualizationsRepository
+from .db.repositories.eeg_annotations import EEGAnnotationsRepository
 from .ml.model_loader import ModelLoader
 from .services.band_analysis_service import BandAnalysisService
+from .services.annotation_service import AnnotationService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
 from .services.eeg_service import EEGService
@@ -51,6 +53,7 @@ from .services.subject_service import SubjectService
 from .services.temporal_biomarker_service import TemporalBiomarkerService
 from .services.topographic_service import TopographicService
 from .services.visualization_service import BandFilter, VisualizationService
+from .config import SAMPLE_RATE
 from .services.visualization_cache_service import (
     ContextAccessError,
     ContextExpiredError,
@@ -132,6 +135,7 @@ temporal_plots_repo = TemporalPlotsRepository()
 temporal_summaries_repo = TemporalSummariesRepository()
 topographic_maps_repo = TopographicMapsRepository()
 eeg_visualizations_repo = EEGVisualizationsRepository()
+eeg_annotations_repo = EEGAnnotationsRepository()
 
 # Initialize services
 file_service = FileService()
@@ -139,6 +143,7 @@ eeg_service = EEGService(model_loader, results_repo, recordings_repo)
 band_analysis_service = BandAnalysisService(band_powers_repo, ratios_repo)
 visualization_service = VisualizationService()
 visualization_cache_service = VisualizationCacheService()
+annotation_service = AnnotationService(eeg_annotations_repo)
 topographic_service = TopographicService()
 temporal_biomarker_service = TemporalBiomarkerService()
 clinician_service = ClinicianService(clinicians_repo)
@@ -407,6 +412,44 @@ def get_eeg_visualization_context_for_result(result_id: int):
             exc_info=True,
         )
         return jsonify({"error": "Failed to load visualization context"}), 500
+
+
+@app.route("/api/eeg_visualization_meta/<context_id>", methods=["GET"])
+@login_required
+def get_eeg_visualization_meta(context_id: str):
+    """Return metadata for a cached EEG visualization context."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    try:
+        csv_bytes = visualization_cache_service.read_context_csv(
+            context_id=context_id,
+            clinician_id=clinician_id,
+        )
+        df = file_service.read_csv_bytes(csv_bytes, f"{context_id}.csv")
+        file_service.validate_eeg_data(df)
+        sample_count = int(df.shape[0])
+        duration_seconds = sample_count / float(SAMPLE_RATE) if sample_count else 0.0
+        return jsonify(
+            {
+                "sample_rate": SAMPLE_RATE,
+                "sample_count": sample_count,
+                "duration_seconds": duration_seconds,
+            }
+        ), 200
+    except ContextAccessError:
+        return jsonify({"error": "Not authorized for this visualization context"}), 403
+    except (ContextNotFoundError, ContextExpiredError) as exc:
+        return jsonify({"error": str(exc)}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(
+            f"Error fetching visualization meta for context {context_id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to load visualization metadata"}), 500
 
 
 @app.route("/api/eeg_visualizations/<context_id>/<band>.png", methods=["GET"])
@@ -965,6 +1008,111 @@ def get_result(result_id):
     except Exception as e:
         logger.error(f"Error fetching result {result_id}: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/results/<int:result_id>/annotations", methods=["GET"])
+@login_required
+def get_result_annotations(result_id: int):
+    """List EEG waveform annotations for a result (optionally filtered by band)."""
+    band = request.args.get("band")
+    allowed_bands = set(VisualizationService.BAND_FILTERS.keys()) | {"segments"}
+    if band:
+        band = band.strip()
+        if band not in allowed_bands:
+            return jsonify({"error": "Invalid band name"}), 400
+
+    try:
+        annotations = annotation_service.list_annotations(result_id, band_name=band)
+        return jsonify({"annotations": annotations}), 200
+    except Exception as e:
+        logger.error(
+            f"Error fetching annotations for result {result_id}: {e}", exc_info=True
+        )
+        return jsonify({"error": "Failed to fetch annotations"}), 500
+
+
+@app.route("/api/results/<int:result_id>/annotations", methods=["POST"])
+@login_required
+def create_result_annotation(result_id: int):
+    """Create an EEG annotation for a result."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        annotation = annotation_service.create_annotation(
+            result_id=result_id,
+            clinician_id=clinician_id,
+            payload=payload,
+        )
+        return jsonify({"annotation": annotation}), 201
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(
+            f"Error creating annotation for result {result_id}: {e}", exc_info=True
+        )
+        return jsonify({"error": "Failed to create annotation"}), 500
+
+
+@app.route("/api/results/<int:result_id>/annotations/<int:annotation_id>", methods=["PATCH"])
+@login_required
+def update_result_annotation(result_id: int, annotation_id: int):
+    """Update an EEG annotation for a result."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        existing = annotation_service.repo.get_by_id(annotation_id)
+        if not existing:
+            return jsonify({"error": "Annotation not found"}), 404
+        if int(existing.get("result_id", result_id)) != result_id:
+            return jsonify({"error": "Annotation does not belong to result"}), 400
+        updated = annotation_service.update_annotation(
+            annotation_id=annotation_id,
+            clinician_id=clinician_id,
+            payload=payload,
+        )
+        return jsonify({"annotation": updated}), 200
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(
+            f"Error updating annotation {annotation_id}: {e}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update annotation"}), 500
+
+
+@app.route("/api/results/<int:result_id>/annotations/<int:annotation_id>", methods=["DELETE"])
+@login_required
+def delete_result_annotation(result_id: int, annotation_id: int):
+    """Delete an EEG annotation for a result."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+
+    try:
+        existing = annotation_service.repo.get_by_id(annotation_id)
+        if not existing:
+            return jsonify({"error": "Annotation not found"}), 404
+        if int(existing.get("result_id", result_id)) != result_id:
+            return jsonify({"error": "Annotation does not belong to result"}), 400
+        annotation_service.delete_annotation(annotation_id, clinician_id=clinician_id)
+        return jsonify({"success": True}), 200
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        logger.error(
+            f"Error deleting annotation {annotation_id}: {e}", exc_info=True
+        )
+        return jsonify({"error": "Failed to delete annotation"}), 500
 
 
 @app.route("/api/results/<int:result_id>/pdf", methods=["GET"])

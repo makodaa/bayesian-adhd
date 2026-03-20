@@ -843,6 +843,58 @@
   background: var(--surface-card);
 }
 
+.eeg-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.eeg-modal-recording {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+
+.eeg-modal-recording-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-500);
+}
+
+.eeg-modal-shortcuts {
+  font-size: 0.72rem;
+  color: var(--text-600);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.eeg-modal-header-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.eeg-modal-select-label {
+  font-size: 0.72rem;
+  color: var(--text-600);
+}
+
+.eeg-modal-select {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 0.74rem;
+  padding: 0.3rem 0.55rem;
+  color: var(--text-800);
+}
+
 .eeg-modal-title {
   margin: 0;
   font-size: 0.95rem;
@@ -935,6 +987,10 @@
   overflow: hidden;
 }
 
+.eeg-modal-canvas.annotation-mode {
+  cursor: crosshair;
+}
+
 .eeg-modal-canvas.is-zoomed {
   cursor: grab;
 }
@@ -943,13 +999,121 @@
   cursor: grabbing;
 }
 
-.eeg-modal-canvas img {
+.eeg-modal-stage {
+  position: relative;
+  width: 100%;
+  height: auto;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.eeg-modal-stage img {
   width: 100%;
   height: auto;
   display: block;
   border-radius: var(--radius-md);
-  transform-origin: 0 0;
-  will-change: transform;
+}
+
+.eeg-modal-annotation-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.eeg-modal-canvas.annotation-mode .eeg-modal-annotation-layer {
+  pointer-events: auto;
+}
+
+.eeg-annotation {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.eeg-annotation-range {
+  background: rgba(78, 132, 187, 0.22);
+  border: 1px solid rgba(78, 132, 187, 0.6);
+  border-radius: 6px;
+}
+
+.eeg-annotation-point {
+  width: 0;
+  border-left: 2px solid rgba(78, 132, 187, 0.9);
+}
+
+.eeg-annotation-label {
+  position: absolute;
+  top: -1.7rem;
+  left: 0;
+  background: rgba(12, 28, 38, 0.7);
+  color: #f3f8fb;
+  font-size: 0.7rem;
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: visible;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.eeg-annotation-point .eeg-annotation-label {
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.eeg-annotation-label-short {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.eeg-annotation-tooltip {
+  position: absolute;
+  left: calc(100% + 0.35rem);
+  top: 50%;
+  min-width: 140px;
+  max-width: 240px;
+  padding: 0.45rem 0.6rem;
+  background: #0c1c26;
+  color: #f3f8fb;
+  border-radius: 10px;
+  box-shadow: 0 12px 26px rgba(8, 16, 22, 0.35);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  white-space: normal;
+  opacity: 0;
+  transform: translateY(-50%) translateX(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.eeg-annotation-label:hover .eeg-annotation-tooltip,
+.eeg-annotation-label:focus .eeg-annotation-tooltip,
+.eeg-annotation-label:focus-within .eeg-annotation-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.eeg-annotation-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.eeg-annotation.is-selected {
+  box-shadow: 0 0 0 2px rgba(35, 121, 193, 0.45);
+  z-index: 3;
+}
+
+.eeg-annotation-draft {
+  background: rgba(96, 170, 120, 0.25);
+  border: 1px dashed rgba(96, 170, 120, 0.7);
 }
 
 .eeg-modal-canvas .eeg-modal-skeleton {
@@ -972,14 +1136,221 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem 0.7rem 1.25rem;
   border-top: 1px solid var(--border-card);
   background: var(--surface-card);
-  font-size: 0.78rem;
-  color: var(--text-500);
   justify-content: space-between;
   flex-wrap: wrap;
+}
+
+.eeg-modal-footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.eeg-modal-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.eeg-modal-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.eeg-modal-group--right {
+  margin-left: auto;
+}
+
+.eeg-modal-group--actions {
+  margin-left: 1.2rem;
+}
+
+.eeg-modal-group-label {
+  font-size: 0.72rem;
+  color: var(--text-600);
+  margin-right: 0.2rem;
+}
+
+.eeg-modal-icon-btn {
+  border: 1px solid var(--border-card);
+  background: #f5fafc;
+  color: var(--text-700);
+  border-radius: var(--radius-sm);
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  gap: 0.35rem;
+  padding: 0 0.55rem;
+  transition:
+    background 130ms ease-out,
+    color 130ms ease-out,
+    border-color 130ms ease-out;
+}
+
+.eeg-modal-icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.eeg-modal-icon-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.eeg-annotation-color-palette {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-sm);
+  background: #f5fafc;
+  border: 1px solid var(--border-card);
+}
+
+.eeg-annotation-color-label {
+  font-size: 0.7rem;
+  color: var(--text-600);
+}
+
+.eeg-annotation-color-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.eeg-annotation-color-swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1px solid rgba(12, 28, 38, 0.2);
+  cursor: pointer;
+  background: var(--swatch-color, #1f77b4);
+  padding: 0;
+}
+
+.eeg-annotation-color-swatch[data-annotation-color="#1f77b4"] { background: #1f77b4; }
+.eeg-annotation-color-swatch[data-annotation-color="#2ca02c"] { background: #2ca02c; }
+.eeg-annotation-color-swatch[data-annotation-color="#ff7f0e"] { background: #ff7f0e; }
+.eeg-annotation-color-swatch[data-annotation-color="#d62728"] { background: #d62728; }
+.eeg-annotation-color-swatch[data-annotation-color="#9467bd"] { background: #9467bd; }
+.eeg-annotation-color-swatch[data-annotation-color="#8c564b"] { background: #8c564b; }
+.eeg-annotation-color-swatch[data-annotation-color="#e377c2"] { background: #e377c2; }
+.eeg-annotation-color-swatch[data-annotation-color="#7f7f7f"] { background: #7f7f7f; }
+
+.eeg-annotation-color-swatch.is-active {
+  box-shadow: 0 0 0 2px rgba(35, 121, 193, 0.45);
+  border-color: rgba(35, 121, 193, 0.65);
+}
+
+.eeg-annotation-color-swatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.eeg-modal-icon-btn:hover {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-color: var(--brand-500);
+}
+
+.eeg-modal-icon-btn.is-active {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #f2fbff;
+}
+
+.eeg-modal-icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eeg-modal-divider {
+  width: 1px;
+  height: 1.6rem;
+  background: var(--border-card);
+}
+
+.eeg-annotation-dialog {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 14, 20, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.eeg-annotation-dialog.hidden {
+  display: none;
+}
+
+.eeg-annotation-dialog-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
+  width: min(420px, 94%);
+  box-shadow: 0 18px 40px rgba(14, 22, 30, 0.35);
+}
+
+.eeg-annotation-dialog-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.eeg-annotation-dialog-card p {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-600);
+}
+
+.eeg-annotation-dialog-card input,
+.eeg-annotation-dialog-card textarea {
+  width: 100%;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.82rem;
+  min-height: 3.2rem;
+  resize: vertical;
+}
+
+.eeg-annotation-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+}
+
+.eeg-modal-control-btn.is-primary {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #f2fbff;
+}
+
+.eeg-modal-control-btn.is-primary:hover {
+  background: var(--brand-800);
+  border-color: var(--brand-800);
+}
+
+.eeg-modal-control-btn.is-danger {
+  background: #d64545;
+  border-color: #d64545;
+  color: #fff;
+}
+
+.eeg-modal-control-btn.is-danger:hover {
+  background: #c03737;
+  border-color: #c03737;
 }
 
 .eeg-modal-controls {
@@ -1015,6 +1386,38 @@
   cursor: not-allowed;
 }
 
+.eeg-modal-control-btn.is-active {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #f2fbff;
+}
+
+.eeg-modal-annotation-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.eeg-annotation-modes {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.eeg-modal-annotation-editor .annotation-editor-label {
+  font-size: 0.72rem;
+  color: var(--text-600);
+}
+
+.eeg-modal-annotation-editor input {
+  border: 1px solid var(--border-card);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.5rem;
+  font-size: 0.74rem;
+  min-width: 160px;
+}
+
 .eeg-modal-zoom-readout {
   font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
   color: var(--text-700);
@@ -1029,6 +1432,7 @@
   flex-wrap: wrap;
 }
 
+.eeg-modal-shortcuts kbd,
 .eeg-modal-footer kbd {
   display: inline-block;
   padding: 0.1em 0.4em;

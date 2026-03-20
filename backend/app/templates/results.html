@@ -321,6 +321,241 @@
             </button>
           </div>
         </aside>
+        <!-- EEG Annotation Modal -->
+        <div
+          id="eeg-modal-overlay"
+          class="eeg-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="eeg-modal-recording-id"
+          aria-hidden="true"
+        >
+          <div class="eeg-modal" id="eeg-modal">
+            <div class="eeg-modal-header">
+              <div class="eeg-modal-header-left">
+                <div class="eeg-modal-recording">
+                  <span class="eeg-modal-recording-label">Recording ID</span>
+                  <span id="eeg-modal-recording-id">—</span>
+                </div>
+                <div class="eeg-modal-shortcuts">
+                  Press <kbd>Esc</kbd> to close · <kbd>←</kbd> <kbd>→</kbd> to switch bands ·
+                  <kbd>+</kbd> <kbd>−</kbd> to zoom · <kbd>A</kbd> annotate
+                </div>
+              </div>
+              <div class="eeg-modal-header-controls">
+                <div class="eeg-modal-band-switcher" role="group" aria-label="Select EEG band">
+                  <button class="eeg-modal-band-btn active" data-modal-band="raw" type="button">Raw</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="filtered" type="button">Filtered</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="delta" type="button">Delta</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="theta" type="button">Theta</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">Alpha</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="beta" type="button">Beta</button>
+                  <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">Gamma</button>
+                </div>
+                <button
+                  id="eeg-modal-classifications-btn"
+                  type="button"
+                  class="eeg-modal-control-btn"
+                >
+                  Model Classifications
+                </button>
+              </div>
+              <button
+                class="eeg-modal-close-btn"
+                id="eeg-modal-close-btn"
+                type="button"
+                aria-label="Close EEG viewer"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="eeg-modal-body">
+              <div class="eeg-modal-canvas" id="eeg-modal-canvas"></div>
+            </div>
+            <div class="eeg-modal-footer">
+              <div class="eeg-modal-footer-controls">
+                <div class="eeg-modal-control-group">
+                  <div class="eeg-modal-group" role="group" aria-label="Zoom controls">
+                    <span class="eeg-modal-group-label">Zoom</span>
+                    <button id="eeg-zoom-in-btn" type="button" class="eeg-modal-icon-btn" aria-label="Zoom in">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                      <line x1="11" y1="8" x2="11" y2="14" stroke="currentColor" stroke-width="2"></line>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2"></line>
+                      <line x1="16" y1="16" x2="22" y2="22" stroke="currentColor" stroke-width="2"></line>
+                    </svg>
+                    </button>
+                    <button id="eeg-zoom-out-btn" type="button" class="eeg-modal-icon-btn" aria-label="Zoom out">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2"></line>
+                      <line x1="16" y1="16" x2="22" y2="22" stroke="currentColor" stroke-width="2"></line>
+                    </svg>
+                    </button>
+                    <button id="eeg-zoom-reset-btn" type="button" class="eeg-modal-icon-btn" aria-label="Reset zoom">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3 12a9 9 0 1 0 3-6.7"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      ></path>
+                      <polyline
+                        points="3 4 3 10 9 10"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      ></polyline>
+                    </svg>
+                    </button>
+                    <button id="eeg-zoom-fit-btn" type="button" class="eeg-modal-icon-btn" aria-label="Fit to view">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                      <polyline points="8 3 8 8 3 8" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+                      <polyline points="16 21 16 16 21 16" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+                    </svg>
+                    </button>
+                  </div>
+                  <span class="eeg-modal-divider" aria-hidden="true"></span>
+                  <div class="eeg-modal-group" role="group" aria-label="Annotate controls">
+                    <span class="eeg-modal-group-label">Annotate</span>
+                    <button
+                      type="button"
+                      class="eeg-modal-icon-btn eeg-annotation-mode-btn"
+                      data-annotation-mode="select"
+                      aria-label="Select annotations"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="eeg-modal-icon-btn eeg-annotation-mode-btn"
+                      data-annotation-mode="draw"
+                      aria-label="Draw annotations"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"/>
+                        <path d="M5 3a2 2 0 0 0-2 2"/>
+                        <path d="M19 3a2 2 0 0 1 2 2"/>
+                        <path d="M5 21a2 2 0 0 1-2-2"/>
+                        <path d="M9 3h1"/>
+                        <path d="M9 21h2"/>
+                        <path d="M14 3h1"/>
+                        <path d="M3 9v1"/>
+                        <path d="M21 9v2"/>
+                        <path d="M3 14v1"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="eeg-modal-group eeg-modal-group--right eeg-modal-group--actions hidden"
+                  id="eeg-annotation-settings"
+                  role="group"
+                  aria-label="Annotation settings"
+                >
+                  <span class="eeg-modal-group-label">Annotation Settings</span>
+                  <div class="eeg-annotation-color-palette" id="eeg-annotation-color-palette" aria-label="Annotation color">
+                    <span class="eeg-annotation-color-label">Color</span>
+                    <div class="eeg-annotation-color-swatches" role="group" aria-label="Select annotation color">
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#1f77b4" aria-label="Blue"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#2ca02c" aria-label="Green"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#ff7f0e" aria-label="Orange"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#d62728" aria-label="Red"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#9467bd" aria-label="Purple"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#8c564b" aria-label="Brown"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#e377c2" aria-label="Pink"></button>
+                      <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#7f7f7f" aria-label="Gray"></button>
+                    </div>
+                  </div>
+                  <button
+                    id="eeg-annotation-rename-btn"
+                    type="button"
+                    class="eeg-modal-icon-btn"
+                    aria-label="Rename annotation"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3 17.5V21h3.5L19 8.5 15.5 5 3 17.5z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      ></path>
+                      <line x1="13" y1="7" x2="17" y2="11" stroke="currentColor" stroke-width="2"></line>
+                    </svg>
+                    <span class="eeg-modal-icon-text">Edit</span>
+                  </button>
+                  <button
+                    id="eeg-annotation-delete-btn"
+                    type="button"
+                    class="eeg-modal-icon-btn"
+                    aria-label="Delete annotation"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+                      <path
+                        d="M7 6v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      ></path>
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="2"></path>
+                    </svg>
+                    <span class="eeg-modal-icon-text">Delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="eeg-annotation-dialog hidden" id="eeg-annotation-rename-modal" role="dialog" aria-modal="true">
+              <div class="eeg-annotation-dialog-card">
+                <h3>Edit annotation</h3>
+                <textarea
+                  id="eeg-annotation-rename-input"
+                  maxlength="60"
+                  placeholder="Annotation label"
+                  rows="3"
+                ></textarea>
+                <div class="eeg-annotation-dialog-actions">
+                  <button id="eeg-annotation-rename-cancel" type="button" class="eeg-modal-control-btn">
+                    Cancel
+                  </button>
+                  <button id="eeg-annotation-rename-save" type="button" class="eeg-modal-control-btn is-primary">
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="eeg-annotation-dialog hidden" id="eeg-annotation-delete-modal" role="dialog" aria-modal="true">
+              <div class="eeg-annotation-dialog-card">
+                <h3>Delete annotation?</h3>
+                <p>This will permanently remove the annotation.</p>
+                <div class="eeg-annotation-dialog-actions">
+                  <button id="eeg-annotation-delete-cancel" type="button" class="eeg-modal-control-btn">
+                    Cancel
+                  </button>
+                  <button id="eeg-annotation-delete-confirm" type="button" class="eeg-modal-control-btn is-danger">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -498,6 +733,7 @@
           if (el && data.clinician_name) el.textContent = data.clinician_name;
           const logoutLabel = byId("sidebar-logout-name");
           if (logoutLabel) logoutLabel.textContent = "Logout";
+          appState.clinicianId = data.clinician_id ?? data.id ?? null;
         } catch {
           window.location.href = "/login.html";
         }
@@ -536,6 +772,7 @@
         allResults: [],
         filteredResults: [],
         filters: { search: "", classification: "all", sort: "recent" },
+        clinicianId: null,
       };
 
       // ── Classification helpers ──
@@ -705,6 +942,7 @@
       // ── Drawer lifecycle ──
 
       let currentResultId = null;
+      let currentRecordingId = null;
 
       function openResultDrawer() {
         const drawer = byId("result-detail-drawer");
@@ -909,6 +1147,28 @@
         return `/api/eeg_visualizations/${contextId}/${band}.png?quality=${quality}`;
       }
 
+      const vizMetaCache = new Map();
+
+      async function fetchVisualizationMeta(contextId) {
+        if (!contextId) return null;
+        if (vizMetaCache.has(contextId)) return vizMetaCache.get(contextId);
+        try {
+          const response = await fetch(
+            `/api/eeg_visualization_meta/${encodeURIComponent(contextId)}`,
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to load visualization metadata");
+          }
+          const meta = await response.json();
+          vizMetaCache.set(contextId, meta);
+          return meta;
+        } catch (error) {
+          showToast(error.message || "Unable to load visualization metadata.", "warning");
+          return null;
+        }
+      }
+
       function setVizStatus(text) {
         const status = byId("drawer-eeg-viz-status");
         if (status) status.textContent = text;
@@ -976,6 +1236,7 @@
               <span id="drawer-eeg-viz-status" class="eeg-viz-status">Preview</span>
               <div class="eeg-viz-actions">
                 <button id="drawer-eeg-viz-detail-btn" type="button" class="btn-secondary-app btn-compact">View detail</button>
+                <button id="drawer-eeg-annotate-btn" type="button" class="eeg-annotate-launch-btn">Annotate</button>
               </div>
             </div>
           </div>
@@ -998,6 +1259,17 @@
           const quality = eegVizState.bandQuality[band] || "preview";
           const nextQuality = quality === "detail" ? "preview" : "detail";
           loadEegVisualization(band, nextQuality, { setActive: true, userInitiated: true });
+        });
+        byId("drawer-eeg-annotate-btn")?.addEventListener("click", () => {
+          if (!currentResultId) {
+            showToast("Select a result to annotate.", "warning");
+            return;
+          }
+          if (!eegVizState.contextId) {
+            showToast("No EEG visualization context available.", "warning");
+            return;
+          }
+          eegAnnotateModal.open(eegVizState.currentBand);
         });
 
         const media = byId("drawer-eeg-viz-media");
@@ -1603,10 +1875,989 @@
         }
       }
 
+      // ── EEG annotation modal ──
+
+      const eegAnnotateModal = (() => {
+        const BANDS = EEG_BANDS.slice();
+      const BAND_LABELS = {
+        raw: "Raw",
+        filtered: "Filtered",
+        delta: "Delta",
+        theta: "Theta",
+        alpha: "Alpha",
+        beta: "Beta",
+        gamma: "Gamma",
+      };
+      const ANNOTATION_COLOR_SWATCHES = [
+        "#1f77b4",
+        "#2ca02c",
+        "#ff7f0e",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+      ];
+      const DEFAULT_ANNOTATION_COLOR = "#1f77b4";
+
+        let currentBand = BANDS[0] || "raw";
+        let isOpen = false;
+
+        const zoomState = {
+          scale: 1,
+          x: 0,
+          y: 0,
+          minScale: 1,
+          maxScale: 6,
+          isPanning: false,
+          startX: 0,
+          startY: 0,
+          startTranslateX: 0,
+          startTranslateY: 0,
+        };
+
+        const annotationState = {
+          enabled: false,
+          mode: "select",
+          isDragging: false,
+          dragMode: null,
+          dragStartX: 0,
+          dragStartY: 0,
+          dragCurrentX: 0,
+          dragCurrentY: 0,
+          selectedId: null,
+          annotations: [],
+          durationSeconds: null,
+          panOverride: false,
+          selectedColor: DEFAULT_ANNOTATION_COLOR,
+        };
+
+        const overlay = () => byId("eeg-modal-overlay");
+        const canvas = () => byId("eeg-modal-canvas");
+        const modalImage = () => byId("eeg-modal-img");
+        const modalStage = () => byId("eeg-modal-stage");
+        const annotationLayer = () => byId("eeg-modal-annotation-layer");
+        const classificationsBtn = () => byId("eeg-modal-classifications-btn");
+        const recordingIdLabel = () => byId("eeg-modal-recording-id");
+        const annotationSettingsGroup = () => byId("eeg-annotation-settings");
+        const annotationColorPalette = () => byId("eeg-annotation-color-palette");
+        const annotationRenameBtn = () => byId("eeg-annotation-rename-btn");
+        const annotationDeleteBtn = () => byId("eeg-annotation-delete-btn");
+        const annotationRenameModal = () => byId("eeg-annotation-rename-modal");
+        const annotationRenameInput = () => byId("eeg-annotation-rename-input");
+        const annotationRenameSaveBtn = () => byId("eeg-annotation-rename-save");
+        const annotationRenameCancelBtn = () => byId("eeg-annotation-rename-cancel");
+        const annotationDeleteModal = () => byId("eeg-annotation-delete-modal");
+        const annotationDeleteConfirmBtn = () => byId("eeg-annotation-delete-confirm");
+        const annotationDeleteCancelBtn = () => byId("eeg-annotation-delete-cancel");
+
+        function updateBandButtons(band) {
+          document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+            const b = btn.getAttribute("data-modal-band");
+            btn.classList.toggle("active", b === band);
+            btn.disabled = !BANDS.includes(b);
+            btn.style.display = BANDS.includes(b) ? "inline-flex" : "none";
+          });
+          const classifications = classificationsBtn();
+          if (classifications) {
+            const hasSegments = BANDS.includes("segments");
+            classifications.disabled = !hasSegments;
+            classifications.classList.toggle("is-active", band === "segments");
+          }
+        }
+
+        function showSkeleton() {
+          const c = canvas();
+          if (!c) return;
+          c.innerHTML = `
+            <div class="loading-state" style="width:100%;max-width:520px;">
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+            </div>`;
+        }
+
+        function showPreviewImage(src, band) {
+          const c = canvas();
+          if (!c) return;
+          c.innerHTML = `
+            <div class="eeg-modal-stage" id="eeg-modal-stage">
+              <img src="${src}" alt="${escapeHtml(BAND_LABELS[band] || band)} EEG waveform" id="eeg-modal-img" />
+              <div class="eeg-modal-annotation-layer" id="eeg-modal-annotation-layer"></div>
+            </div>`;
+          const img = byId("eeg-modal-img");
+          if (img) {
+            img.addEventListener("load", () => {
+              renderAnnotations();
+            });
+            if (img.complete) {
+              renderAnnotations();
+            }
+          }
+          applyTransform();
+          renderAnnotations();
+        }
+
+        function updateZoomReadout() {
+          const readout = byId("eeg-modal-zoom-readout");
+          if (readout) readout.textContent = `${Math.round(zoomState.scale * 100)}%`;
+        }
+
+        function clampPan() {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return;
+          const scaledWidth = img.offsetWidth * zoomState.scale;
+          const scaledHeight = img.offsetHeight * zoomState.scale;
+          const minX = Math.min(0, c.clientWidth - scaledWidth);
+          const minY = Math.min(0, c.clientHeight - scaledHeight);
+          zoomState.x = Math.min(0, Math.max(minX, zoomState.x));
+          zoomState.y = Math.min(0, Math.max(minY, zoomState.y));
+        }
+
+        function applyTransform() {
+          const stage = modalStage();
+          const c = canvas();
+          if (!c) return;
+          if (!stage) {
+            updateZoomReadout();
+            c.classList.remove("is-zoomed", "is-panning");
+            return;
+          }
+          if (zoomState.scale <= 1) {
+            zoomState.x = 0;
+            zoomState.y = 0;
+          }
+          clampPan();
+          stage.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+          c.classList.toggle("is-zoomed", zoomState.scale > 1.01);
+          c.classList.toggle("is-panning", zoomState.isPanning);
+          updateZoomReadout();
+        }
+
+        function setScale(newScale, originX, originY) {
+          const clamped = Math.min(zoomState.maxScale, Math.max(zoomState.minScale, newScale));
+          if (clamped === zoomState.scale) return;
+          if (originX == null || originY == null) {
+            zoomState.scale = clamped;
+            applyTransform();
+            return;
+          }
+          const ratio = clamped / zoomState.scale;
+          zoomState.x = originX - (originX - zoomState.x) * ratio;
+          zoomState.y = originY - (originY - zoomState.y) * ratio;
+          zoomState.scale = clamped;
+          applyTransform();
+        }
+
+        function zoomByFactor(factor, originEvent) {
+          const c = canvas();
+          if (!c) return;
+          const rect = c.getBoundingClientRect();
+          const originX = originEvent ? originEvent.clientX - rect.left : c.clientWidth / 2;
+          const originY = originEvent ? originEvent.clientY - rect.top : c.clientHeight / 2;
+          setScale(zoomState.scale * factor, originX, originY);
+        }
+
+        function resetZoom() {
+          zoomState.scale = 1;
+          zoomState.x = 0;
+          zoomState.y = 0;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function handleZoomWheel(event) {
+          if (!isOpen) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+          zoomByFactor(factor, event);
+        }
+
+        function startPan(event) {
+          if (!isOpen) return;
+          if (event.button !== 0) return;
+          if (
+            annotationState.enabled &&
+            annotationState.mode === "draw" &&
+            !annotationState.panOverride
+          ) {
+            return;
+          }
+          if (zoomState.scale <= 1) return;
+          if (!modalImage()) return;
+          event.preventDefault();
+          zoomState.isPanning = true;
+          zoomState.startX = event.clientX;
+          zoomState.startY = event.clientY;
+          zoomState.startTranslateX = zoomState.x;
+          zoomState.startTranslateY = zoomState.y;
+          applyTransform();
+        }
+
+        function handlePan(event) {
+          if (!isOpen || !zoomState.isPanning) return;
+          const dx = event.clientX - zoomState.startX;
+          const dy = event.clientY - zoomState.startY;
+          zoomState.x = zoomState.startTranslateX + dx;
+          zoomState.y = zoomState.startTranslateY + dy;
+          applyTransform();
+        }
+
+        function endPan() {
+          if (!zoomState.isPanning) return;
+          zoomState.isPanning = false;
+          applyTransform();
+        }
+
+        function getDurationSeconds() {
+          if (Number.isFinite(annotationState.durationSeconds)) {
+            return annotationState.durationSeconds;
+          }
+          return null;
+        }
+
+        async function ensureAnnotationMeta() {
+          if (!eegVizState.contextId) return null;
+          const meta = await fetchVisualizationMeta(eegVizState.contextId);
+          annotationState.durationSeconds = meta?.duration_seconds ?? null;
+          return annotationState.durationSeconds;
+        }
+
+        function setAnnotateMode(enabled) {
+          annotationState.enabled = enabled;
+          const c = canvas();
+          if (c) c.classList.toggle("annotation-mode", enabled);
+
+          if (!enabled) {
+            annotationState.selectedId = null;
+            annotationState.isDragging = false;
+            annotationState.dragMode = null;
+            updateAnnotationEditor();
+            renderAnnotations();
+            return;
+          }
+
+          setAnnotationMode(annotationState.mode || "select");
+
+          if (!currentResultId) {
+            showToast("Select a result to annotate.", "warning");
+            setAnnotateMode(false);
+            return;
+          }
+
+          ensureAnnotationMeta().then(() => {
+            loadAnnotationsForBand(currentBand);
+          });
+        }
+
+        function setAnnotationMode(mode) {
+          const nextMode = mode === "select" ? "select" : "draw";
+          annotationState.mode = nextMode;
+          document.querySelectorAll(".eeg-annotation-mode-btn").forEach((btn) => {
+            btn.classList.toggle(
+              "is-active",
+              btn.getAttribute("data-annotation-mode") === nextMode,
+            );
+          });
+        }
+
+        function openRenameModal() {
+          const modal = annotationRenameModal();
+          if (!modal) return;
+          modal.classList.remove("hidden");
+          const input = annotationRenameInput();
+          if (input) {
+            input.focus();
+            input.select();
+          }
+        }
+
+        function closeRenameModal() {
+          const modal = annotationRenameModal();
+          if (modal) modal.classList.add("hidden");
+        }
+
+        function openDeleteModal() {
+          const modal = annotationDeleteModal();
+          if (modal) modal.classList.remove("hidden");
+        }
+
+        function closeDeleteModal() {
+          const modal = annotationDeleteModal();
+          if (modal) modal.classList.add("hidden");
+        }
+
+        function updateAnnotationEditor() {
+          const renameInput = annotationRenameInput();
+          const renameBtn = annotationRenameBtn();
+          const deleteBtn = annotationDeleteBtn();
+          const selected = annotationState.annotations.find(
+            (item) => item.id === annotationState.selectedId,
+          );
+          if (renameInput) renameInput.value = selected ? selected.label || "" : "";
+          const canEdit = Boolean(
+            selected &&
+              appState.clinicianId &&
+              Number(selected.clinician_id) === Number(appState.clinicianId),
+          );
+          if (renameBtn) renameBtn.disabled = !canEdit;
+          if (deleteBtn) deleteBtn.disabled = !canEdit;
+          const settings = annotationSettingsGroup();
+          if (settings) settings.classList.toggle("hidden", !selected);
+          annotationState.selectedColor =
+            selected?.color || annotationState.selectedColor || DEFAULT_ANNOTATION_COLOR;
+          const palette = annotationColorPalette();
+          if (palette) {
+            palette.querySelectorAll(".eeg-annotation-color-swatch").forEach((swatch) => {
+              const swatchColor = swatch.getAttribute("data-annotation-color");
+              swatch.classList.toggle(
+                "is-active",
+                swatchColor === annotationState.selectedColor,
+              );
+              swatch.disabled = !canEdit;
+            });
+          }
+        }
+
+        function setSelectedAnnotation(annotationId) {
+          annotationState.selectedId = annotationId;
+          closeRenameModal();
+          closeDeleteModal();
+          updateAnnotationEditor();
+          renderAnnotations();
+        }
+
+        async function loadAnnotationsForBand(band) {
+          if (!currentResultId || !band) {
+            annotationState.annotations = [];
+            annotationState.selectedId = null;
+            renderAnnotations();
+            updateAnnotationEditor();
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/api/results/${currentResultId}/annotations?band=${encodeURIComponent(band)}`,
+            );
+            if (!response.ok) {
+              const err = await response.json().catch(() => ({}));
+              throw new Error(err.error || "Failed to load annotations");
+            }
+            const data = await response.json();
+            annotationState.annotations = Array.isArray(data.annotations)
+              ? data.annotations
+              : [];
+            annotationState.selectedId = null;
+            updateAnnotationEditor();
+            renderAnnotations();
+          } catch (error) {
+            showToast(error.message || "Failed to load annotations.", "warning");
+          }
+        }
+
+        async function createAnnotation(payload) {
+          if (!currentResultId) return null;
+          const response = await fetch(`/api/results/${currentResultId}/annotations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to create annotation");
+          }
+          const data = await response.json();
+          return data.annotation || null;
+        }
+
+        async function updateAnnotation(annotationId, payload) {
+          if (!currentResultId) return null;
+          const response = await fetch(
+            `/api/results/${currentResultId}/annotations/${annotationId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            },
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to update annotation");
+          }
+          const data = await response.json();
+          return data.annotation || null;
+        }
+
+        async function deleteAnnotation(annotationId) {
+          if (!currentResultId) return;
+          const response = await fetch(
+            `/api/results/${currentResultId}/annotations/${annotationId}`,
+            { method: "DELETE" },
+          );
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to delete annotation");
+          }
+        }
+
+        function getStageX(event) {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return null;
+          const rect = c.getBoundingClientRect();
+          const rawX = event.clientX - rect.left;
+          const unscaledX = (rawX - zoomState.x) / zoomState.scale;
+          return Math.max(0, Math.min(img.offsetWidth, unscaledX));
+        }
+
+        function getStageY(event) {
+          const img = modalImage();
+          const c = canvas();
+          if (!img || !c) return null;
+          const rect = c.getBoundingClientRect();
+          const rawY = event.clientY - rect.top;
+          const unscaledY = (rawY - zoomState.y) / zoomState.scale;
+          return Math.max(0, Math.min(img.offsetHeight, unscaledY));
+        }
+
+        function resolveAnnotationColor(annotation) {
+          return annotation?.color || annotationState.selectedColor || DEFAULT_ANNOTATION_COLOR;
+        }
+
+        function toRgba(color, alpha) {
+          const hex = String(color || "").trim();
+          const hexMatch = hex.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+          if (!hexMatch) {
+            return `rgba(31, 119, 180, ${alpha})`;
+          }
+          let r;
+          let g;
+          let b;
+          if (hex.length === 4) {
+            r = parseInt(hex[1] + hex[1], 16);
+            g = parseInt(hex[2] + hex[2], 16);
+            b = parseInt(hex[3] + hex[3], 16);
+          } else {
+            r = parseInt(hex.slice(1, 3), 16);
+            g = parseInt(hex.slice(3, 5), 16);
+            b = parseInt(hex.slice(5, 7), 16);
+          }
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function buildAnnotationHtml(annotation, options = {}) {
+          const img = modalImage();
+          const duration = getDurationSeconds();
+          if (!img || !duration) return "";
+          const width = Math.max(img.offsetWidth, 1);
+          const layer = annotationLayer();
+          const height = Math.max(layer?.offsetHeight ?? img.offsetHeight, 1);
+          const start = Number(annotation.start_time_sec) || 0;
+          const end = annotation.end_time_sec != null ? Number(annotation.end_time_sec) : null;
+          const rawLabel = String(annotation.label || "Annotation");
+          const label = escapeHtml(rawLabel);
+          const notes = annotation.notes ? escapeHtml(annotation.notes) : "";
+          const annotationColor = resolveAnnotationColor(annotation);
+          const fillColor = toRgba(annotationColor, 0.18);
+          const clinicianNameRaw = annotation.clinician_name || "";
+          const clinicianName = clinicianNameRaw.trim() || "Unknown clinician";
+          const createdAtRaw = annotation.created_at;
+          let createdLabel = "Unknown time";
+          if (createdAtRaw) {
+            const createdDate = new Date(createdAtRaw);
+            if (!Number.isNaN(createdDate.getTime())) {
+              createdLabel = createdDate.toLocaleString();
+            }
+          }
+          const shortLimit = 18;
+          const shortLabelRaw =
+            rawLabel.length > shortLimit
+              ? `${rawLabel.slice(0, shortLimit).trim()}...`
+              : rawLabel;
+          const shortLabel = escapeHtml(shortLabelRaw);
+          const tooltipHtml = `
+            <span class="eeg-annotation-tooltip">
+              <div class="eeg-annotation-tooltip-title">${label}</div>
+              ${notes ? `<div>${notes}</div>` : ""}
+              <div>Annotator: ${escapeHtml(clinicianName)}</div>
+              <div>Created: ${escapeHtml(createdLabel)}</div>
+            </span>`;
+          const labelHtml = `
+            <span class="eeg-annotation-label" tabindex="0" aria-label="${label}">
+              <span class="eeg-annotation-label-short">${shortLabel}</span>
+              ${tooltipHtml}
+            </span>`;
+          const minPx = 6;
+          const startPx = (start / duration) * width;
+          const laneStartRaw = annotation.lane_start;
+          const laneEndRaw = annotation.lane_end;
+          const laneStartParsed =
+            laneStartRaw == null || laneStartRaw === "" ? null : Number(laneStartRaw);
+          const laneEndParsed =
+            laneEndRaw == null || laneEndRaw === "" ? null : Number(laneEndRaw);
+          const laneStart = Number.isFinite(laneStartParsed) ? laneStartParsed : null;
+          const laneEnd = Number.isFinite(laneEndParsed) ? laneEndParsed : null;
+          const minLanePx = 8;
+          const handleHeight = 12;
+          let laneTopPx = 0;
+          let laneHeightPx = height;
+
+          if (laneStart != null) {
+            if (laneEnd != null) {
+              const startY = Math.max(0, Math.min(height, laneStart * height));
+              const endY = Math.max(0, Math.min(height, laneEnd * height));
+              laneTopPx = Math.min(startY, endY);
+              laneHeightPx = Math.max(minLanePx, Math.abs(endY - startY));
+            } else {
+              const centerY = Math.max(0, Math.min(height, laneStart * height));
+              laneTopPx = Math.max(0, Math.min(height - handleHeight, centerY - handleHeight / 2));
+              laneHeightPx = handleHeight;
+            }
+          }
+
+          if (end == null || Math.abs(end - start) * width / duration < minPx) {
+            const leftPct = (startPx / width) * 100;
+            const selectedClass = options.selected ? " is-selected" : "";
+            return `
+              <div class="eeg-annotation eeg-annotation-point${selectedClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; top:${laneTopPx}px; height:${laneHeightPx}px; border-left-color:${annotationColor};">
+                ${labelHtml}
+              </div>`;
+          }
+
+          const endPx = (end / duration) * width;
+          const leftPx = Math.min(startPx, endPx);
+          const widthPx = Math.max(minPx, Math.abs(endPx - startPx));
+          const leftPct = (leftPx / width) * 100;
+          const widthPct = (widthPx / width) * 100;
+          const selectedClass = options.selected ? " is-selected" : "";
+          const draftClass = options.draft ? " eeg-annotation-draft" : "";
+          return `
+            <div class="eeg-annotation eeg-annotation-range${selectedClass}${draftClass}" data-annotation-id="${annotation.id}" style="left:${leftPct}%; width:${widthPct}%; top:${laneTopPx}px; height:${laneHeightPx}px; background:${fillColor}; border-color:${annotationColor};">
+              ${labelHtml}
+            </div>`;
+        }
+
+        function renderAnnotations() {
+          const layer = annotationLayer();
+          if (!layer) return;
+          const duration = getDurationSeconds();
+          if (!duration) {
+            layer.innerHTML = "";
+            return;
+          }
+          if (layer.offsetHeight <= 1) {
+            return;
+          }
+          const html = annotationState.annotations
+            .map((annotation) =>
+              buildAnnotationHtml(annotation, {
+                selected: annotation.id === annotationState.selectedId,
+              }),
+            )
+            .join("");
+
+          let draftHtml = "";
+          if (annotationState.isDragging && annotationState.dragMode === "new") {
+            const img = modalImage();
+            if (img) {
+              const layerHeight = Math.max(layer.offsetHeight, 1);
+              const width = Math.max(img.offsetWidth, 1);
+              const startPx = annotationState.dragStartX;
+              const endPx = annotationState.dragCurrentX;
+              const leftPx = Math.min(startPx, endPx);
+              const widthPx = Math.max(4, Math.abs(endPx - startPx));
+              const leftPct = (leftPx / width) * 100;
+              const widthPct = (widthPx / width) * 100;
+              const startY = annotationState.dragStartY;
+              const endY = annotationState.dragCurrentY;
+              const topPx = Math.max(0, Math.min(layerHeight, Math.min(startY, endY)));
+              const heightPx = Math.max(8, Math.abs(endY - startY));
+              draftHtml = `
+                <div class="eeg-annotation eeg-annotation-range eeg-annotation-draft" style="left:${leftPct}%; width:${widthPct}%; top:${topPx}px; height:${heightPx}px;"></div>`;
+            }
+          }
+
+          layer.innerHTML = html + draftHtml;
+        }
+
+        function handleAnnotatePointerDown(event) {
+          if (!annotationState.enabled || annotationState.panOverride) return;
+          if (event.button !== 0) return;
+          const img = modalImage();
+          if (!img) return;
+
+          const target = event.target.closest("[data-annotation-id]");
+          const stageX = getStageX(event);
+          const stageY = getStageY(event);
+          if (stageX == null || stageY == null) return;
+
+          if (annotationState.mode === "select") {
+            if (target) {
+              const annotationId = Number(target.getAttribute("data-annotation-id"));
+              setSelectedAnnotation(annotationId);
+            } else {
+              setSelectedAnnotation(null);
+            }
+            event.preventDefault();
+            return;
+          }
+
+          annotationState.dragMode = "new";
+          annotationState.dragStartX = stageX;
+          annotationState.dragStartY = stageY;
+          annotationState.dragCurrentX = stageX;
+          annotationState.dragCurrentY = stageY;
+          annotationState.isDragging = true;
+          setSelectedAnnotation(null);
+          renderAnnotations();
+          event.preventDefault();
+        }
+
+        function handleAnnotatePointerMove(event) {
+          if (!annotationState.isDragging) return;
+          const stageX = getStageX(event);
+          const stageY = getStageY(event);
+          if (stageX == null || stageY == null) return;
+          annotationState.dragCurrentX = stageX;
+          annotationState.dragCurrentY = stageY;
+          renderAnnotations();
+        }
+
+        async function handleAnnotatePointerUp(event) {
+          if (!annotationState.isDragging) return;
+          const stageX = getStageX(event);
+          const stageY = getStageY(event);
+          const duration = getDurationSeconds();
+          const img = modalImage();
+          annotationState.isDragging = false;
+          const dragMode = annotationState.dragMode;
+          annotationState.dragMode = null;
+
+          if (!duration || !img || stageX == null || stageY == null) {
+            renderAnnotations();
+            return;
+          }
+
+          const deltaPx = Math.abs(stageX - annotationState.dragStartX);
+          const deltaYPx = Math.abs(stageY - annotationState.dragStartY);
+          const minDragPx = 4;
+
+          try {
+            if (dragMode === "new") {
+              const startPx = annotationState.dragStartX;
+              const endPx = stageX;
+              const startTime = (Math.min(startPx, endPx) / img.offsetWidth) * duration;
+              const endTime = (Math.max(startPx, endPx) / img.offsetWidth) * duration;
+              const label = "Annotation";
+              const layer = annotationLayer();
+              const laneHeight = Math.max(layer?.offsetHeight ?? img.offsetHeight, 1);
+              const startLane = Math.max(0, Math.min(1, annotationState.dragStartY / laneHeight));
+              const endLane = Math.max(0, Math.min(1, stageY / laneHeight));
+              const laneStart = Math.min(startLane, endLane);
+              const laneEnd = Math.max(startLane, endLane);
+              const isPoint = deltaPx < minDragPx && deltaYPx < minDragPx;
+              const payload = {
+                band_name: currentBand,
+                start_time_sec: startTime,
+                end_time_sec: isPoint ? null : endTime,
+                lane_start: isPoint ? startLane : laneStart,
+                lane_end: isPoint ? null : laneEnd,
+                label,
+                color: annotationState.selectedColor || DEFAULT_ANNOTATION_COLOR,
+              };
+              const created = await createAnnotation(payload);
+              if (created) {
+                await loadAnnotationsForBand(currentBand);
+                setSelectedAnnotation(created.id);
+                openRenameModal();
+              }
+            }
+          } catch (error) {
+            showToast(error.message || "Failed to save annotation.", "error");
+          } finally {
+            renderAnnotations();
+          }
+        }
+
+        async function fetchBandVisualization(band) {
+          if (!eegVizState.contextId) return;
+          showSkeleton();
+          const url = buildVizUrl(eegVizState.contextId, band, "detail");
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(errText || "Failed to load visualization");
+            }
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            showPreviewImage(objectUrl, band);
+          } catch (error) {
+            const c = canvas();
+            if (c) {
+              c.innerHTML = `<p style="font-size:0.84rem;color:var(--text-700);margin:0">${escapeHtml(error.message || "Failed to load visualization")}</p>`;
+            }
+          }
+        }
+
+        function switchBand(band) {
+          if (!BANDS.includes(band)) return;
+          currentBand = band;
+          updateBandButtons(band);
+          resetZoom();
+          fetchBandVisualization(band);
+          if (annotationState.enabled) {
+            loadAnnotationsForBand(band);
+          }
+        }
+
+        function open(band) {
+          if (!eegVizState.contextId) return;
+          currentBand = band || currentBand;
+          isOpen = true;
+          annotationState.durationSeconds = null;
+          annotationState.panOverride = false;
+          setAnnotateMode(true);
+          resetZoom();
+
+          const recordingId = currentRecordingId ?? currentResultId ?? "—";
+          if (recordingIdLabel()) recordingIdLabel().textContent = recordingId;
+
+          const ov = overlay();
+          if (!ov) return;
+          ov.classList.add("is-open");
+          ov.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+
+          updateBandButtons(currentBand);
+          fetchBandVisualization(currentBand);
+
+          document.addEventListener("keydown", handleKeydown);
+          document.addEventListener("keyup", handleKeyup);
+          window.addEventListener("resize", applyTransform);
+        }
+
+        function close() {
+          isOpen = false;
+          setAnnotateMode(false);
+          endPan();
+          const ov = overlay();
+          if (ov) {
+            ov.classList.remove("is-open");
+            ov.setAttribute("aria-hidden", "true");
+          }
+          document.body.style.overflow = "";
+          document.removeEventListener("keydown", handleKeydown);
+          document.removeEventListener("keyup", handleKeyup);
+          window.removeEventListener("resize", applyTransform);
+        }
+
+        function handleKeydown(event) {
+          if (!isOpen) return;
+          const tagName = event.target?.tagName || "";
+          const isTextInput = ["INPUT", "TEXTAREA"].includes(tagName);
+          const isEditable = event.target?.isContentEditable;
+          const isDialogOpen =
+            annotationRenameModal()?.classList.contains("hidden") === false ||
+            annotationDeleteModal()?.classList.contains("hidden") === false;
+          if (isTextInput || isEditable) {
+            if (event.key === "Escape") {
+              close();
+            }
+            return;
+          }
+          if (event.key === "Backspace" && !isTextInput && !isEditable) {
+            event.preventDefault();
+            return;
+          }
+          if ((event.key === "a" || event.key === "A") && !isTextInput) {
+            event.preventDefault();
+            setAnnotateMode(true);
+            setAnnotationMode("draw");
+            return;
+          }
+          if (event.code === "Space" && annotationState.enabled) {
+            event.preventDefault();
+            annotationState.panOverride = true;
+            return;
+          }
+          if (event.key === "Escape") {
+            close();
+            return;
+          }
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            zoomByFactor(1.2);
+            return;
+          }
+          if (event.key === "-") {
+            event.preventDefault();
+            zoomByFactor(1 / 1.2);
+            return;
+          }
+          if (event.key === "0" || event.key === "f" || event.key === "F") {
+            event.preventDefault();
+            resetZoom();
+            return;
+          }
+          if (event.key === "ArrowRight") {
+            if (isTextInput || isDialogOpen) return;
+            const idx = BANDS.indexOf(currentBand);
+            switchBand(BANDS[(idx + 1) % BANDS.length]);
+            return;
+          }
+          if (event.key === "ArrowLeft") {
+            if (isTextInput || isDialogOpen) return;
+            const idx = BANDS.indexOf(currentBand);
+            switchBand(BANDS[(idx - 1 + BANDS.length) % BANDS.length]);
+            return;
+          }
+        }
+
+        function handleKeyup(event) {
+          if (!isOpen) return;
+          if (event.code === "Space") {
+            annotationState.panOverride = false;
+          }
+        }
+
+        function init() {
+          byId("eeg-modal-close-btn")?.addEventListener("click", close);
+          byId("eeg-zoom-in-btn")?.addEventListener("click", () => zoomByFactor(1.2));
+          byId("eeg-zoom-out-btn")?.addEventListener("click", () => zoomByFactor(1 / 1.2));
+          byId("eeg-zoom-reset-btn")?.addEventListener("click", resetZoom);
+          byId("eeg-zoom-fit-btn")?.addEventListener("click", resetZoom);
+          classificationsBtn()?.addEventListener("click", () => {
+            if (BANDS.includes("segments")) switchBand("segments");
+          });
+          document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const band = btn.getAttribute("data-modal-band");
+              if (band) switchBand(band);
+            });
+          });
+          document.querySelectorAll(".eeg-annotation-mode-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const mode = btn.getAttribute("data-annotation-mode");
+              setAnnotateMode(true);
+              setAnnotationMode(mode);
+            });
+          });
+          document.querySelectorAll(".eeg-annotation-color-swatch").forEach((swatch) => {
+            swatch.addEventListener("click", async () => {
+              const selectedId = annotationState.selectedId;
+              if (!selectedId) return;
+              const selected = annotationState.annotations.find(
+                (item) => item.id === annotationState.selectedId,
+              );
+              const canEdit = Boolean(
+                selected &&
+                  appState.clinicianId &&
+                  Number(selected.clinician_id) === Number(appState.clinicianId),
+              );
+              if (!canEdit) return;
+              const color = swatch.getAttribute("data-annotation-color");
+              if (!color) return;
+              annotationState.selectedColor = color;
+              try {
+                await updateAnnotation(selectedId, { color });
+                await loadAnnotationsForBand(currentBand);
+                setSelectedAnnotation(selectedId);
+              } catch (error) {
+                showToast(error.message || "Failed to update annotation color.", "error");
+              }
+            });
+          });
+          annotationRenameBtn()?.addEventListener("click", () => {
+            const selected = annotationState.annotations.find(
+              (item) => item.id === annotationState.selectedId,
+            );
+            const canEdit = Boolean(
+              selected &&
+                appState.clinicianId &&
+                Number(selected.clinician_id) === Number(appState.clinicianId),
+            );
+            if (!canEdit) return;
+            openRenameModal();
+          });
+          annotationDeleteBtn()?.addEventListener("click", () => {
+            const selected = annotationState.annotations.find(
+              (item) => item.id === annotationState.selectedId,
+            );
+            const canEdit = Boolean(
+              selected &&
+                appState.clinicianId &&
+                Number(selected.clinician_id) === Number(appState.clinicianId),
+            );
+            if (!canEdit) return;
+            openDeleteModal();
+          });
+          annotationRenameSaveBtn()?.addEventListener("click", async () => {
+            const selectedId = annotationState.selectedId;
+            if (!selectedId) return;
+            const label = annotationRenameInput()?.value?.trim() || "Annotation";
+            try {
+              await updateAnnotation(selectedId, {
+                label,
+                color: annotationState.selectedColor || DEFAULT_ANNOTATION_COLOR,
+              });
+              await loadAnnotationsForBand(currentBand);
+              setSelectedAnnotation(selectedId);
+              closeRenameModal();
+            } catch (error) {
+              showToast(error.message || "Failed to update annotation.", "error");
+            }
+          });
+          annotationRenameCancelBtn()?.addEventListener("click", closeRenameModal);
+          annotationDeleteConfirmBtn()?.addEventListener("click", async () => {
+            const selectedId = annotationState.selectedId;
+            if (!selectedId) return;
+            try {
+              await deleteAnnotation(selectedId);
+              await loadAnnotationsForBand(currentBand);
+              setSelectedAnnotation(null);
+              closeDeleteModal();
+            } catch (error) {
+              showToast(error.message || "Failed to delete annotation.", "error");
+            }
+          });
+          annotationDeleteCancelBtn()?.addEventListener("click", closeDeleteModal);
+          annotationRenameInput()?.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              annotationRenameSaveBtn()?.click();
+            }
+          });
+          annotationRenameModal()?.addEventListener("click", (event) => {
+            if (event.target === annotationRenameModal()) closeRenameModal();
+          });
+          annotationDeleteModal()?.addEventListener("click", (event) => {
+            if (event.target === annotationDeleteModal()) closeDeleteModal();
+          });
+
+          overlay()?.addEventListener("click", (event) => {
+            if (event.target === overlay()) close();
+          });
+          canvas()?.addEventListener("wheel", handleZoomWheel, { passive: false });
+          canvas()?.addEventListener("mousedown", startPan);
+          canvas()?.addEventListener("mousedown", handleAnnotatePointerDown);
+          window.addEventListener("mousemove", handlePan);
+          window.addEventListener("mouseup", endPan);
+          window.addEventListener("mousemove", handleAnnotatePointerMove);
+          window.addEventListener("mouseup", handleAnnotatePointerUp);
+
+        }
+
+        return { init, open, close };
+      })();
+
       // ── View result ──
 
       async function viewResult(resultId) {
         currentResultId = null;
+        currentRecordingId = null;
         byId("result-download-pdf-btn").disabled = true;
         byId("result-detail-title").textContent = "Result Details";
         byId("result-detail-subtitle").textContent = "Loading...";
@@ -1626,6 +2877,7 @@
             return;
           }
           currentResultId = resultId;
+          currentRecordingId = data.recording_id ?? null;
           byId("result-download-pdf-btn").disabled = false;
           renderResultDetail(data);
           loadDrawerEEGVisualizations(resultId);
@@ -1669,6 +2921,7 @@
       async function initializePage() {
         await loadCurrentClinician();
         await loadResults();
+        eegAnnotateModal.init();
         const q = new URLSearchParams(location.search).get("search");
         if (q) {
           const s = byId("search-results");
