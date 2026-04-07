@@ -1642,6 +1642,52 @@
         alpha_theta_ratio: { label: "Alpha/Theta Ratio (ATR)", range: "Reference: 0.5 to 1.2" },
       };
 
+      const CUTOFFS_BY_SUBTYPE = {
+        "ADHD-C": {
+          rel_alpha: { direction: ">=", cutoff: 0.223973 },
+          rel_beta: { direction: "<=", cutoff: 0.013036 },
+          tar: { direction: "<=", cutoff: 0.618060 },
+          atr: { direction: ">=", cutoff: 1.617967 },
+        },
+        "ADHD-H": {
+          rel_alpha: { direction: "<=", cutoff: 0.012194 },
+          rel_beta: { direction: ">=", cutoff: 0.199041 },
+          tbr: { direction: "<=", cutoff: 0.493945 },
+        },
+        "ADHD-I": {
+          tar: { direction: ">=", cutoff: 3.719410 },
+          atr: { direction: "<=", cutoff: 0.268860 },
+        },
+        Control: {
+          rel_theta: { direction: "<=", cutoff: 0.039379 },
+          tbr: { direction: ">=", cutoff: 9.239005 },
+        },
+      };
+
+      const CUTOFF_SUBTYPE_LABELS = {
+        "ADHD-C": "ADHD-C",
+        "ADHD-H": "ADHD-H",
+        "ADHD-I": "ADHD-I",
+        Control: "Non-ADHD",
+      };
+
+      function getSubtypeFromClassification(label) {
+        const normalized = String(label || "").toLowerCase();
+        if (normalized.includes("combined")) return "ADHD-C";
+        if (normalized.includes("hyperactive")) return "ADHD-H";
+        if (normalized.includes("inattentive")) return "ADHD-I";
+        if (normalized.includes("non-adhd")) return "Control";
+        return null;
+      }
+
+      function formatCutoffHint(subtypeKey, metricKey) {
+        if (!subtypeKey || !metricKey) return "";
+        const cutoff = CUTOFFS_BY_SUBTYPE[subtypeKey]?.[metricKey];
+        if (!cutoff) return "";
+        const label = CUTOFF_SUBTYPE_LABELS[subtypeKey] || subtypeKey;
+        return `Likely ${label} if ${metricKey} ${cutoff.direction} ${cutoff.cutoff.toFixed(3)}.`;
+      }
+
       const appState = {
         currentStep: 1,
         file: null,
@@ -2849,6 +2895,7 @@
         if (!barsContainer) return;
 
         const averageRelative = displayData.average_relative_power || {};
+        const subtypeKey = getSubtypeFromClassification(appState.latestResult?.classification);
         const bands = Object.keys(averageRelative);
         if (bands.length === 0) {
           barsContainer.innerHTML =
@@ -2863,6 +2910,18 @@
           const displayBand = band
             .replace(/_/g, " ")
             .replace(/\b\w/g, (match) => match.toUpperCase());
+          const metricKey =
+            band === "alpha"
+              ? "rel_alpha"
+              : band === "beta"
+                ? "rel_beta"
+                : band === "theta"
+                  ? "rel_theta"
+                  : null;
+          const cutoffHint = formatCutoffHint(subtypeKey, metricKey);
+          const hintHtml = cutoffHint
+            ? `<div class="normal-range">${escapeHtml(cutoffHint)}</div>`
+            : "";
           html += `
                     <div class="band-bar">
                         <div class="band-label">${escapeHtml(displayBand)}</div>
@@ -2871,6 +2930,7 @@
                         </div>
                         <div class="band-value">${percentage.toFixed(1)}%</div>
                     </div>
+                    ${hintHtml}
                 `;
         });
 
@@ -2946,6 +3006,13 @@
           return;
         }
 
+        const subtypeKey = getSubtypeFromClassification(appState.latestResult?.classification);
+        const ratioMetricKeyMap = {
+          theta_beta_ratio: "tbr",
+          theta_alpha_ratio: "tar",
+          alpha_theta_ratio: "atr",
+        };
+
         container.innerHTML = Object.entries(ratios)
           .map(([key, rawValue]) => {
             const value = Number(rawValue);
@@ -2953,11 +3020,17 @@
               label: key.replace(/_/g, " ").replace(/\b\w/g, (match) => match.toUpperCase()),
               range: "Reference range varies by context",
             };
+            const metricKey = ratioMetricKeyMap[key];
+            const cutoffHint = formatCutoffHint(subtypeKey, metricKey);
+            const cutoffHtml = cutoffHint
+              ? `<span class="ratio-cutoff">${escapeHtml(cutoffHint)}</span>`
+              : "";
             return `
                     <div class="ratio-item">
                         <div class="ratio-copy">
                             <span class="ratio-name">${escapeHtml(meta.label)}</span>
                             <span class="ratio-range">${escapeHtml(meta.range)}</span>
+                            ${cutoffHtml}
                         </div>
                         <span class="ratio-value">${Number.isFinite(value) ? value.toFixed(3) : "N/A"}</span>
                     </div>
