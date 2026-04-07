@@ -23,7 +23,7 @@ import pandas as pd
 from scipy.signal import welch
 
 from ..config import (
-    CLASSIFYING_FREQUENCY_BANDS,
+    FREQUENCY_BANDS,
     ELECTRODE_CHANNELS,
     OVERLAP,
     SAMPLE_RATE,
@@ -127,13 +127,13 @@ def _compute_window_biomarkers(
         freqs, psd = welch(sig, fs=SAMPLE_RATE, nperseg=nperseg)
 
         powers: dict[str, float] = {}
-        for band, (lo, hi) in CLASSIFYING_FREQUENCY_BANDS.items():
+        for band, (lo, hi) in FREQUENCY_BANDS.items():
             powers[band] = _band_power(freqs, psd, lo, hi)
         band_powers[elec] = powers
 
     # ── Global average band powers ──────────────────────────────────
     avg_bp: dict[str, float] = {}
-    for band in CLASSIFYING_FREQUENCY_BANDS:
+    for band in FREQUENCY_BANDS:
         avg_bp[band] = float(np.mean([band_powers[e][band] for e in electrodes]))
 
     # ── 1. Band ratios ──────────────────────────────────────────────

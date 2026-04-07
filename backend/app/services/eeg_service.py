@@ -10,7 +10,6 @@ from scipy.integrate import simpson
 
 from ..config import (
     BROADBAND,
-    CLASSIFYING_FREQUENCY_BANDS,
     DISPLAY_FREQUENCY_BANDS,
     ELECTRODE_CHANNELS,
     MODEL_FREQUENCY_BANDS,
@@ -87,9 +86,26 @@ class EEGService:
         # --- Filter for ICA (1–80 Hz typical) ---
         raw.filter(1.0, 60.0, fir_design="firwin", verbose=False)
 
-        # --- Fit ICA (fixed component count: n_channels - 1) ---
-        ica = mne.preprocessing.ICA(n_components=len(ch_names) - 1, method="fastica", verbose=False)
-        ica.fit(raw, picks="eeg", decim=3)
+        # --- Fit ICA (with fallback for degenerate data) ---
+        # Try variance-based selection first, fall back to fixed components if it fails
+        ica = None
+        try:
+            ica = mne.preprocessing.ICA(n_components=0.999999, method="fastica", verbose=False)
+            ica.fit(raw, picks="eeg", decim=3)
+        except RuntimeError as e:
+            # If variance-based selection fails (e.g., one component has 100% variance),
+            # fall back to fixed conservative component count
+            if "PCA component captures most" in str(e) or "captures most of the explained variance" in str(e):
+                try:
+                    ica = mne.preprocessing.ICA(n_components=10, method="fastica", verbose=False)
+                    ica.fit(raw, picks="eeg", decim=3)
+                except Exception as e2:
+                    # If ICA still fails, return original data uncleaned
+                    logger = get_app_logger(__name__)
+                    logger.warning(f"ICA fitting failed, returning uncleaned data: {e2}")
+                    return df
+            else:
+                raise
 
         # --- Detect EOG-like (blink) components if present ---
         try:

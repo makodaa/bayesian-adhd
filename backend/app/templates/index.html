@@ -335,34 +335,34 @@
                 </div>
 
                 <div id="results-content" class="results-content hidden">
-                   <article class="summary-card">
-                     <h3>
-                       Classification Summary
-                       <span class="tooltip-anchor">
-                         <span
-                           class="tooltip-trigger"
-                           role="button"
-                           tabindex="0"
-                           aria-label="Classification summary definition"
-                         >
-                           i
-                         </span>
-                         <span class="tooltip-bubble" role="tooltip">
-                           <div>
-                             Prediction from the CNN-LSTM model based on learned EEG features.
-                           </div>
-                         </span>
-                       </span>
-                     </h3>
-                     <div id="prediction-result"></div>
-                   </article>
+                  <article class="summary-card">
+                    <h3>
+                      Classification Summary
+                      <span class="tooltip-anchor">
+                        <span
+                          class="tooltip-trigger"
+                          role="button"
+                          tabindex="0"
+                          aria-label="Classification summary definition"
+                        >
+                          i
+                        </span>
+                        <span class="tooltip-bubble" role="tooltip">
+                          <div>
+                            Prediction from the CNN-LSTM model based on learned EEG features.
+                          </div>
+                        </span>
+                      </span>
+                    </h3>
+                    <div id="prediction-result"></div>
+                  </article>
 
-                   <article class="summary-card" id="narrative-card">
-                     <h3>Arousal &amp; Attention Profile</h3>
-                     <p id="narrative-text" class="narrative-text"></p>
-                   </article>
+                  <article class="summary-card" id="narrative-card">
+                    <h3>Arousal &amp; Attention Profile</h3>
+                    <p id="narrative-text" class="narrative-text"></p>
+                  </article>
 
-                   <article id="quality-notice-section" class="quality-card hidden">
+                  <article id="quality-notice-section" class="quality-card hidden">
                     <h3 id="quality-notice-title">Warning</h3>
                     <div id="quality-notice-content"></div>
                   </article>
@@ -378,10 +378,7 @@
                       <span class="section-title">
                         <span>Spectral Band Power Analysis</span>
                         <span class="tooltip-anchor">
-                          <span
-                            class="tooltip-trigger"
-                            aria-label="Spectral band power definition"
-                          >
+                          <span class="tooltip-trigger" aria-label="Spectral band power definition">
                             i
                           </span>
                           <span class="tooltip-bubble" role="tooltip">
@@ -783,7 +780,8 @@
             <div>
               <h2 id="assessment-drawer-title">New Assessment</h2>
               <p>
-                Follow the step-by-step workflow to submit an EEG assessment without leaving this page.
+                Follow the step-by-step workflow to submit an EEG assessment without leaving this
+                page.
               </p>
             </div>
             <button
@@ -838,7 +836,9 @@
                       <h3>Subject Details</h3>
                       <div class="form-grid">
                         <div class="field-wrap full">
-                          <label for="subject-code">Subject Code <span class="required-indicator">*</span></label>
+                          <label for="subject-code"
+                            >Subject Code <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="text"
                             id="subject-code"
@@ -852,12 +852,16 @@
                           <p class="field-error hidden" data-error-for="subject-code"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="date-of-birth">Date of Birth <span class="required-indicator">*</span></label>
+                          <label for="date-of-birth"
+                            >Date of Birth <span class="required-indicator">*</span></label
+                          >
                           <input type="date" id="date-of-birth" required />
                           <p class="field-error hidden" data-error-for="date-of-birth"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="gender">Gender <span class="required-indicator">*</span></label>
+                          <label for="gender"
+                            >Gender <span class="required-indicator">*</span></label
+                          >
                           <select id="gender" required>
                             <option value="" selected disabled>Select gender</option>
                             <option value="Male">Male</option>
@@ -925,7 +929,10 @@
                           <span class="tooltip-bubble" role="tooltip">
                             <div>Captured to interpret EEG responses.</div>
                             <ul>
-                              <li>Sleep, caffeine, medication, and meals can affect stimulant response.</li>
+                              <li>
+                                Sleep, caffeine, medication, and meals can affect stimulant
+                                response.
+                              </li>
                             </ul>
                           </span>
                         </span>
@@ -941,7 +948,9 @@
                           />
                         </div>
                         <div class="field-wrap">
-                          <label for="sleep-hours">Sleep Hours <span class="required-indicator">*</span></label>
+                          <label for="sleep-hours"
+                            >Sleep Hours <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="sleep-hours"
@@ -954,7 +963,10 @@
                           <p class="field-error hidden" data-error-for="sleep-hours"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="coffee-hours-ago">Time since caffeine intake (hours) <span class="required-indicator">*</span></label>
+                          <label for="coffee-hours-ago"
+                            >Time since caffeine intake (hours)
+                            <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="coffee-hours-ago"
@@ -967,7 +979,10 @@
                           <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="drugs-hours-ago">Time since drug intake (hours) <span class="required-indicator">*</span></label>
+                          <label for="drugs-hours-ago"
+                            >Time since drug intake (hours)
+                            <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="drugs-hours-ago"
@@ -980,7 +995,10 @@
                           <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="meal-hours-ago">Time since last meal (hours) <span class="required-indicator">*</span></label>
+                          <label for="meal-hours-ago"
+                            >Time since last meal (hours)
+                            <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="meal-hours-ago"
@@ -1059,10 +1077,14 @@
                     <div class="form-panel">
                       <h3>Recording File Summary</h3>
                       <div id="file-meta" class="metadata-panel">
-                        <div class="metadata-row"><span>Filename</span><span>Not selected</span></div>
+                        <div class="metadata-row">
+                          <span>Filename</span><span>Not selected</span>
+                        </div>
                         <div class="metadata-row"><span>Rows</span><span>-</span></div>
                         <div class="metadata-row"><span>Columns</span><span>-</span></div>
-                        <div class="metadata-row"><span>Estimated Duration</span><span>-</span></div>
+                        <div class="metadata-row">
+                          <span>Estimated Duration</span><span>-</span>
+                        </div>
                         <div class="metadata-row">
                           <span>Sampling Rate</span><span>128 Hz reference</span>
                         </div>
@@ -1079,9 +1101,9 @@
                 </div>
 
                 <div class="disclaimer-note">
-                  This assessment report is generated by an automated support system. Findings should be
-                  interpreted alongside clinical history, behavioral assessments, and professional
-                  judgment.
+                  This assessment report is generated by an automated support system. Findings
+                  should be interpreted alongside clinical history, behavioral assessments, and
+                  professional judgment.
                 </div>
               </section>
 
@@ -1138,22 +1160,23 @@
               <button class="eeg-modal-band-btn" data-modal-band="filtered" type="button">
                 Filtered
               </button>
-              <button class="eeg-modal-band-btn" data-modal-band="delta" type="button">Delta</button>
-              <button class="eeg-modal-band-btn" data-modal-band="theta" type="button">Theta</button>
-              <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">Alpha</button>
+              <button class="eeg-modal-band-btn" data-modal-band="delta" type="button">
+                Delta
+              </button>
+              <button class="eeg-modal-band-btn" data-modal-band="theta" type="button">
+                Theta
+              </button>
+              <button class="eeg-modal-band-btn" data-modal-band="alpha" type="button">
+                Alpha
+              </button>
               <button class="eeg-modal-band-btn" data-modal-band="beta" type="button">Beta</button>
-              <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">Gamma</button>
+              <button class="eeg-modal-band-btn" data-modal-band="gamma" type="button">
+                Gamma
+              </button>
               <button class="eeg-modal-band-btn" data-modal-band="segments" type="button">
                 Segments
               </button>
             </div>
-            <button
-              id="eeg-modal-classifications-btn"
-              type="button"
-              class="eeg-modal-control-btn"
-            >
-              Model Classifications
-            </button>
           </div>
           <button
             id="eeg-modal-close-btn"
@@ -1189,43 +1212,132 @@
             <div class="eeg-modal-control-group">
               <div class="eeg-modal-group" role="group" aria-label="Zoom controls">
                 <span class="eeg-modal-group-label">Zoom</span>
-                <button id="eeg-zoom-in-btn" type="button" class="eeg-modal-icon-btn" aria-label="Zoom in">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
-                  <line x1="11" y1="8" x2="11" y2="14" stroke="currentColor" stroke-width="2"></line>
-                  <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2"></line>
-                  <line x1="16" y1="16" x2="22" y2="22" stroke="currentColor" stroke-width="2"></line>
-                </svg>
+                <button
+                  id="eeg-zoom-in-btn"
+                  type="button"
+                  class="eeg-modal-icon-btn"
+                  aria-label="Zoom in"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></circle>
+                    <line
+                      x1="11"
+                      y1="8"
+                      x2="11"
+                      y2="14"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></line>
+                    <line
+                      x1="8"
+                      y1="11"
+                      x2="14"
+                      y2="11"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></line>
+                    <line
+                      x1="16"
+                      y1="16"
+                      x2="22"
+                      y2="22"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></line>
+                  </svg>
                 </button>
-                <button id="eeg-zoom-out-btn" type="button" class="eeg-modal-icon-btn" aria-label="Zoom out">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
-                  <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2"></line>
-                  <line x1="16" y1="16" x2="22" y2="22" stroke="currentColor" stroke-width="2"></line>
-                </svg>
+                <button
+                  id="eeg-zoom-out-btn"
+                  type="button"
+                  class="eeg-modal-icon-btn"
+                  aria-label="Zoom out"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></circle>
+                    <line
+                      x1="8"
+                      y1="11"
+                      x2="14"
+                      y2="11"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></line>
+                    <line
+                      x1="16"
+                      y1="16"
+                      x2="22"
+                      y2="22"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></line>
+                  </svg>
                 </button>
-                <button id="eeg-zoom-reset-btn" type="button" class="eeg-modal-icon-btn" aria-label="Reset zoom">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M3 12a9 9 0 1 0 3-6.7"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  ></path>
-                  <polyline
-                    points="3 4 3 10 9 10"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  ></polyline>
-                </svg>
+                <button
+                  id="eeg-zoom-reset-btn"
+                  type="button"
+                  class="eeg-modal-icon-btn"
+                  aria-label="Reset zoom"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M3 12a9 9 0 1 0 3-6.7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></path>
+                    <polyline
+                      points="3 4 3 10 9 10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></polyline>
+                  </svg>
                 </button>
-                <button id="eeg-zoom-fit-btn" type="button" class="eeg-modal-icon-btn" aria-label="Fit to view">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
-                  <polyline points="8 3 8 8 3 8" fill="none" stroke="currentColor" stroke-width="2"></polyline>
-                  <polyline points="16 21 16 16 21 16" fill="none" stroke="currentColor" stroke-width="2"></polyline>
-                </svg>
+                <button
+                  id="eeg-zoom-fit-btn"
+                  type="button"
+                  class="eeg-modal-icon-btn"
+                  aria-label="Fit to view"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect
+                      x="4"
+                      y="4"
+                      width="16"
+                      height="16"
+                      rx="2"
+                      ry="2"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></rect>
+                    <polyline
+                      points="8 3 8 8 3 8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></polyline>
+                    <polyline
+                      points="16 21 16 16 21 16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    ></polyline>
+                  </svg>
                 </button>
               </div>
               <span class="eeg-modal-divider" aria-hidden="true"></span>
@@ -1237,8 +1349,21 @@
                   data-annotation-mode="select"
                   aria-label="Select annotations"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"
+                    />
                   </svg>
                 </button>
                 <button
@@ -1247,17 +1372,30 @@
                   data-annotation-mode="draw"
                   aria-label="Draw annotations"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"/>
-                    <path d="M5 3a2 2 0 0 0-2 2"/>
-                    <path d="M19 3a2 2 0 0 1 2 2"/>
-                    <path d="M5 21a2 2 0 0 1-2-2"/>
-                    <path d="M9 3h1"/>
-                    <path d="M9 21h2"/>
-                    <path d="M14 3h1"/>
-                    <path d="M3 9v1"/>
-                    <path d="M21 9v2"/>
-                    <path d="M3 14v1"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"
+                    />
+                    <path d="M5 3a2 2 0 0 0-2 2" />
+                    <path d="M19 3a2 2 0 0 1 2 2" />
+                    <path d="M5 21a2 2 0 0 1-2-2" />
+                    <path d="M9 3h1" />
+                    <path d="M9 21h2" />
+                    <path d="M14 3h1" />
+                    <path d="M3 9v1" />
+                    <path d="M21 9v2" />
+                    <path d="M3 14v1" />
                   </svg>
                 </button>
               </div>
@@ -1269,17 +1407,65 @@
               aria-label="Annotation settings"
             >
               <span class="eeg-modal-group-label">Annotation Settings</span>
-              <div class="eeg-annotation-color-palette" id="eeg-annotation-color-palette" aria-label="Annotation color">
+              <div
+                class="eeg-annotation-color-palette"
+                id="eeg-annotation-color-palette"
+                aria-label="Annotation color"
+              >
                 <span class="eeg-annotation-color-label">Color</span>
-                <div class="eeg-annotation-color-swatches" role="group" aria-label="Select annotation color">
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#1f77b4" aria-label="Blue"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#2ca02c" aria-label="Green"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#ff7f0e" aria-label="Orange"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#d62728" aria-label="Red"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#9467bd" aria-label="Purple"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#8c564b" aria-label="Brown"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#e377c2" aria-label="Pink"></button>
-                  <button type="button" class="eeg-annotation-color-swatch" data-annotation-color="#7f7f7f" aria-label="Gray"></button>
+                <div
+                  class="eeg-annotation-color-swatches"
+                  role="group"
+                  aria-label="Select annotation color"
+                >
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#1f77b4"
+                    aria-label="Blue"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#2ca02c"
+                    aria-label="Green"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#ff7f0e"
+                    aria-label="Orange"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#d62728"
+                    aria-label="Red"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#9467bd"
+                    aria-label="Purple"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#8c564b"
+                    aria-label="Brown"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#e377c2"
+                    aria-label="Pink"
+                  ></button>
+                  <button
+                    type="button"
+                    class="eeg-annotation-color-swatch"
+                    data-annotation-color="#7f7f7f"
+                    aria-label="Gray"
+                  ></button>
                 </div>
               </div>
               <button
@@ -1295,7 +1481,14 @@
                     stroke="currentColor"
                     stroke-width="2"
                   ></path>
-                  <line x1="13" y1="7" x2="17" y2="11" stroke="currentColor" stroke-width="2"></line>
+                  <line
+                    x1="13"
+                    y1="7"
+                    x2="17"
+                    y2="11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  ></line>
                 </svg>
                 <span class="eeg-modal-icon-text">Edit</span>
               </button>
@@ -1306,21 +1499,36 @@
                 aria-label="Delete annotation"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="2"></polyline>
+                  <polyline
+                    points="3 6 5 6 21 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  ></polyline>
                   <path
                     d="M7 6v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
                   ></path>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="2"></path>
+                  <path
+                    d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  ></path>
                 </svg>
                 <span class="eeg-modal-icon-text">Delete</span>
               </button>
             </div>
           </div>
         </div>
-        <div class="eeg-annotation-dialog hidden" id="eeg-annotation-rename-modal" role="dialog" aria-modal="true">
+        <div
+          class="eeg-annotation-dialog hidden"
+          id="eeg-annotation-rename-modal"
+          role="dialog"
+          aria-modal="true"
+        >
           <div class="eeg-annotation-dialog-card">
             <h3>Edit annotation</h3>
             <textarea
@@ -1333,13 +1541,22 @@
               <button id="eeg-annotation-rename-cancel" type="button" class="eeg-modal-control-btn">
                 Cancel
               </button>
-              <button id="eeg-annotation-rename-save" type="button" class="eeg-modal-control-btn is-primary">
+              <button
+                id="eeg-annotation-rename-save"
+                type="button"
+                class="eeg-modal-control-btn is-primary"
+              >
                 Save
               </button>
             </div>
           </div>
         </div>
-        <div class="eeg-annotation-dialog hidden" id="eeg-annotation-delete-modal" role="dialog" aria-modal="true">
+        <div
+          class="eeg-annotation-dialog hidden"
+          id="eeg-annotation-delete-modal"
+          role="dialog"
+          aria-modal="true"
+        >
           <div class="eeg-annotation-dialog-card">
             <h3>Delete annotation?</h3>
             <p>This will permanently remove the annotation.</p>
@@ -1347,7 +1564,11 @@
               <button id="eeg-annotation-delete-cancel" type="button" class="eeg-modal-control-btn">
                 Cancel
               </button>
-              <button id="eeg-annotation-delete-confirm" type="button" class="eeg-modal-control-btn is-danger">
+              <button
+                id="eeg-annotation-delete-confirm"
+                type="button"
+                class="eeg-modal-control-btn is-danger"
+              >
                 Delete
               </button>
             </div>
@@ -1379,6 +1600,13 @@
         "Cz",
         "Pz",
       ];
+      // Old 10-20 system names → New MCN system names
+      const OLD_TO_NEW_ELECTRODE_MAPPING = {
+        T3: "T7",
+        T4: "T8",
+        T5: "P7",
+        T6: "P8",
+      };
       const SAMPLE_RATE_HZ = 128;
       const PROCESSING_STAGES = [
         "Validating subject metadata and EEG file",
@@ -1387,26 +1615,26 @@
         "Loading topographic maps",
       ];
 
-        const bandColors = {
-          delta: "#6a8aa5",
-          theta: "#5a9ab2",
+      const bandColors = {
+        delta: "#6a8aa5",
+        theta: "#5a9ab2",
         alpha: "#5eab81",
         beta: "#d28a4c",
         gamma: "#c8676f",
         fast_alpha: "#5a9bb8",
-          high_beta: "#d07e53",
-        };
-        const ANNOTATION_COLOR_SWATCHES = [
-          "#1f77b4",
-          "#2ca02c",
-          "#ff7f0e",
-          "#d62728",
-          "#9467bd",
-          "#8c564b",
-          "#e377c2",
-          "#7f7f7f",
-        ];
-        const DEFAULT_ANNOTATION_COLOR = "#1f77b4";
+        high_beta: "#d07e53",
+      };
+      const ANNOTATION_COLOR_SWATCHES = [
+        "#1f77b4",
+        "#2ca02c",
+        "#ff7f0e",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+      ];
+      const DEFAULT_ANNOTATION_COLOR = "#1f77b4";
 
       const ratioMeta = {
         theta_beta_ratio: { label: "Theta/Beta Ratio (TBR)", range: "Reference: 1.0 to 2.5" },
@@ -1725,7 +1953,17 @@
         if (numeric0To18 || numeric1To19) {
           presentChannels = [...ELECTRODE_CHANNELS];
         } else {
-          const normalizedHeaders = new Set(headers.map((header) => header.toLowerCase()));
+          // Strip whitespace and normalize headers for matching
+          const normalizedHeaders = new Set();
+          headers.forEach((header) => {
+            const trimmed = header.trim().toLowerCase();
+            normalizedHeaders.add(trimmed);
+            // Also add old naming variants (e.g., "t3" -> "t7")
+            const upper = header.trim().toUpperCase();
+            if (OLD_TO_NEW_ELECTRODE_MAPPING[upper]) {
+              normalizedHeaders.add(OLD_TO_NEW_ELECTRODE_MAPPING[upper].toLowerCase());
+            }
+          });
           presentChannels = ELECTRODE_CHANNELS.filter((channel) =>
             normalizedHeaders.has(channel.toLowerCase()),
           );
@@ -1944,18 +2182,9 @@
           ["Recording Details", ""],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          [
-            "Time since caffeine intake (hours)",
-            formatHoursSince(context.coffeeHoursAgo),
-          ],
-          [
-            "Time since drug intake (hours)",
-            formatHoursSince(context.drugsHoursAgo),
-          ],
-          [
-            "Time since last meal (hours)",
-            formatContextValue(context.mealHoursAgo),
-          ],
+          ["Time since caffeine intake (hours)", formatHoursSince(context.coffeeHoursAgo)],
+          ["Time since drug intake (hours)", formatHoursSince(context.drugsHoursAgo)],
+          ["Time since last meal (hours)", formatContextValue(context.mealHoursAgo)],
           ["Medication Details", formatContextValue(context.medication)],
           [
             "CSV File",
@@ -1994,8 +2223,7 @@
 
         const prep = (result && result.preprocessing_summary) || null;
         if (!prep) {
-          helper.textContent =
-            "Run an assessment to generate the preprocessing checklist.";
+          helper.textContent = "Run an assessment to generate the preprocessing checklist.";
           body.innerHTML =
             "<li class='subject-summary-empty'>No preprocessing summary recorded yet.</li>";
           return;
@@ -2045,11 +2273,10 @@
           byId("notes")?.value,
         ];
         const hasDraft =
-          fields.some((value) => Boolean(value && String(value).trim())) ||
-          Boolean(appState.file);
+          fields.some((value) => Boolean(value && String(value).trim())) || Boolean(appState.file);
         const hasCompletedAssessment = Boolean(
           appState.latestAssessmentContext &&
-            String(appState.latestAssessmentContext.subjectCode || "").trim(),
+          String(appState.latestAssessmentContext.subjectCode || "").trim(),
         );
 
         const shouldShowCompleted = appState.submissionInFlight || hasCompletedAssessment;
@@ -2152,24 +2379,12 @@
           ],
           ["Gender", context.gender || "-"],
           ["Referral Name", formatContextValue(context.referralName, "Not provided")],
-          [
-            "Referral Institution",
-            formatContextValue(context.referralInstitution, "Not provided"),
-          ],
+          ["Referral Institution", formatContextValue(context.referralInstitution, "Not provided")],
           ["Technician", formatContextValue(context.technicianName)],
           ["Sleep Hours", formatContextValue(context.sleepHours)],
-          [
-            "Time since caffeine intake (hours)",
-            formatHoursSince(context.coffeeHoursAgo),
-          ],
-          [
-            "Time since drug intake (hours)",
-            formatHoursSince(context.drugsHoursAgo),
-          ],
-          [
-            "Time since last meal (hours)",
-            formatContextValue(context.mealHoursAgo),
-          ],
+          ["Time since caffeine intake (hours)", formatHoursSince(context.coffeeHoursAgo)],
+          ["Time since drug intake (hours)", formatHoursSince(context.drugsHoursAgo)],
+          ["Time since last meal (hours)", formatContextValue(context.mealHoursAgo)],
           ["Medication Details", formatContextValue(context.medication)],
           ["CSV File", context.fileMeta ? context.fileMeta.name : "Not selected"],
           [
@@ -2292,10 +2507,7 @@
 
         const meta = appState.fileMeta;
         if (meta && meta.missingChannels && meta.missingChannels.length > 0) {
-          setFieldError(
-            "file",
-            "Upload a complete 19-channel recording using the 10-20 system.",
-          );
+          setFieldError("file", "Upload a complete 19-channel recording using the 10-20 system.");
           hasErrors = true;
         }
 
@@ -2435,23 +2647,23 @@
        */
       function generateNarrative(classification, confidence, avgRelPower, bandRatios) {
         const theta = Number(avgRelPower.theta) || 0;
-        const beta  = Number(avgRelPower.beta)  || 0;
+        const beta = Number(avgRelPower.beta) || 0;
         const alpha = Number(avgRelPower.alpha) || 0;
-        const tbr   = Number(bandRatios.theta_beta_ratio) || 0;
+        const tbr = Number(bandRatios.theta_beta_ratio) || 0;
 
         const thetaPct = (theta * 100).toFixed(1);
-        const betaPct  = (beta  * 100).toFixed(1);
+        const betaPct = (beta * 100).toFixed(1);
         const alphaPct = (alpha * 100).toFixed(1);
 
-        const isAdhd = String(classification).toLowerCase().includes("adhd") &&
-                       !String(classification).toLowerCase().includes("non-adhd");
+        const isAdhd =
+          String(classification).toLowerCase().includes("adhd") &&
+          !String(classification).toLowerCase().includes("non-adhd");
 
-        const s1 = (
+        const s1 =
           `EEG spectral analysis shows relative theta power of ${thetaPct}%, ` +
           `relative beta power of ${betaPct}%, ` +
           `relative alpha power of ${alphaPct}%, ` +
-          `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`
-        );
+          `and a theta/beta ratio (TBR) of ${tbr.toFixed(2)}.`;
         const s2 = _narrativeArousalSentence(theta, beta, tbr);
         const s3 = _narrativeAttentionSentence(isAdhd, tbr);
 
@@ -2462,7 +2674,7 @@
         const el = byId("narrative-text");
         if (!el) return;
         const avgRelPower = (bandData && bandData.average_relative_power) || {};
-        const bandRatios  = (bandData && bandData.band_ratios)            || {};
+        const bandRatios = (bandData && bandData.band_ratios) || {};
         if (!avgRelPower.theta && !avgRelPower.beta) {
           el.textContent = "Spectral data is not yet available to generate an arousal profile.";
           return;
@@ -2544,8 +2756,7 @@
         ) {
           notices.push({
             severity: "high",
-            message:
-              "Drug intake was reported, but medication details were not provided.",
+            message: "Drug intake was reported, but medication details were not provided.",
           });
         }
 
@@ -2588,7 +2799,6 @@
             message: "No meal was reported in the last 6 hours.",
           });
         }
-
 
         // Medication details present — Moderate
         if (String(context.medication || "").trim()) {
@@ -3256,13 +3466,10 @@
         if (context.sleepHours !== "") formData.append("sleep_hours", context.sleepHours);
         if (context.coffeeHoursAgo !== "")
           formData.append("coffee_hours_ago", context.coffeeHoursAgo);
-        if (context.drugsHoursAgo !== "")
-          formData.append("drugs_hours_ago", context.drugsHoursAgo);
-        if (context.mealHoursAgo !== "")
-          formData.append("meal_hours_ago", context.mealHoursAgo);
+        if (context.drugsHoursAgo !== "") formData.append("drugs_hours_ago", context.drugsHoursAgo);
+        if (context.mealHoursAgo !== "") formData.append("meal_hours_ago", context.mealHoursAgo);
         if (context.medication) formData.append("medication", context.medication);
-        if (context.technicianName)
-          formData.append("technician_name", context.technicianName);
+        if (context.technicianName) formData.append("technician_name", context.technicianName);
         if (context.referralName) formData.append("referral_name", context.referralName);
         if (context.referralInstitution)
           formData.append("referral_institution", context.referralInstitution);
@@ -3361,7 +3568,11 @@
 
           updateProcessingStage(1, "Running classification pipeline...");
           displayPrediction(result.classification, result.confidence_score);
-          renderNarrativeCard(result.classification, result.confidence_score, result.band_analysis || {});
+          renderNarrativeCard(
+            result.classification,
+            result.confidence_score,
+            result.band_analysis || {},
+          );
           displayBandPowers(result.band_analysis || {});
           displayClinicalRatios((result.band_analysis || {}).band_ratios || {});
           renderDataQualityNotice(context, result.confidence_score || 0);
@@ -3798,7 +4009,7 @@
         const modalImage = () => byId("eeg-modal-img");
         const modalStage = () => byId("eeg-modal-stage");
         const annotationLayer = () => byId("eeg-modal-annotation-layer");
-        const classificationsBtn = () => byId("eeg-modal-classifications-btn");
+        // const classificationsBtn = () => byId("eeg-modal-classifications-btn");
         const recordingIdLabel = () => byId("eeg-modal-recording-id");
         const annotationSettingsGroup = () => byId("eeg-annotation-settings");
         const annotationColorPalette = () => byId("eeg-annotation-color-palette");
@@ -4098,8 +4309,8 @@
           if (renameInput) renameInput.value = selected ? selected.label || "" : "";
           const canEdit = Boolean(
             selected &&
-              appState.clinicianId &&
-              Number(selected.clinician_id) === Number(appState.clinicianId),
+            appState.clinicianId &&
+            Number(selected.clinician_id) === Number(appState.clinicianId),
           );
           if (renameBtn) renameBtn.disabled = !canEdit;
           if (deleteBtn) deleteBtn.disabled = !canEdit;
@@ -4111,10 +4322,7 @@
           if (palette) {
             palette.querySelectorAll(".eeg-annotation-color-swatch").forEach((swatch) => {
               const swatchColor = swatch.getAttribute("data-annotation-color");
-              swatch.classList.toggle(
-                "is-active",
-                swatchColor === annotationState.selectedColor,
-              );
+              swatch.classList.toggle("is-active", swatchColor === annotationState.selectedColor);
               swatch.disabled = !canEdit;
             });
           }
@@ -4147,9 +4355,7 @@
               throw new Error(err.error || "Failed to load annotations");
             }
             const data = await response.json();
-            annotationState.annotations = Array.isArray(data.annotations)
-              ? data.annotations
-              : [];
+            annotationState.annotations = Array.isArray(data.annotations) ? data.annotations : [];
             annotationState.selectedId = null;
             updateAnnotationEditor();
             renderAnnotations();
@@ -4160,14 +4366,11 @@
 
         async function createAnnotation(payload) {
           if (!appState.latestResultId) return null;
-          const response = await fetch(
-            `/api/results/${appState.latestResultId}/annotations`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            },
-          );
+          const response = await fetch(`/api/results/${appState.latestResultId}/annotations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
           if (!response.ok) {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.error || "Failed to create annotation");
@@ -4277,9 +4480,7 @@
           }
           const shortLimit = 18;
           const shortLabelRaw =
-            rawLabel.length > shortLimit
-              ? `${rawLabel.slice(0, shortLimit).trim()}...`
-              : rawLabel;
+            rawLabel.length > shortLimit ? `${rawLabel.slice(0, shortLimit).trim()}...` : rawLabel;
           const shortLabel = escapeHtml(shortLabelRaw);
           const tooltipHtml = `
             <span class="eeg-annotation-tooltip">
@@ -4299,8 +4500,7 @@
           const laneEndRaw = annotation.lane_end;
           const laneStartParsed =
             laneStartRaw == null || laneStartRaw === "" ? null : Number(laneStartRaw);
-          const laneEndParsed =
-            laneEndRaw == null || laneEndRaw === "" ? null : Number(laneEndRaw);
+          const laneEndParsed = laneEndRaw == null || laneEndRaw === "" ? null : Number(laneEndRaw);
           const laneStart = Number.isFinite(laneStartParsed) ? laneStartParsed : null;
           const laneEnd = Number.isFinite(laneEndParsed) ? laneEndParsed : null;
           const minLanePx = 8;
@@ -4320,7 +4520,7 @@
               laneHeightPx = handleHeight;
             }
           }
-          if (end == null || Math.abs(end - start) * width / duration < minPx) {
+          if (end == null || (Math.abs(end - start) * width) / duration < minPx) {
             const leftPct = (startPx / width) * 100;
             const selectedClass = options.selected ? " is-selected" : "";
             return `
@@ -4698,8 +4898,7 @@
           setAnnotateMode(true);
           resetZoom();
 
-          const recordingId =
-            appState.latestResult?.recording_id ?? appState.latestResultId ?? "—";
+          const recordingId = appState.latestResult?.recording_id ?? appState.latestResultId ?? "—";
           if (recordingIdLabel()) recordingIdLabel().textContent = recordingId;
 
           const ov = overlay();
@@ -4804,8 +5003,8 @@
               );
               const canEdit = Boolean(
                 selected &&
-                  appState.clinicianId &&
-                  Number(selected.clinician_id) === Number(appState.clinicianId),
+                appState.clinicianId &&
+                Number(selected.clinician_id) === Number(appState.clinicianId),
               );
               if (!canEdit) return;
               const color = swatch.getAttribute("data-annotation-color");
@@ -4826,8 +5025,8 @@
             );
             const canEdit = Boolean(
               selected &&
-                appState.clinicianId &&
-                Number(selected.clinician_id) === Number(appState.clinicianId),
+              appState.clinicianId &&
+              Number(selected.clinician_id) === Number(appState.clinicianId),
             );
             if (!canEdit) return;
             openRenameModal();
@@ -4838,8 +5037,8 @@
             );
             const canEdit = Boolean(
               selected &&
-                appState.clinicianId &&
-                Number(selected.clinician_id) === Number(appState.clinicianId),
+              appState.clinicianId &&
+              Number(selected.clinician_id) === Number(appState.clinicianId),
             );
             if (!canEdit) return;
             openDeleteModal();
@@ -4992,9 +5191,7 @@
               const maxValue = maxAttr !== null ? Number(maxAttr) : 99;
               if (digitsOnly.length > 2) {
                 input.value = digitsOnly.slice(0, 2);
-                input.setCustomValidity(
-                  `Enter a value between ${minValue} and ${maxValue}.`,
-                );
+                input.setCustomValidity(`Enter a value between ${minValue} and ${maxValue}.`);
                 input.classList.add("field-invalid");
               } else {
                 if (input.validationMessage.startsWith("Enter a value between")) {

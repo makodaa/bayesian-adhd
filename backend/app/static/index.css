@@ -6,7 +6,7 @@
 /* ─── Index-specific token overrides ─────────────────────────────────────── */
 
 :root {
-  --brand-100: #d6ebf4;
+  --brand-100: #ffffff;
 }
 
 /* ─── Assessment backdrop ────────────────────────────────────────────────── */
@@ -61,7 +61,7 @@
   gap: 0.35rem;
   border-radius: var(--radius-sm);
   padding: 0.24rem 0.72rem;
-  background: #e8f3f8;
+  background: #ffffff;
   color: var(--brand-700);
   font-size: 0.8rem;
   font-weight: 600;
@@ -132,7 +132,7 @@
 
 .empty-state {
   text-align: center;
-  background: #f5fafc;
+  background: #ffffff;
   border: 1px dashed #c8d7df;
   border-radius: var(--radius-md);
   padding: 2.1rem 1rem;
@@ -424,7 +424,7 @@
 }
 
 .section-toggle:hover {
-  background: #f8fbfc;
+  background: #ffffff;
 }
 
 .toggle-symbol,
@@ -510,7 +510,7 @@
   margin: 0;
   font-size: 0.84rem;
   color: var(--text-700);
-  background: #f7fbfc;
+  background: #ffffff;
   border: 1px dashed #ccdbe3;
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.7rem;
@@ -522,7 +522,7 @@
 .band-view-toggle {
   display: inline-flex;
   gap: 0.35rem;
-  background: #ebf3f7;
+  background: #ffffff;
   border-radius: var(--radius-sm);
   padding: 0.23rem;
   margin-bottom: 0.85rem;
@@ -674,7 +674,7 @@
 
 .topo-type-btn {
   border: 1px solid #c8dbe6;
-  background: #f5fafc;
+  background: #ffffff;
   color: var(--text-700);
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
@@ -829,7 +829,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #f8fbfc;
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -913,7 +913,7 @@
 
 .eeg-modal-band-btn {
   border: 1px solid var(--border-card);
-  background: #f5fafc;
+  background: #ffffff;
   color: var(--text-700);
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
@@ -1089,7 +1089,9 @@
   white-space: normal;
   opacity: 0;
   transform: translateY(-50%) translateX(4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   pointer-events: none;
   z-index: 4;
 }
@@ -1181,7 +1183,7 @@
 
 .eeg-modal-icon-btn {
   border: 1px solid var(--border-card);
-  background: #f5fafc;
+  background: #ffffff;
   color: var(--text-700);
   border-radius: var(--radius-sm);
   height: 2rem;
@@ -1213,7 +1215,7 @@
   gap: 0.45rem;
   padding: 0.15rem 0.35rem;
   border-radius: var(--radius-sm);
-  background: #f5fafc;
+  background: #ffffff;
   border: 1px solid var(--border-card);
 }
 
@@ -1238,14 +1240,30 @@
   padding: 0;
 }
 
-.eeg-annotation-color-swatch[data-annotation-color="#1f77b4"] { background: #1f77b4; }
-.eeg-annotation-color-swatch[data-annotation-color="#2ca02c"] { background: #2ca02c; }
-.eeg-annotation-color-swatch[data-annotation-color="#ff7f0e"] { background: #ff7f0e; }
-.eeg-annotation-color-swatch[data-annotation-color="#d62728"] { background: #d62728; }
-.eeg-annotation-color-swatch[data-annotation-color="#9467bd"] { background: #9467bd; }
-.eeg-annotation-color-swatch[data-annotation-color="#8c564b"] { background: #8c564b; }
-.eeg-annotation-color-swatch[data-annotation-color="#e377c2"] { background: #e377c2; }
-.eeg-annotation-color-swatch[data-annotation-color="#7f7f7f"] { background: #7f7f7f; }
+.eeg-annotation-color-swatch[data-annotation-color="#1f77b4"] {
+  background: #1f77b4;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#2ca02c"] {
+  background: #2ca02c;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#ff7f0e"] {
+  background: #ff7f0e;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#d62728"] {
+  background: #d62728;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#9467bd"] {
+  background: #9467bd;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#8c564b"] {
+  background: #8c564b;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#e377c2"] {
+  background: #e377c2;
+}
+.eeg-annotation-color-swatch[data-annotation-color="#7f7f7f"] {
+  background: #7f7f7f;
+}
 
 .eeg-annotation-color-swatch.is-active {
   box-shadow: 0 0 0 2px rgba(35, 121, 193, 0.45);
@@ -1362,7 +1380,7 @@
 
 .eeg-modal-control-btn {
   border: 1px solid var(--border-card);
-  background: #f5fafc;
+  background: #ffffff;
   color: var(--text-700);
   border-radius: var(--radius-sm);
   font-size: 0.74rem;
@@ -1438,7 +1456,7 @@
   padding: 0.1em 0.4em;
   font-size: 0.71rem;
   font-family: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
-  background: #eaf2f6;
+  background: #ffffff;
   border: 1px solid #c8d8e2;
   border-radius: var(--radius-xs);
   color: var(--text-700);
@@ -1497,7 +1515,7 @@
 .plot-header {
   width: 100%;
   border: none;
-  background: #f5fafc;
+  background: #ffffff;
   color: var(--text-900);
   padding: 0.55rem 0.7rem;
   display: flex;
@@ -1664,7 +1682,6 @@
   padding: 0.7rem 1.1rem 0.8rem;
 }
 
-
 .step-dot {
   width: 22px;
   height: 22px;
@@ -1705,6 +1722,7 @@
   padding: 1.15rem 1.2rem 1.2rem;
   display: flex;
   flex-direction: column;
+  background: var(--surface-bg);
 }
 
 #analysis-form {
@@ -1910,7 +1928,7 @@
   text-align: center;
   font-size: 0.72rem;
   color: var(--text-700);
-  background: #f8fbfc;
+  background: #ffffff;
 }
 
 .channel-pill.valid {
@@ -1931,7 +1949,7 @@
 .metadata-panel {
   border: 1px solid #d8e3e8;
   border-radius: var(--radius-sm);
-  background: #f8fbfc;
+  background: #ffffff;
   padding: 0.65rem;
   display: grid;
   gap: 0.4rem;

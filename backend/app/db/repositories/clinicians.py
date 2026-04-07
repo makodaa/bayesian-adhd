@@ -229,3 +229,16 @@ class CliniciansRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to verify password: {e}", exc_info=True)
             return False
+    
+    def set_all_inactive(self):
+        """Mark all clinicians as inactive (logged out) by clearing all sessions."""
+        logger.info("Force logging out all clinicians")
+        query = "DELETE FROM clinician_sessions;"
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query)
+                logger.info("All clinician sessions cleared successfully")
+        except Exception as e:
+            logger.error(f"Failed to clear all clinician sessions: {e}", exc_info=True)
+            raise

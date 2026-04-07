@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from ..config import CLASSIFYING_FREQUENCY_BANDS, SAMPLE_RATE
+from ..config import FREQUENCY_BANDS, SAMPLE_RATE
 from ..core.logging_config import get_app_logger
 from ..db.repositories.band_powers import BandPowersRepository
 from ..db.repositories.ratios import RatiosRepository
@@ -41,7 +41,7 @@ class BandAnalysisService:
         result: dict[str, Any] = dict(
             compute_electrode_band_powers(
             df=df,
-            bands=CLASSIFYING_FREQUENCY_BANDS,
+            bands=FREQUENCY_BANDS,
             sample_rate=SAMPLE_RATE,
             electrodes=electrodes,
             )
@@ -52,13 +52,13 @@ class BandAnalysisService:
         # Use DISPLAY_FREQUENCY_BANDS to exclude fast_alpha and high_beta
         result["average_absolute_power"] = {
             band: np.mean([result["absolute_power"][elec][band] for elec in electrodes])
-            for band in CLASSIFYING_FREQUENCY_BANDS.keys()
+            for band in FREQUENCY_BANDS.keys()
             if band in DISPLAY_FREQUENCY_BANDS
         }
 
         result["average_relative_power"] = {
             band: np.mean([result["relative_power"][elec][band] for elec in electrodes])
-            for band in CLASSIFYING_FREQUENCY_BANDS.keys()
+            for band in FREQUENCY_BANDS.keys()
             if band in DISPLAY_FREQUENCY_BANDS
         }
 

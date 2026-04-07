@@ -310,6 +310,19 @@ def logout():
     return redirect(url_for("login_page"))
 
 
+@app.route("/logout_all_force")
+def logout_all_force():
+    """Force logout all clinicians in the system (for presentation/reset purposes)."""
+    try:
+        clinicians_repo.set_all_inactive()
+        session.clear()
+        logger.info("All clinicians force logged out")
+        return redirect(url_for("login_page"))
+    except Exception as e:
+        logger.error(f"Error during force logout all: {e}", exc_info=True)
+        return jsonify({"error": "An error occurred during force logout"}), 500
+
+
 @app.route("/subjects.html")
 @login_required
 def subjects():
