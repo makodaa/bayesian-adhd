@@ -98,6 +98,6 @@ class ClinicianService:
                 'occupation': c.get('occupation', ''),
                 'assessments_count': c.get('assessments_count', 0),
                 'last_activity': c.get('last_activity'),
-                'is_active': True
+                'is_active': bool(c.get('is_active', False)),
             })
         return formatted
