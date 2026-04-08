@@ -656,10 +656,6 @@
   color: var(--text-500);
 }
 
-.ratio-cutoff {
-  font-size: 0.72rem;
-  color: var(--text-600);
-}
 
 .ratio-value {
   font-size: 0.9rem;

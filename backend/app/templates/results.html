@@ -1142,52 +1142,6 @@
         gamma: "#F44336",
       };
 
-      const CUTOFFS_BY_SUBTYPE = {
-        "ADHD-C": {
-          rel_alpha: { direction: ">=", cutoff: 0.223973 },
-          rel_beta: { direction: "<=", cutoff: 0.013036 },
-          tar: { direction: "<=", cutoff: 0.618060 },
-          atr: { direction: ">=", cutoff: 1.617967 },
-        },
-        "ADHD-H": {
-          rel_alpha: { direction: "<=", cutoff: 0.012194 },
-          rel_beta: { direction: ">=", cutoff: 0.199041 },
-          tbr: { direction: "<=", cutoff: 0.493945 },
-        },
-        "ADHD-I": {
-          tar: { direction: ">=", cutoff: 3.719410 },
-          atr: { direction: "<=", cutoff: 0.268860 },
-        },
-        Control: {
-          rel_theta: { direction: "<=", cutoff: 0.039379 },
-          tbr: { direction: ">=", cutoff: 9.239005 },
-        },
-      };
-
-      const CUTOFF_SUBTYPE_LABELS = {
-        "ADHD-C": "ADHD-C",
-        "ADHD-H": "ADHD-H",
-        "ADHD-I": "ADHD-I",
-        Control: "Non-ADHD",
-      };
-
-      function getSubtypeFromClassification(label) {
-        const normalized = String(label || "").toLowerCase();
-        if (normalized.includes("combined")) return "ADHD-C";
-        if (normalized.includes("hyperactive")) return "ADHD-H";
-        if (normalized.includes("inattentive")) return "ADHD-I";
-        if (normalized.includes("non-adhd")) return "Control";
-        return null;
-      }
-
-      function formatCutoffHint(subtypeKey, metricKey) {
-        if (!subtypeKey || !metricKey) return "";
-        const cutoff = CUTOFFS_BY_SUBTYPE[subtypeKey]?.[metricKey];
-        if (!cutoff) return "";
-        const label = CUTOFF_SUBTYPE_LABELS[subtypeKey] || subtypeKey;
-        return `Likely ${label} if ${metricKey} ${cutoff.direction} ${cutoff.cutoff.toFixed(3)}.`;
-      }
-
       const EEG_BANDS = ["raw", "filtered", "delta", "theta", "alpha", "beta", "gamma"];
       const eegVizState = {
         contextId: null,
@@ -1487,7 +1441,6 @@
 
         // Confidence bar
         const conf = Number(data.confidence_score);
-        const subtypeKey = getSubtypeFromClassification(data.predicted_class);
         const confRatio = Number.isFinite(conf) ? Math.max(0, Math.min(100, conf * 100)) : 0;
         const confState = getConfidenceState(Number.isFinite(conf) ? conf : 0);
         const confText = Number.isFinite(conf)
@@ -1608,27 +1561,12 @@
           .map((band) => {
             const pct = (averageBandPowers[band] * 100).toFixed(1);
             const color = BAND_COLORS[band] || "#607484";
-            const metricKey =
-              band === "alpha"
-                ? "rel_alpha"
-                : band === "beta"
-                  ? "rel_beta"
-                  : band === "theta"
-                    ? "rel_theta"
-                    : null;
-            const cutoffHint = formatCutoffHint(subtypeKey, metricKey);
-            const hintHtml = cutoffHint
-              ? `<div class="band-bar-hint">${escapeHtml(cutoffHint)}</div>`
-              : "";
-            return `<div class="band-bar-block">
-              <div class="band-bar-row">
-                <span class="band-bar-label">${escapeHtml(band.charAt(0).toUpperCase() + band.slice(1))}</span>
-                <div class="band-bar-track">
-                  <div class="band-bar-fill" style="width:${pct}%;background:${color};"></div>
-                </div>
-                <span class="band-bar-value">${pct}%</span>
+            return `<div class="band-bar-row">
+              <span class="band-bar-label">${escapeHtml(band.charAt(0).toUpperCase() + band.slice(1))}</span>
+              <div class="band-bar-track">
+                <div class="band-bar-fill" style="width:${pct}%;background:${color};"></div>
               </div>
-              ${hintHtml}
+              <span class="band-bar-value">${pct}%</span>
             </div>`;
           })
           .join("");
@@ -1664,25 +1602,15 @@
         // Clinical ratios section
         let ratioItems = "";
         if (data.ratios && data.ratios.length > 0) {
-          const ratioMetricKeyMap = {
-            theta_beta_ratio: "tbr",
-            theta_alpha_ratio: "tar",
-            alpha_theta_ratio: "atr",
-          };
           ratioItems = data.ratios
             .map((ratio) => {
               const displayName = ratio.ratio_name
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (l) => l.toUpperCase());
-              const metricKey = ratioMetricKeyMap[ratio.ratio_name];
-              const cutoffHint = formatCutoffHint(subtypeKey, metricKey);
-              const hintRow = cutoffHint
-                ? `<li class="detail-item detail-note"><span>${escapeHtml(cutoffHint)}</span></li>`
-                : "";
               return `<li class="detail-item">
               <span class="detail-label">${escapeHtml(displayName)}</span>
               <span class="detail-value mono">${escapeHtml(ratio.ratio_value.toFixed(3))}</span>
-            </li>${hintRow}`;
+            </li>`;
             })
             .join("");
         }
