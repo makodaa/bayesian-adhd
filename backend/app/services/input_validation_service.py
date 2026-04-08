@@ -88,7 +88,7 @@ def validate_date_of_birth(value: str | None) -> date:
     """Validate an ISO date-of-birth string.
 
     Expected format: YYYY-MM-DD.
-    Raises ``ValueError`` if missing, invalid, or in the future.
+    Raises ``ValueError`` if missing, invalid, in the future, or age not between 1–100.
     """
     if not value:
         raise ValueError("Date of birth is required.")
@@ -101,6 +101,12 @@ def validate_date_of_birth(value: str | None) -> date:
         raise ValueError("Date of birth must be in YYYY-MM-DD format.") from exc
     if parsed > date.today():
         raise ValueError("Date of birth cannot be in the future.")
+    
+    # Validate that age is between 1 and 100 years
+    age = compute_age_from_dob(parsed)
+    if not (1 <= age <= 100):
+        raise ValueError("Subject age must be between 1 and 100 years.")
+    
     return parsed
 
 

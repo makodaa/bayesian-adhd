@@ -119,9 +119,6 @@ def _build_intervention_recommendations(count: int) -> str:
         "1) Structured routines with clear task breakdowns and external reminders.<br/>"
         "2) Behavioral therapy or skills coaching targeting attention, planning, and impulse control.<br/>"
         "3) Environmental supports such as reduced distractions and scheduled breaks.<br/>"
-        "4) Consider school or workplace accommodations when appropriate.<br/>"
-        "Additional behavioral assessments are recommended to corroborate symptoms across settings "
-        "and functional impact (e.g., standardized rating scales and clinical interview)."
     )
 
 
@@ -1134,7 +1131,7 @@ class PDFReportService:
 
         rows = [
             [summary_block, pre_block],
-            [diagnostic_block, post_block],
+            [diagnostic_block, ""],
         ]
         if recommendation_block:
             rows.append(["", recommendation_block])

@@ -182,6 +182,9 @@
               </div>
             </div>
             <div class="page-actions">
+              <button id="print-assessment-btn" type="button" class="btn-primary-app hidden">
+                Download PDF Report
+              </button>
               <button id="open-assessment-btn" type="button" class="btn-primary-app">
                 New Assessment
               </button>
@@ -856,6 +859,7 @@
                             >Date of Birth <span class="required-indicator">*</span></label
                           >
                           <input type="date" id="date-of-birth" required />
+                          <p class="hint">Age must be between 1 and 100 years</p>
                           <p class="field-error hidden" data-error-for="date-of-birth"></p>
                         </div>
                         <div class="field-wrap">
@@ -1832,6 +1836,7 @@
         const appMain = document.querySelector(".app-main");
         if (!drawer || !backdrop) return;
 
+        setHidden("print-assessment-btn", true);
         appState.isDrawerOpen = true;
         if (appMain) appMain.classList.add("drawer-open");
         positionDrawerInView(drawer, backdrop, appMain);
@@ -2119,6 +2124,37 @@
           years -= 1;
         }
         return years < 0 ? 0 : years;
+      }
+
+      function validateDateOfBirthAge() {
+        const dobField = byId("date-of-birth");
+        const dobValue = dobField?.value;
+        if (!dobValue) return;
+
+        const age = computeAgeFromDob(dobValue);
+        if (age === null) return;
+
+        if (age < 1 || age > 100) {
+          const errorMsg =
+            age < 1
+              ? "Date of birth cannot be today or in the future."
+              : "Subject age must be between 1 and 100 years.";
+          dobField.classList.add("field-invalid");
+          dobField.setCustomValidity(errorMsg);
+          const errorNode = document.querySelector("[data-error-for='date-of-birth']");
+          if (errorNode) {
+            errorNode.textContent = errorMsg;
+            errorNode.classList.remove("hidden");
+          }
+        } else {
+          dobField.classList.remove("field-invalid");
+          dobField.setCustomValidity("");
+          const errorNode = document.querySelector("[data-error-for='date-of-birth']");
+          if (errorNode) {
+            errorNode.textContent = "";
+            errorNode.classList.add("hidden");
+          }
+        }
       }
 
       function isContextAlignedWithLatest(context) {
@@ -3588,6 +3624,7 @@
           setHidden("results-content", false);
           setAssessmentLoadingState(false);
           setHidden("export-bar", false);
+          setHidden("print-assessment-btn", false);
           updateExportControls();
           scrollToAssessmentFindings();
           appState.submissionInFlight = false;
@@ -3936,8 +3973,13 @@
           byId(id)?.addEventListener("change", () => clearFieldError(id));
         });
 
+        // Add custom validation for date of birth age range
+        byId("date-of-birth")?.addEventListener("change", validateDateOfBirthAge);
+        byId("date-of-birth")?.addEventListener("input", validateDateOfBirthAge);
+
         byId("band-view-average")?.addEventListener("click", () => setBandView("average"));
         byId("band-view-electrode")?.addEventListener("click", () => setBandView("electrode"));
+        byId("print-assessment-btn")?.addEventListener("click", handlePdfDownload);
         byId("download-pdf-btn")?.addEventListener("click", handlePdfDownload);
 
         document.addEventListener("keydown", (event) => {
@@ -4133,7 +4175,7 @@
           document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
             btn.classList.toggle("active", btn.getAttribute("data-modal-band") === band);
           });
-          const classifications = classificationsBtn();
+          const classifications = null;
           if (classifications) {
             const hasSegments = BANDS.includes("segments");
             classifications.disabled = !hasSegments;
@@ -4978,9 +5020,9 @@
           byId("eeg-zoom-out-btn")?.addEventListener("click", () => zoomByFactor(1 / 1.2));
           byId("eeg-zoom-reset-btn")?.addEventListener("click", resetZoom);
           byId("eeg-zoom-fit-btn")?.addEventListener("click", resetZoom);
-          classificationsBtn()?.addEventListener("click", () => {
-            if (BANDS.includes("segments")) switchBand("segments");
-          });
+          // classificationsBtn()?.addEventListener("click", () => {
+          //   if (BANDS.includes("segments")) switchBand("segments");
+          // });
           document.querySelectorAll(".eeg-modal-band-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
               const band = btn.getAttribute("data-modal-band");

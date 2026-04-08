@@ -101,15 +101,16 @@ class ResultsRepository(BaseRepository):
         WHERE rec.subject_id = %s
           AND r.confidence_score >= %s
           AND r.predicted_class IS NOT NULL
-          AND LOWER(r.predicted_class) LIKE '%adhd%'
-          AND LOWER(r.predicted_class) NOT LIKE '%non-adhd%'
-          AND LOWER(r.predicted_class) NOT LIKE '%non adhd%';
+          AND LOWER(r.predicted_class) LIKE '%%adhd%%'
+          AND LOWER(r.predicted_class) NOT LIKE '%%non-adhd%%'
+          AND LOWER(r.predicted_class) NOT LIKE '%%non adhd%%';
         """
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(query, (subject_id, confidence_threshold))
-                count = cursor.fetchone()[0]
+                result = cursor.fetchone()
+                count = result[0] if result else 0
                 return int(count or 0)
         except Exception as e:
             logger.error(
