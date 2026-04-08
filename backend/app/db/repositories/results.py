@@ -84,3 +84,38 @@ class ResultsRepository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to fetch results for recording {recording_id}: {e}", exc_info=True)
             raise
+
+    def count_high_confidence_adhd_by_subject(
+        self,
+        subject_id: int,
+        confidence_threshold: float,
+    ) -> int:
+        """Count high-confidence ADHD-positive results for a subject."""
+        logger.debug(
+            "Counting high-confidence ADHD results for subject %s", subject_id
+        )
+        query = """
+        SELECT COUNT(*)
+        FROM results r
+        JOIN recordings rec ON r.recording_id = rec.id
+        WHERE rec.subject_id = %s
+          AND r.confidence_score >= %s
+          AND r.predicted_class IS NOT NULL
+          AND LOWER(r.predicted_class) LIKE '%adhd%'
+          AND LOWER(r.predicted_class) NOT LIKE '%non-adhd%'
+          AND LOWER(r.predicted_class) NOT LIKE '%non adhd%';
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (subject_id, confidence_threshold))
+                count = cursor.fetchone()[0]
+                return int(count or 0)
+        except Exception as e:
+            logger.error(
+                "Failed to count high-confidence ADHD results for subject %s: %s",
+                subject_id,
+                e,
+                exc_info=True,
+            )
+            raise

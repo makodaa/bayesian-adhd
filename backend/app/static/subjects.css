@@ -306,6 +306,45 @@
   color: var(--text-900);
 }
 
+.recommendation-card {
+  border: 1px solid #cfe3d7;
+  border-radius: var(--radius-sm);
+  background: #f6fbf8;
+  padding: 0.65rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.recommendation-card h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-900);
+}
+
+.recommendation-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-600);
+}
+
+.recommendation-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: var(--text-700);
+  line-height: 1.5;
+}
+
+.recommendation-list li {
+  margin-bottom: 0.35rem;
+}
+
+.recommendation-list li:last-child {
+  margin-bottom: 0;
+}
+
 
 /* ─── Timeline cards ─────────────────────────────────────────────────────── */
 

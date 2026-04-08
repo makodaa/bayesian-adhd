@@ -130,9 +130,29 @@ class ResultsService:
                     (result_id,)
                 )
                 result['ratios'] = cursor.fetchall()
-                
+
+                subject_id = result.get("subject_id")
+                if subject_id is not None:
+                    threshold = 0.8
+                    result["adhd_high_confidence_count"] = (
+                        self.results_repo.count_high_confidence_adhd_by_subject(
+                            subject_id, threshold
+                        )
+                    )
+                    result["adhd_high_confidence_threshold"] = threshold
+
                 logger.info(f"Retrieved full details for result {result_id}")
                 return result
         except Exception as e:
             logger.error(f"Failed to fetch full details for result {result_id}: {e}", exc_info=True)
             raise
+
+    def get_high_confidence_adhd_count(
+        self,
+        subject_id: int,
+        confidence_threshold: float = 0.8,
+    ) -> int:
+        """Count ADHD-positive results meeting the confidence threshold."""
+        return self.results_repo.count_high_confidence_adhd_by_subject(
+            subject_id, confidence_threshold
+        )

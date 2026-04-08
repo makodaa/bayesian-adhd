@@ -36,6 +36,8 @@ DEFAULT_NORMATIVE_RANGES: dict[str, dict[str, float]] = {
     "gamma": {"p25": 1.0, "p75": 5.0},
 }
 
+ADHD_HIGH_CONFIDENCE_THRESHOLD = 0.8
+
 
 def _format_date(value) -> str:
     if value is None:
@@ -101,6 +103,26 @@ def _map_class_label(predicted_class: str) -> str:
     if not label:
         return "Inconclusive"
     return label
+
+
+def _is_adhd_label(predicted_class: str) -> bool:
+    label = str(predicted_class or "").lower()
+    if "adhd" not in label:
+        return False
+    return "non-adhd" not in label and "non adhd" not in label
+
+
+def _build_intervention_recommendations(count: int) -> str:
+    return (
+        "Two or more high-confidence ADHD-positive results were recorded "
+        f"(count: {count}). Consider the following general intervention strategies:<br/>"
+        "1) Structured routines with clear task breakdowns and external reminders.<br/>"
+        "2) Behavioral therapy or skills coaching targeting attention, planning, and impulse control.<br/>"
+        "3) Environmental supports such as reduced distractions and scheduled breaks.<br/>"
+        "4) Consider school or workplace accommodations when appropriate.<br/>"
+        "Additional behavioral assessments are recommended to corroborate symptoms across settings "
+        "and functional impact (e.g., standardized rating scales and clinical interview)."
+    )
 
 
 def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
@@ -716,7 +738,20 @@ class PDFReportService:
         predicted_class = result_data.get("predicted_class", "")
         label = _map_class_label(predicted_class)
         confidence = result_data.get("confidence_score", 0.0) or 0.0
+        confidence_value = confidence if confidence <= 1 else confidence / 100
         confidence_pct = confidence * 100 if confidence <= 1 else confidence
+
+        high_confidence_count = int(result_data.get("adhd_high_confidence_count") or 0)
+        eligible_for_recommendations = (
+            _is_adhd_label(predicted_class)
+            and confidence_value >= ADHD_HIGH_CONFIDENCE_THRESHOLD
+            and high_confidence_count >= 2
+        )
+        intervention_recommendations = (
+            _build_intervention_recommendations(high_confidence_count)
+            if eligible_for_recommendations
+            else None
+        )
 
         summary_findings = (
             "Relative band power summary: "
@@ -770,7 +805,7 @@ class PDFReportService:
             "normative_ranges": normative_ranges or DEFAULT_NORMATIVE_RANGES,
             "model_classification": {
                 "label": label,
-                "confidence": confidence if confidence <= 1 else confidence / 100,
+                "confidence": confidence_value,
                 "theta_beta_ratio": tbr,
                 "model_version": f"ADHDNet v{APP_VERSION}",
                 "notes": "",
@@ -778,6 +813,7 @@ class PDFReportService:
             "summary_findings": summary_findings,
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
+            "intervention_recommendations": intervention_recommendations,
             "post_assessment_notes": _display(
                 result_data.get("post_assessment_notes"), "Not recorded"
             ),
@@ -786,6 +822,7 @@ class PDFReportService:
             "clinician_occupation": clinician_occupation,
             "supervising_physician": "Not recorded",
             "footer_fields": footer_fields,
+            "adhd_high_confidence_count": high_confidence_count,
         }
 
     def _build_header(self, report_data: dict) -> list:
@@ -1075,19 +1112,35 @@ class PDFReportService:
                 min_height=40,
             ),
         ]
+        recommendation_text = report_data.get("intervention_recommendations")
+        recommendation_block = None
+        if recommendation_text:
+            recommendation_block = [
+                Paragraph(
+                    "INTERVENTION STRATEGIES & RECOMMENDATIONS",
+                    self.styles["SectionHeader"],
+                ),
+                build_shaded_content_box(
+                    recommendation_text,
+                    self.styles,
+                    width / 2 - 6,
+                    min_height=50,
+                ),
+            ]
         disclaimer_block = [
             Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
             build_disclaimer_box(self.styles, width / 2 - 6),
         ]
 
-        table = Table(
-            [
-                [summary_block, pre_block],
-                [diagnostic_block, post_block],
-                [disclaimer_block, ""],
-            ],
-            colWidths=[width / 2, width / 2],
-        )
+        rows = [
+            [summary_block, pre_block],
+            [diagnostic_block, post_block],
+        ]
+        if recommendation_block:
+            rows.append(["", recommendation_block])
+        rows.append([disclaimer_block, ""])
+
+        table = Table(rows, colWidths=[width / 2, width / 2])
         table.setStyle(
             TableStyle(
                 [

@@ -798,6 +798,41 @@
         return { label: "Low", className: "low" };
       }
 
+      const ADHD_CONFIDENCE_THRESHOLD = 0.8;
+
+      function isHighConfidence(confidence) {
+        return Number.isFinite(confidence) && confidence >= ADHD_CONFIDENCE_THRESHOLD;
+      }
+
+      function isAdhdLabel(label) {
+        return getClassificationClass(label) === "adhd";
+      }
+
+      function buildInterventionRecommendationsSection(data) {
+        const count = Number(data.adhd_high_confidence_count || 0);
+        const confidence = Number(data.confidence_score);
+        if (!isAdhdLabel(data.predicted_class) || !isHighConfidence(confidence) || count < 2) {
+          return "";
+        }
+
+        const items = [
+          "Structured routines with clear task breakdowns and external reminders.",
+          "Behavioral therapy or skills coaching to support attention, planning, and impulse control.",
+          "Environmental supports such as reduced distractions and scheduled breaks.",
+          "Consider school or workplace accommodations when appropriate.",
+          "Additional behavioral assessments to corroborate symptoms across settings (e.g., standardized rating scales and clinical interview).",
+        ];
+
+        return `
+          <section class="detail-section recommendation-section">
+            <h3>Intervention Strategies &amp; Recommendations</h3>
+            <p class="recommendation-meta">Trigger: ${escapeHtml(String(count))} high-confidence ADHD-positive results recorded for this subject.</p>
+            <ul class="recommendation-list">
+              ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+            </ul>
+          </section>`;
+      }
+
       // ── Filters ──
 
       function syncFilterState() {
@@ -1616,6 +1651,8 @@
             }
           </section>`;
 
+        const recommendationSection = buildInterventionRecommendationsSection(data);
+
         // Notes & disclaimers section
         const disclaimers = [];
         const sleepNum = data.sleep_hours != null ? Number(data.sleep_hours) : null;
@@ -1708,6 +1745,7 @@
           prepSection +
           bandSection +
           narrativeSection +
+          recommendationSection +
           ratioSection +
           notesSection +
           eegVizSection +
