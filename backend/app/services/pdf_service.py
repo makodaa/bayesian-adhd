@@ -118,7 +118,6 @@ def _build_intervention_recommendations(count: int) -> str:
         f"(count: {count}). Consider the following general intervention strategies:<br/>"
         "1) Structured routines with clear task breakdowns and external reminders.<br/>"
         "2) Behavioral therapy or skills coaching targeting attention, planning, and impulse control.<br/>"
-        "3) Environmental supports such as reduced distractions and scheduled breaks.<br/>"
     )
 
 
@@ -1131,11 +1130,8 @@ class PDFReportService:
 
         rows = [
             [summary_block, pre_block],
-            [diagnostic_block, ""],
+            [diagnostic_block, disclaimer_block],
         ]
-        if recommendation_block:
-            rows.append(["", recommendation_block])
-        rows.append([disclaimer_block, ""])
 
         table = Table(rows, colWidths=[width / 2, width / 2])
         table.setStyle(
