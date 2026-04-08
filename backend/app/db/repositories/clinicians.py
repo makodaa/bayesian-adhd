@@ -106,6 +106,8 @@ class CliniciansRepository(BaseRepository):
                     'last_name': clinician_data['last_name'],
                     'middle_name': clinician_data['middle_name'],
                     'occupation': clinician_data['occupation'],
+                    'archived_at': clinician_data.get('archived_at'),
+                    'is_active': clinician_data.get('is_active', False),
                     'assessments': []
                 }
                 

@@ -81,6 +81,12 @@
   color: #5c7384;
 }
 
+.status-pill.archived {
+  background: #f7efe5;
+  border-color: #e7d5c2;
+  color: #8a5b1d;
+}
+
 .table-feedback {
   padding: 1.3rem 1rem 1.4rem;
   text-align: center;

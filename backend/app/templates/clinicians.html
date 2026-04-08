@@ -268,6 +268,12 @@
             <!-- populated by JS -->
           </div>
           <div class="detail-footer">
+            <button id="archive-clinician-btn" type="button" class="btn-secondary-app hidden">
+              Archive Clinician
+            </button>
+            <button id="restore-clinician-btn" type="button" class="btn-secondary-app hidden">
+              Restore Clinician
+            </button>
             <button id="close-clinician-detail-footer-btn" type="button" class="btn-secondary-app">
               Close
             </button>
@@ -488,6 +494,9 @@
         };
       }
 
+      let isAdminClinician = false;
+      let activeClinicianId = null;
+
       function collectAddClinicianDraft() {
         return {
           firstName: byId("ac-first-name")?.value || "",
@@ -571,6 +580,7 @@
           const data = await res.json();
           const el = byId("sidebar-clinician-name");
           if (el && data.clinician_name) el.textContent = data.clinician_name;
+          isAdminClinician = data.is_admin === true;
           const logoutLabel = byId("sidebar-logout-name");
           if (logoutLabel) logoutLabel.textContent = "Logout";
         } catch {
@@ -674,6 +684,13 @@
 
       // ── Table rendering ──
 
+      function getStatusPresentation(data) {
+        const isArchived = Boolean(data?.archived_at || data?.is_archived);
+        if (isArchived) return { label: "Archived", className: "archived" };
+        if (data?.is_active) return { label: "Online", className: "active" };
+        return { label: "Offline", className: "inactive" };
+      }
+
       function renderCliniciansTable(clinicians) {
         const tbody = byId("clinicians-table-body");
         if (!tbody) return;
@@ -694,14 +711,13 @@
             const lastActivity = c.last_activity
               ? new Date(c.last_activity).toLocaleDateString()
               : "—";
-            const statusClass = c.is_active ? "active" : "inactive";
-            const statusLabel = c.is_active ? "Active" : "Inactive";
+            const status = getStatusPresentation(c);
             return `<tr class="clinician-row" data-clinician-id="${c.id}" tabindex="0" role="button" aria-label="View profile for ${escapeHtml(name)}">
             <td class="clinician-name-cell">${escapeHtml(name)}</td>
             <td>${occupation}</td>
             <td>${assessments}</td>
             <td>${escapeHtml(lastActivity)}</td>
-            <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+            <td><span class="status-pill ${status.className}">${status.label}</span></td>
           </tr>`;
           })
           .join("");
@@ -767,11 +783,14 @@
         byId("clinician-detail-title").textContent = name;
         byId("clinician-detail-subtitle").textContent = data.occupation || "Clinician";
 
+        activeClinicianId = data.id;
+        const status = getStatusPresentation(data);
+
         const profileItems = [
           ["First Name", data.first_name],
           ["Last Name", data.last_name],
           ["Occupation", data.occupation],
-          ["Status", data.is_active === false ? "Inactive" : "Active"],
+          ["Status", status.label],
         ].filter(([, v]) => v != null && v !== "");
 
         const profileSection = `
@@ -829,6 +848,26 @@
           </section>`;
 
         byId("clinician-detail-body").innerHTML = profileSection + timelineSection;
+        updateArchiveControls(data);
+      }
+
+      function updateArchiveControls(data) {
+        const archiveBtn = byId("archive-clinician-btn");
+        const restoreBtn = byId("restore-clinician-btn");
+        if (!archiveBtn || !restoreBtn) return;
+
+        if (!isAdminClinician) {
+          archiveBtn.classList.add("hidden");
+          restoreBtn.classList.add("hidden");
+          return;
+        }
+
+        const isArchived = Boolean(data?.archived_at);
+        const isAdminTarget =
+          data?.first_name === "Admin" && data?.last_name === "Clinician";
+
+        archiveBtn.classList.toggle("hidden", isArchived || isAdminTarget);
+        restoreBtn.classList.toggle("hidden", !isArchived || isAdminTarget);
       }
 
       // ── Add clinician form ──
@@ -1038,6 +1077,74 @@
           showToast("Draft clinician form restored.", "success");
         }
         openDrawer("add-clinician-drawer");
+      });
+
+      byId("archive-clinician-btn")?.addEventListener("click", async () => {
+        if (!activeClinicianId) return;
+        const confirmed = window.confirm(
+          "Archive this clinician? They will not be able to log in until restored.",
+        );
+        if (!confirmed) return;
+
+        const btn = byId("archive-clinician-btn");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Archiving...";
+        }
+
+        try {
+          const res = await fetch(`/api/clinicians/${activeClinicianId}/archive`, {
+            method: "PATCH",
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed to archive clinician", "error");
+            return;
+          }
+          showToast("Clinician archived successfully.", "success");
+          await loadClinicians();
+          await viewClinician(activeClinicianId);
+        } catch {
+          showToast("An unexpected error occurred. Please try again.", "error");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Archive Clinician";
+          }
+        }
+      });
+
+      byId("restore-clinician-btn")?.addEventListener("click", async () => {
+        if (!activeClinicianId) return;
+        const confirmed = window.confirm("Restore this clinician account?");
+        if (!confirmed) return;
+
+        const btn = byId("restore-clinician-btn");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Restoring...";
+        }
+
+        try {
+          const res = await fetch(`/api/clinicians/${activeClinicianId}/restore`, {
+            method: "PATCH",
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Failed to restore clinician", "error");
+            return;
+          }
+          showToast("Clinician restored successfully.", "success");
+          await loadClinicians();
+          await viewClinician(activeClinicianId);
+        } catch {
+          showToast("An unexpected error occurred. Please try again.", "error");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Restore Clinician";
+          }
+        }
       });
 
       byId("submit-add-clinician-btn")?.addEventListener("click", async () => {
