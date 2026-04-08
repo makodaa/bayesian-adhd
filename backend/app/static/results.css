@@ -339,6 +339,12 @@
   gap: 0.5rem;
 }
 
+.band-bar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .band-bar-row {
   display: flex;
   align-items: center;
@@ -373,6 +379,24 @@
   color: var(--text-900);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.79rem;
+}
+
+.band-bar-hint {
+  margin-left: calc(56px + 0.6rem);
+  font-size: 0.72rem;
+  color: var(--text-600);
+}
+
+.detail-item.detail-note {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-600);
+  padding-bottom: 0.1rem;
+}
+
+.detail-item.detail-note span {
+  color: var(--text-600);
+  font-weight: 500;
 }
 
 /* Topo grid */
