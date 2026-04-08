@@ -948,12 +948,12 @@ class PDFReportService:
             ["Sensor group", _display(report_data["sensor_group"])],
             ["Medication", _display(report_data["medication"])],
             [
-                "Time since drug intake (hours)",
+                "Time since medicine intake (hours)",
                 _format_hours(report_data.get("drugs_hours_ago")),
             ],
         ]
         right_details = [
-            ["Alertness", _display(report_data["alertness"])],
+            # ["Alertness", _display(report_data["alertness"])],
             ["Sleep hours", _format_hours(report_data.get("sleep_hours"))],
             [
                 "Time since caffeine intake (hours)",
