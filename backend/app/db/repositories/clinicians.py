@@ -71,6 +71,11 @@ class CliniciansRepository(BaseRepository):
             c.last_name,
             c.middle_name,
             c.occupation,
+            c.archived_at,
+            EXISTS (
+                SELECT 1 FROM clinician_sessions s
+                WHERE s.clinician_id = c.id
+            ) as is_active,
             r.id as result_id,
             r.predicted_class,
             r.confidence_score,
@@ -133,6 +138,7 @@ class CliniciansRepository(BaseRepository):
         FROM clinicians c
         LEFT JOIN results r ON c.id = r.clinician_id
         LEFT JOIN clinician_sessions s ON c.id = s.clinician_id
+        WHERE c.archived_at IS NULL
         GROUP BY c.id
         ORDER BY c.id;
         """
@@ -195,7 +201,8 @@ class CliniciansRepository(BaseRepository):
         logger.debug(f"Fetching clinician by username: {username}")
         query = """
         SELECT * FROM clinicians 
-        WHERE CONCAT(first_name, ' ', last_name) = %s;
+        WHERE CONCAT(first_name, ' ', last_name) = %s
+          AND archived_at IS NULL;
         """
         try:
             with self.get_connection() as conn:
@@ -241,4 +248,28 @@ class CliniciansRepository(BaseRepository):
                 logger.info("All clinician sessions cleared successfully")
         except Exception as e:
             logger.error(f"Failed to clear all clinician sessions: {e}", exc_info=True)
+            raise
+
+    def archive_clinician(self, clinician_id):
+        """Soft archive a clinician account."""
+        logger.info(f"Archiving clinician: {clinician_id}")
+        query = "UPDATE clinicians SET archived_at = NOW() WHERE id = %s;"
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (clinician_id,))
+        except Exception as e:
+            logger.error(f"Failed to archive clinician: {e}", exc_info=True)
+            raise
+
+    def restore_clinician(self, clinician_id):
+        """Restore a soft-archived clinician account."""
+        logger.info(f"Restoring clinician: {clinician_id}")
+        query = "UPDATE clinicians SET archived_at = NULL WHERE id = %s;"
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (clinician_id,))
+        except Exception as e:
+            logger.error(f"Failed to restore clinician: {e}", exc_info=True)
             raise

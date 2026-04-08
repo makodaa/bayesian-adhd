@@ -99,5 +99,6 @@ class ClinicianService:
                 'assessments_count': c.get('assessments_count', 0),
                 'last_activity': c.get('last_activity'),
                 'is_active': bool(c.get('is_active', False)),
+                'is_archived': bool(c.get('archived_at')),
             })
         return formatted

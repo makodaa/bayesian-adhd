@@ -14,6 +14,7 @@ CREATE TABLE clinicians (
     middle_name VARCHAR(50),
     occupation VARCHAR(50) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    archived_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

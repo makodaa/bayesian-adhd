@@ -170,6 +170,11 @@ def login_required(f):
     return decorated_function
 
 
+def is_admin_session() -> bool:
+    """Return True when current session is the admin clinician."""
+    return session.get("clinician_name") == "Admin Clinician"
+
+
 # Initialize the model on first request
 @app.before_request
 def initialize_model():
@@ -291,6 +296,7 @@ def api_me():
                 "clinician_id": session.get("clinician_id"),
                 "clinician_name": session.get("clinician_name"),
                 "clinician_occupation": session.get("clinician_occupation", ""),
+                "is_admin": is_admin_session(),
             }
         ), 200
     except Exception as e:
@@ -931,7 +937,7 @@ def get_clinician_details(clinician_id):
 def create_clinician():
     """Create a new clinician (admin only)."""
     try:
-        if session.get("clinician_name") != "Admin Clinician":
+        if not is_admin_session():
             return jsonify({"error": "Only the administrator can add clinicians"}), 403
 
         data = request.get_json()
@@ -947,6 +953,48 @@ def create_clinician():
         ), 201
     except Exception as e:
         logger.error(f"Error creating clinician: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/clinicians/<int:clinician_id>/archive", methods=["PATCH"])
+@login_required
+def archive_clinician(clinician_id: int):
+    """Archive a clinician (admin only)."""
+    try:
+        if not is_admin_session():
+            return jsonify({"error": "Only the administrator can archive clinicians"}), 403
+
+        clinician = clinicians_repo.get_by_id(clinician_id)
+        if not clinician:
+            return jsonify({"error": "Clinician not found"}), 404
+
+        if clinician.get("first_name") == "Admin" and clinician.get("last_name") == "Clinician":
+            return jsonify({"error": "Administrator account cannot be archived"}), 403
+
+        clinicians_repo.archive_clinician(clinician_id)
+        clinicians_repo.set_inactive(clinician_id)
+        return jsonify({"message": "Clinician archived successfully"}), 200
+    except Exception as e:
+        logger.error(f"Error archiving clinician: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/clinicians/<int:clinician_id>/restore", methods=["PATCH"])
+@login_required
+def restore_clinician(clinician_id: int):
+    """Restore an archived clinician (admin only)."""
+    try:
+        if not is_admin_session():
+            return jsonify({"error": "Only the administrator can restore clinicians"}), 403
+
+        clinician = clinicians_repo.get_by_id(clinician_id)
+        if not clinician:
+            return jsonify({"error": "Clinician not found"}), 404
+
+        clinicians_repo.restore_clinician(clinician_id)
+        return jsonify({"message": "Clinician restored successfully"}), 200
+    except Exception as e:
+        logger.error(f"Error restoring clinician: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
