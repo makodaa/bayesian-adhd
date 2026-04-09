@@ -136,29 +136,19 @@ def validate_sleep_hours(value: str | float | None) -> float | None:
     return hours
 
 
-def validate_required_sleep_hours(value: str | float | None) -> float:
-    """Parse and range-check required sleep hours.
-
-    Raises ``ValueError`` if the value is missing, non-numeric, or out of range 0–99.99.
-    """
-    hours = validate_sleep_hours(value)
-    if hours is None:
-        raise ValueError("Sleep hours are required.")
-    return hours
-
-
 def validate_hours_ago(
     value: str | float | None,
     field_label: str,
     min_value: float = 0.0,
     max_value: float = 99.99,
-) -> float:
-    """Parse and range-check a required hours-ago field.
+) -> float | None:
+    """Parse and range-check an optional hours-ago field.
 
-    Raises ``ValueError`` if the value is missing, non-numeric, or out of range.
+    Returns ``None`` if the value is absent/blank.
+    Raises ``ValueError`` if the value is non-numeric or out of range.
     """
     if value is None or value == "":
-        raise ValueError(f"{field_label} is required.")
+        return None
     try:
         hours = float(value)
     except (TypeError, ValueError):

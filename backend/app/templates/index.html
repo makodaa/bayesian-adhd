@@ -952,9 +952,7 @@
                           />
                         </div>
                         <div class="field-wrap">
-                          <label for="sleep-hours"
-                            >Sleep Hours <span class="required-indicator">*</span></label
-                          >
+                          <label for="sleep-hours">Sleep Hours</label>
                           <input
                             type="number"
                             id="sleep-hours"
@@ -962,47 +960,35 @@
                             max="99.99"
                             step="0.5"
                             placeholder="Hours slept"
-                            required
                           />
                           <p class="field-error hidden" data-error-for="sleep-hours"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="coffee-hours-ago"
-                            >Time since caffeine intake (hours)
-                            <span class="required-indicator">*</span></label
-                          >
+                          <label for="coffee-hours-ago">Time since caffeine intake (hours)</label>
                           <input
                             type="number"
                             id="coffee-hours-ago"
-                            min="1"
+                            min="0"
                             max="99"
                             step="1"
-                            placeholder="1-99; 99 means no record"
-                            required
+                            placeholder="Hours since caffeine intake"
                           />
                           <p class="field-error hidden" data-error-for="coffee-hours-ago"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="drugs-hours-ago"
-                            >Time since drug intake (hours)
-                            <span class="required-indicator">*</span></label
-                          >
+                          <label for="drugs-hours-ago">Time since drug intake (hours)</label>
                           <input
                             type="number"
                             id="drugs-hours-ago"
-                            min="1"
+                            min="0"
                             max="99"
                             step="1"
-                            placeholder="1-99; 99 means no record"
-                            required
+                            placeholder="Hours since drug intake"
                           />
                           <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="meal-hours-ago"
-                            >Time since last meal (hours)
-                            <span class="required-indicator">*</span></label
-                          >
+                          <label for="meal-hours-ago">Time since last meal (hours)</label>
                           <input
                             type="number"
                             id="meal-hours-ago"
@@ -1010,7 +996,6 @@
                             max="99"
                             step="1"
                             placeholder="Hours since last meal"
-                            required
                           />
                           <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
                         </div>
@@ -2039,9 +2024,6 @@
       }
 
       function formatHoursSince(value, fallback = "Not provided") {
-        if (value === null || value === undefined) return fallback;
-        const numeric = Number(value);
-        if (!Number.isNaN(numeric) && numeric === 99) return "No Record";
         return formatContextValue(value, fallback);
       }
 
@@ -2060,15 +2042,6 @@
       function clearFieldError(fieldId) {
         const field = byId(fieldId);
         if (!field) return;
-        if (
-          field instanceof HTMLInputElement &&
-          ["meal-hours-ago", "coffee-hours-ago", "drugs-hours-ago"].includes(field.id)
-        ) {
-          const digitsOnly = field.value.replace(/\D/g, "");
-          if (digitsOnly.length > 2) {
-            return;
-          }
-        }
         const errorNode = document.querySelector(`[data-error-for='${fieldId}']`);
         field.classList.remove("field-invalid");
         field.setCustomValidity("");
@@ -2472,15 +2445,7 @@
       }
 
       function validateStepOne() {
-        const requiredFields = [
-          "subject-code",
-          "date-of-birth",
-          "gender",
-          "sleep-hours",
-          "coffee-hours-ago",
-          "drugs-hours-ago",
-          "meal-hours-ago",
-        ];
+        const requiredFields = ["subject-code", "date-of-birth", "gender"];
         requiredFields.forEach(clearFieldError);
 
         let hasErrors = false;
@@ -2491,6 +2456,11 @@
             hasErrors = true;
           }
         });
+
+        // Clear errors for optional fields
+        ["sleep-hours", "coffee-hours-ago", "drugs-hours-ago", "meal-hours-ago"].forEach(
+          clearFieldError,
+        );
 
         const dobValue = byId("date-of-birth")?.value || "";
         const dobParsed = parseIsoDate(dobValue);
@@ -2508,19 +2478,21 @@
           }
         }
 
+        // Validate numeric fields only if they have values
         const numericFields = [
           ["sleep-hours", 0, 99.99],
-          ["coffee-hours-ago", 1, 99],
-          ["drugs-hours-ago", 1, 99],
+          ["coffee-hours-ago", 0, 99],
+          ["drugs-hours-ago", 0, 99],
           ["meal-hours-ago", 0, 99],
         ];
 
         numericFields.forEach(([fieldId, min, max]) => {
           const field = byId(fieldId);
           if (!field) return;
-          if (!String(field.value || "").trim()) return;
-          const value = Number(field.value);
-          if (!Number.isFinite(value) || value < min || value > max) {
+          const value = String(field.value || "").trim();
+          if (!value) return; // Skip validation if empty (optional field)
+          const numValue = Number(value);
+          if (!Number.isFinite(numValue) || numValue < min || numValue > max) {
             setFieldError(fieldId, `Enter a value between ${min} and ${max}.`);
             hasErrors = true;
           }
@@ -2787,7 +2759,6 @@
         if (
           drugsValue !== null &&
           !Number.isNaN(drugsValue) &&
-          drugsValue < 99 &&
           !String(context.medication || "").trim()
         ) {
           notices.push({
@@ -5224,23 +5195,6 @@
           input.addEventListener("input", () => {
             if (input.value.includes("-")) {
               input.value = input.value.replace(/-/g, "");
-            }
-            if (["meal-hours-ago", "coffee-hours-ago", "drugs-hours-ago"].includes(input.id)) {
-              const digitsOnly = input.value.replace(/\D/g, "");
-              const minAttr = input.getAttribute("min");
-              const maxAttr = input.getAttribute("max");
-              const minValue = minAttr !== null ? Number(minAttr) : 0;
-              const maxValue = maxAttr !== null ? Number(maxAttr) : 99;
-              if (digitsOnly.length > 2) {
-                input.value = digitsOnly.slice(0, 2);
-                input.setCustomValidity(`Enter a value between ${minValue} and ${maxValue}.`);
-                input.classList.add("field-invalid");
-              } else {
-                if (input.validationMessage.startsWith("Enter a value between")) {
-                  input.setCustomValidity("");
-                }
-                input.classList.remove("field-invalid");
-              }
             }
           });
 

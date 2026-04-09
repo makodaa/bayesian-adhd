@@ -42,7 +42,7 @@ from .services.input_validation_service import (
     validate_date_of_birth,
     validate_gender,
     validate_hours_ago,
-    validate_required_sleep_hours,
+    validate_sleep_hours,
     validate_subject_code,
     validate_text_field,
 )
@@ -706,18 +706,18 @@ def predict():
         )
         notes = validate_text_field(notes, "Clinical notes", max_len=255)
 
-        # Validate required numeric fields
-        sleep_hours_float = validate_required_sleep_hours(sleep_hours_raw)
+        # Validate optional numeric fields
+        sleep_hours_float = validate_sleep_hours(sleep_hours_raw)
         coffee_hours_ago = validate_hours_ago(
             coffee_hours_ago_raw,
             "Time since caffeine intake",
-            min_value=1,
+            min_value=0,
             max_value=99,
         )
         drugs_hours_ago = validate_hours_ago(
             drugs_hours_ago_raw,
             "Time since drug intake",
-            min_value=1,
+            min_value=0,
             max_value=99,
         )
         meal_hours_ago = validate_hours_ago(

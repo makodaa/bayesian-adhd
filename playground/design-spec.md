@@ -41,7 +41,7 @@ The application completely avoids consumer UI aesthetics (vibrant colors, playfu
 ### 3.1 Typography
 * **Application UI:** A self-hosted, clean, contemporary sans-serif typeface used for all general interface copy, headers, and clinical notes.
 * **Numerical Data:** A self-hosted monospace typeface strictly used for fixed-width rendering of confidence scores, frequency values, band power readings, and timestamps to ensure clean alignment in tables. 
-* **Form Inputs:** Explicit `<label>` elements are required for all form fields; placeholder-only inputs are prohibited for accessibility reasons.
+* **Form Inputs:** Explicit `<label>` elements for all form fields; placeholder-only inputs are prohibited for accessibility reasons.
 
 ### 3.2 Color Tokens
 * **Primary Brand:** A cool, muted tone used for the sidebar, primary buttons, active navigation states, and chart bases.
