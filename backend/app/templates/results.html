@@ -101,6 +101,27 @@
             <span>Assessments</span>
           </a>
           <a
+            href="/configurations.html"
+            class="sidebar-link"
+            title="Configurations"
+            aria-label="Configurations"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.35.14.6.47.6.85V10a2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+              ></path>
+            </svg>
+            <span>Configurations</span>
+          </a>
+          <a
             href="/clinicians.html"
             class="sidebar-link"
             title="Clinicians"
@@ -739,6 +760,17 @@
         }
       }
 
+      async function loadClinicianThresholds() {
+        try {
+          const response = await fetch("/api/configurations");
+          if (!response.ok) return;
+          const data = await response.json();
+          appState.clinicianThresholds = data.thresholds || null;
+        } catch (error) {
+          console.warn("Failed to load clinician thresholds", error);
+        }
+      }
+
       function toggleMobileSidebar(open) {
         const sidebar = byId("sidebar");
         const backdrop = byId("sidebar-backdrop");
@@ -773,6 +805,7 @@
         filteredResults: [],
         filters: { search: "", classification: "all", sort: "recent" },
         clinicianId: null,
+        clinicianThresholds: null,
       };
 
       // ── Classification helpers ──
@@ -790,6 +823,39 @@
       function renderClassificationPill(label) {
         const cls = getClassificationClass(label);
         return `<span class="classification-pill ${cls}">${escapeHtml(label || "No result")}</span>`;
+      }
+
+      function formatSubtypeLabel(key) {
+        if (key === "hyperactive_impulsive") return "Hyperactive-Impulsive";
+        if (key === "inattentive") return "Inattentive";
+        if (key === "combined") return "Combined";
+        return key.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+      }
+
+
+      function buildBandHelperLine(band, subtypeKey, subtypeLabel) {
+        if (!subtypeKey || !subtypeLabel) return "";
+        const thresholds = appState.clinicianThresholds || {};
+        const range = thresholds[subtypeKey]?.[band];
+        if (!range) return "";
+        const min = Number(range.min);
+        const max = Number(range.max);
+        if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
+        const minPct = (min * 100).toFixed(2);
+        const maxPct = (max * 100).toFixed(2);
+        return `
+          <div class="band-helper-line">
+            Reference range (${escapeHtml(subtypeLabel)}): ${minPct}%–${maxPct}%
+          </div>
+        `;
+      }
+
+      function getSubtypeKeyFromLabel(label) {
+        const lowered = String(label || "").toLowerCase();
+        if (lowered.includes("inattentive")) return "inattentive";
+        if (lowered.includes("hyperactive")) return "hyperactive_impulsive";
+        if (lowered.includes("combined")) return "combined";
+        return null;
       }
 
       function getConfidenceState(confidence) {
@@ -1556,18 +1622,21 @@
             averageBandPowers[band] = vals.reduce((a, b) => a + b, 0) / vals.length;
           });
         }
+        const subtypeKey = getSubtypeKeyFromLabel(data.predicted_class);
+        const subtypeLabel = subtypeKey ? formatSubtypeLabel(subtypeKey) : null;
         const BAND_ORDER = ["delta", "theta", "alpha", "beta", "gamma"];
         const bandBars = BAND_ORDER.filter((band) => averageBandPowers[band] !== undefined)
           .map((band) => {
             const pct = (averageBandPowers[band] * 100).toFixed(1);
             const color = BAND_COLORS[band] || "#607484";
+            const helperLine = buildBandHelperLine(band, subtypeKey, subtypeLabel);
             return `<div class="band-bar-row">
               <span class="band-bar-label">${escapeHtml(band.charAt(0).toUpperCase() + band.slice(1))}</span>
               <div class="band-bar-track">
                 <div class="band-bar-fill" style="width:${pct}%;background:${color};"></div>
               </div>
               <span class="band-bar-value">${pct}%</span>
-            </div>`;
+            </div>${helperLine}`;
           })
           .join("");
 
@@ -2958,6 +3027,7 @@
 
       async function initializePage() {
         await loadCurrentClinician();
+        await loadClinicianThresholds();
         await loadResults();
         eegAnnotateModal.init();
         const q = new URLSearchParams(location.search).get("search");

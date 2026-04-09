@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configurations - BayesianADHD</title>
+    <link rel="icon" type="image/png" href="/static/images/icon.png" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/configurations.css" />
+  </head>
+
+  <body>
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <div class="app-shell">
+      <aside class="app-sidebar" id="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-inner">
+            <span class="brand-name">BayesianADHD</span>
+          </div>
+          <button
+            class="sidebar-expand-btn"
+            id="sidebar-expand-btn"
+            type="button"
+            aria-label="Toggle sidebar"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="/index.html" class="sidebar-link" title="Dashboard" aria-label="Dashboard">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="/subjects.html" class="sidebar-link" title="Subjects" aria-label="Subjects">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Subjects</span>
+          </a>
+          <a href="/results.html" class="sidebar-link" title="Assessments" aria-label="Assessments">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>Assessments</span>
+          </a>
+          <a
+            href="/configurations.html"
+            class="sidebar-link active"
+            title="Configurations"
+            aria-label="Configurations"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.35.14.6.47.6.85V10a2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+              ></path>
+            </svg>
+            <span>Configurations</span>
+          </a>
+          <a
+            href="/clinicians.html"
+            class="sidebar-link"
+            title="Clinicians"
+            aria-label="Clinicians"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M11 2v2"></path>
+              <path d="M5 2v2"></path>
+              <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"></path>
+              <path d="M8 15a6 6 0 0 0 12 0v-3"></path>
+              <circle cx="20" cy="10" r="2"></circle>
+            </svg>
+            <span>Clinicians</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <p class="sidebar-user-label">Signed in as</p>
+          <p class="sidebar-user-name" id="sidebar-clinician-name">Clinician</p>
+          <button id="logout-btn" class="sidebar-logout" type="button" title="Logout">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span class="sidebar-logout-label" id="sidebar-logout-name">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="page-header">
+          <div class="page-header-inner">
+            <div class="page-title-group">
+              <button
+                id="sidebar-toggle"
+                class="menu-toggle"
+                type="button"
+                aria-label="Toggle navigation menu"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+              <div>
+                <h1>Clinician Configurations</h1>
+                <p>Set relative band power ranges per ADHD subtype for quick reference.</p>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button id="reset-thresholds-btn" type="button" class="btn-secondary-app">
+                Reset to Defaults
+              </button>
+              <button id="save-thresholds-btn" type="button" class="btn-primary-app">
+                Save Configuration
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main class="page-body">
+          <section class="section-shell">
+            <div class="section-head">
+              <h2>Relative Power Thresholds</h2>
+              <p>
+                Define the minimum and maximum expected relative power range for each EEG band and
+                ADHD subtype. Values are stored per clinician.
+              </p>
+              <p class="helper-copy" id="threshold-helper">
+                Enter values between 0 and 100. Example: 25 to 40 means 25–40% relative power.
+              </p>
+            </div>
+
+            <div class="threshold-grid" id="threshold-grid"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function showToast(message, variant = "error") {
+        const container = byId("toast-container");
+        if (!container) return;
+        const toast = document.createElement("div");
+        toast.className = `toast-message ${variant}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        window.setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-8px)";
+          window.setTimeout(() => toast.remove(), 180);
+        }, 6000);
+      }
+
+      function toggleMobileSidebar(open) {
+        const sidebar = byId("sidebar");
+        const backdrop = byId("sidebar-backdrop");
+        if (!sidebar || !backdrop) return;
+        const shouldOpen =
+          typeof open === "boolean" ? open : !sidebar.classList.contains("mobile-open");
+        sidebar.classList.toggle("mobile-open", shouldOpen);
+        backdrop.classList.toggle("open", shouldOpen);
+      }
+
+      async function handleLogout() {
+        try {
+          await fetch("/api/logout", { method: "POST" });
+        } finally {
+          window.location.href = "/login.html";
+        }
+      }
+
+      byId("sidebar-toggle")?.addEventListener("click", () => toggleMobileSidebar());
+      byId("sidebar-backdrop")?.addEventListener("click", () => toggleMobileSidebar(false));
+      byId("logout-btn")?.addEventListener("click", handleLogout);
+
+      byId("sidebar-expand-btn")?.addEventListener("click", () => {
+        const sidebar = byId("sidebar");
+        if (sidebar) sidebar.classList.toggle("expanded");
+      });
+
+      const SUBTYPES = [
+        { key: "inattentive", label: "Inattentive" },
+        { key: "hyperactive_impulsive", label: "Hyperactive-Impulsive" },
+        { key: "combined", label: "Combined" },
+      ];
+      const BANDS = ["delta", "theta", "alpha", "beta", "gamma"];
+      let activeThresholds = {};
+
+      function buildThresholdGrid(thresholds) {
+        const grid = byId("threshold-grid");
+        if (!grid) return;
+        grid.innerHTML = SUBTYPES.map((subtype) => {
+          const rows = BANDS.map((band) => {
+            const bandLabel = band.charAt(0).toUpperCase() + band.slice(1);
+            const values = thresholds[subtype.key]?.[band] || { min: "", max: "" };
+            return `
+              <div class="threshold-row">
+                <div class="threshold-band">
+                  <span>${escapeHtml(bandLabel)}</span>
+                </div>
+                <div class="threshold-range">
+                  <label class="threshold-field">
+                    <span>Min</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      inputmode="decimal"
+                      data-subtype="${escapeHtml(subtype.key)}"
+                      data-band="${escapeHtml(band)}"
+                      data-bound="min"
+                      value="${escapeHtml(values.min ?? "")}"
+                    />
+                  </label>
+                  <label class="threshold-field">
+                    <span>Max</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      inputmode="decimal"
+                      data-subtype="${escapeHtml(subtype.key)}"
+                      data-band="${escapeHtml(band)}"
+                      data-bound="max"
+                      value="${escapeHtml(values.max ?? "")}"
+                    />
+                  </label>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <article class="threshold-section">
+              <div class="threshold-section-header">
+                <h3>${escapeHtml(subtype.label)}</h3>
+                <p>Expected relative power ranges for this subtype.</p>
+              </div>
+              <div class="threshold-rows">${rows}</div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function readThresholdInputs() {
+        const data = {};
+        SUBTYPES.forEach((subtype) => {
+          data[subtype.key] = {};
+          BANDS.forEach((band) => {
+            data[subtype.key][band] = { min: null, max: null };
+          });
+        });
+
+        document.querySelectorAll("#threshold-grid input").forEach((input) => {
+          const subtype = input.getAttribute("data-subtype");
+          const band = input.getAttribute("data-band");
+          const bound = input.getAttribute("data-bound");
+          if (!subtype || !band || !bound) return;
+          const raw = input.value;
+          const value = raw === "" ? null : Number(raw);
+          if (!data[subtype]) data[subtype] = {};
+          if (!data[subtype][band]) data[subtype][band] = {};
+          data[subtype][band][bound] = value;
+        });
+
+        return data;
+      }
+
+      function validateThresholds(thresholds) {
+        const errors = [];
+        SUBTYPES.forEach((subtype) => {
+          BANDS.forEach((band) => {
+            const range = thresholds[subtype.key]?.[band];
+            if (!range) return;
+            const min = range.min;
+            const max = range.max;
+            if (min == null || max == null || Number.isNaN(min) || Number.isNaN(max)) {
+              errors.push(`${subtype.label} ${band} requires min and max.`);
+              return;
+            }
+            if (min < 0 || max > 100 || min > max) {
+              errors.push(`${subtype.label} ${band} must be within 0 and 100.`);
+            }
+          });
+        });
+        return errors;
+      }
+
+      function normalizeThresholds(thresholds) {
+        const normalized = {};
+        SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {};
+          BANDS.forEach((band) => {
+            const range = thresholds[subtype.key]?.[band] || { min: 0, max: 1 };
+            normalized[subtype.key][band] = {
+              min: Number(range.min) / 100,
+              max: Number(range.max) / 100,
+            };
+          });
+        });
+        return normalized;
+      }
+
+      async function loadCurrentClinician() {
+        try {
+          const res = await fetch("/api/me");
+          if (!res.ok) {
+            window.location.href = "/login.html";
+            return;
+          }
+          const data = await res.json();
+          const el = byId("sidebar-clinician-name");
+          if (el && data.clinician_name) el.textContent = data.clinician_name;
+          const logoutLabel = byId("sidebar-logout-name");
+          if (logoutLabel) logoutLabel.textContent = "Logout";
+        } catch {
+          window.location.href = "/login.html";
+        }
+      }
+
+      async function loadThresholds() {
+        try {
+          const response = await fetch("/api/configurations");
+          if (!response.ok) throw new Error("Unable to load configuration");
+          const payload = await response.json();
+          const thresholds = payload.thresholds || {};
+          const display = convertThresholdsToPercent(thresholds);
+          activeThresholds = display;
+          buildThresholdGrid(display);
+        } catch (error) {
+          showToast(error.message || "Failed to load configuration", "error");
+        }
+      }
+
+      async function loadDefaults() {
+        const response = await fetch("/api/configurations/defaults");
+        if (!response.ok) throw new Error("Unable to load defaults");
+        const payload = await response.json();
+        return convertThresholdsToPercent(payload.thresholds || {});
+      }
+
+      async function handleReset() {
+        try {
+          const defaults = await loadDefaults();
+          activeThresholds = defaults;
+          buildThresholdGrid(defaults);
+          showToast("Defaults loaded. Save to apply.", "info");
+        } catch (error) {
+          showToast(error.message || "Failed to load defaults", "error");
+        }
+      }
+
+      async function handleSave() {
+        const raw = readThresholdInputs();
+        const errors = validateThresholds(raw);
+        if (errors.length) {
+          showToast(errors[0], "warning");
+          return;
+        }
+        const normalized = normalizeThresholds(raw);
+        try {
+          const response = await fetch("/api/configurations", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ thresholds: normalized }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "Failed to save configuration");
+          }
+          activeThresholds = raw;
+          showToast("Configuration saved successfully", "success");
+        } catch (error) {
+          showToast(error.message || "Failed to save configuration", "error");
+        }
+      }
+
+      function convertThresholdsToPercent(thresholds) {
+        const display = {};
+        SUBTYPES.forEach((subtype) => {
+          const subtypeValues = thresholds[subtype.key] || {};
+          display[subtype.key] = {};
+          BANDS.forEach((band) => {
+            const range = subtypeValues[band] || { min: 0, max: 1 };
+            display[subtype.key][band] = {
+              min: Number(range.min) * 100,
+              max: Number(range.max) * 100,
+            };
+          });
+        });
+        return display;
+      }
+
+      byId("reset-thresholds-btn")?.addEventListener("click", handleReset);
+      byId("save-thresholds-btn")?.addEventListener("click", handleSave);
+
+      loadCurrentClinician();
+      loadThresholds();
+    </script>
+  </body>
+</html>

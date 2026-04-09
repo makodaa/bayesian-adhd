@@ -21,6 +21,7 @@ from flask import (
 from .core.logging_config import get_app_logger
 from .db.repositories.band_powers import BandPowersRepository
 from .db.repositories.clinicians import CliniciansRepository
+from .db.repositories.clinician_thresholds import ClinicianThresholdsRepository
 from .db.repositories.ratios import RatiosRepository
 from .db.repositories.recordings import RecordingsRepository
 from .db.repositories.results import ResultsRepository
@@ -35,6 +36,7 @@ from .services.band_analysis_service import BandAnalysisService
 from .services.annotation_service import AnnotationService
 from .services.clinician_auth_service import ClinicianAuthService
 from .services.clinician_service import ClinicianService
+from .services.clinician_threshold_service import ClinicianThresholdService
 from .services.eeg_service import EEGService
 from .services.file_service import FileService
 from .services.input_validation_service import (
@@ -131,6 +133,7 @@ band_powers_repo = BandPowersRepository()
 ratios_repo = RatiosRepository()
 subjects_repo = SubjectsRepository()
 clinicians_repo = CliniciansRepository()
+clinician_thresholds_repo = ClinicianThresholdsRepository()
 temporal_plots_repo = TemporalPlotsRepository()
 temporal_summaries_repo = TemporalSummariesRepository()
 topographic_maps_repo = TopographicMapsRepository()
@@ -147,6 +150,7 @@ annotation_service = AnnotationService(eeg_annotations_repo)
 topographic_service = TopographicService()
 temporal_biomarker_service = TemporalBiomarkerService()
 clinician_service = ClinicianService(clinicians_repo)
+clinician_threshold_service = ClinicianThresholdService(clinician_thresholds_repo)
 clinician_auth_service = ClinicianAuthService(clinicians_repo)
 subject_service = SubjectService(subjects_repo)
 recording_service = RecordingService(
@@ -339,6 +343,12 @@ def subjects():
 @login_required
 def clinicians():
     return render_template("clinicians.html")
+
+
+@app.route("/configurations.html")
+@login_required
+def configurations():
+    return render_template("configurations.html")
 
 
 @app.route("/results.html")
@@ -1069,6 +1079,52 @@ def get_result(result_id):
     except Exception as e:
         logger.error(f"Error fetching result {result_id}: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/configurations", methods=["GET"])
+@login_required
+def get_configurations():
+    """Return clinician-specific band power thresholds."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+    try:
+        thresholds = clinician_threshold_service.get_thresholds(clinician_id)
+        return jsonify({"thresholds": thresholds}), 200
+    except Exception as e:
+        logger.error(f"Error fetching clinician thresholds: {e}", exc_info=True)
+        return jsonify({"error": "Failed to load configuration"}), 500
+
+
+@app.route("/api/configurations/defaults", methods=["GET"])
+@login_required
+def get_configuration_defaults():
+    """Return default threshold ranges."""
+    try:
+        defaults = clinician_threshold_service.get_default_thresholds()
+        return jsonify({"thresholds": defaults}), 200
+    except Exception as e:
+        logger.error(f"Error fetching threshold defaults: {e}", exc_info=True)
+        return jsonify({"error": "Failed to load default configuration"}), 500
+
+
+@app.route("/api/configurations", methods=["PUT"])
+@login_required
+def replace_configurations():
+    """Replace clinician-specific threshold configuration."""
+    clinician_id = session.get("clinician_id")
+    if not isinstance(clinician_id, int):
+        return jsonify({"error": "Invalid clinician session"}), 401
+    payload = request.get_json(silent=True) or {}
+    thresholds = payload.get("thresholds", {})
+    try:
+        clinician_threshold_service.replace_thresholds(clinician_id, thresholds)
+        return jsonify({"success": True}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error saving clinician thresholds: {e}", exc_info=True)
+        return jsonify({"error": "Failed to save configuration"}), 500
 
 
 @app.route("/api/results/<int:result_id>/annotations", methods=["GET"])

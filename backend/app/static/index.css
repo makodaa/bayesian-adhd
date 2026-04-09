@@ -562,13 +562,14 @@
 
 .band-progress {
   height: 18px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: #e3ebef;
   overflow: hidden;
 }
 
 .band-progress-bar {
   height: 100%;
+  border-radius: 0;
   transition: width 260ms ease-out;
 }
 
@@ -583,6 +584,12 @@
   margin: -0.4rem 0 0.62rem 88px;
   font-size: 0.76rem;
   color: var(--text-500);
+}
+
+.band-helper-line {
+  margin: -0.35rem 0 0.65rem calc(88px + 0.65rem);
+  font-size: 0.76rem;
+  color: var(--text-600);
 }
 
 /* ─── Electrode table ────────────────────────────────────────────────────── */
