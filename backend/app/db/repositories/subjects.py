@@ -126,20 +126,43 @@ class SubjectsRepository(BaseRepository):
                     'assessments': []
                 }
                 
+                result_ids = [row["result_id"] for row in rows if row["result_id"]]
+                band_power_map: dict[int, dict[str, float]] = {}
+                if result_ids:
+                    band_query = """
+                    SELECT result_id, frequency_band, AVG(relative_power) AS avg_relative_power
+                    FROM band_powers
+                    WHERE result_id = ANY(%s)
+                    GROUP BY result_id, frequency_band;
+                    """
+                    cursor.execute(band_query, (result_ids,))
+                    band_rows = cursor.fetchall()
+                    for band_row in band_rows:
+                        result_id = band_row["result_id"]
+                        band = str(band_row["frequency_band"]).lower()
+                        band_power_map.setdefault(result_id, {})[band] = float(
+                            band_row["avg_relative_power"]
+                        )
+
                 for row in rows:
-                    if row['result_id']:
+                    if row["result_id"]:
                         clinician_name = None
-                        if row['first_name'] or row['last_name']:
-                            clinician_name = f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
-                        
-                        subject['assessments'].append({
-                            'result_id': row['result_id'],
-                            'predicted_class': row['predicted_class'],
-                            'confidence_score': row['confidence_score'],
-                            'inferenced_at': row['inferenced_at'],
-                            'file_name': row['file_name'],
-                            'clinician_name': clinician_name
-                        })
+                        if row["first_name"] or row["last_name"]:
+                            clinician_name = (
+                                f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
+                            )
+
+                        subject["assessments"].append(
+                            {
+                                "result_id": row["result_id"],
+                                "predicted_class": row["predicted_class"],
+                                "confidence_score": row["confidence_score"],
+                                "inferenced_at": row["inferenced_at"],
+                                "file_name": row["file_name"],
+                                "clinician_name": clinician_name,
+                                "band_powers": band_power_map.get(row["result_id"], {}),
+                            }
+                        )
                 
                 return subject
         except Exception as e:

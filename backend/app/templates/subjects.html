@@ -532,6 +532,18 @@
       }
 
       const ADHD_CONFIDENCE_THRESHOLD = 0.8;
+      const CONFIG_SUBTYPES = [
+        { key: "inattentive", label: "Inattentive" },
+        { key: "hyperactive_impulsive", label: "Hyperactive-Impulsive" },
+        { key: "combined", label: "Combined" },
+      ];
+      const CONFIG_BANDS = ["alpha", "beta", "theta"];
+      const CONFIG_STATES = ["decreased", "elevated"];
+
+      const appConfigState = {
+        thresholds: {},
+        recommendations: {},
+      };
 
       function countHighConfidenceAdhd(assessments) {
         if (!Array.isArray(assessments)) {
@@ -544,17 +556,121 @@
         }).length;
       }
 
-      function buildSubjectRecommendations(count) {
-        if (count < 2) {
+      function mapPredictedSubtype(label) {
+        const normalized = String(label || "")
+          .trim()
+          .toLowerCase();
+        if (!normalized.includes("adhd")) {
+          return null;
+        }
+        if (normalized.includes("inattentive") || normalized.includes("adhd-i")) {
+          return "inattentive";
+        }
+        if (
+          normalized.includes("hyperactive") ||
+          normalized.includes("impulsive") ||
+          normalized.includes("adhd-h")
+        ) {
+          return "hyperactive_impulsive";
+        }
+        if (normalized.includes("combined") || normalized.includes("adhd-c")) {
+          return "combined";
+        }
+        return null;
+      }
+
+      function normalizeRecommendationConfig(recommendations) {
+        const normalized = {};
+        CONFIG_SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {};
+          CONFIG_BANDS.forEach((band) => {
+            const bandValues = recommendations?.[subtype.key]?.[band] || {};
+            normalized[subtype.key][band] = {
+              decreased: String(bandValues.decreased || "").trim(),
+              elevated: String(bandValues.elevated || "").trim(),
+            };
+          });
+        });
+        return normalized;
+      }
+
+      function normalizeThresholdConfig(thresholds) {
+        const normalized = {};
+        CONFIG_SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {};
+          CONFIG_BANDS.forEach((band) => {
+            const values = thresholds?.[subtype.key]?.[band] || { min: 0, max: 1 };
+            const min = Number(values.min);
+            const max = Number(values.max);
+            normalized[subtype.key][band] = {
+              min: Number.isFinite(min) ? min : 0,
+              max: Number.isFinite(max) ? max : 1,
+            };
+          });
+        });
+        return normalized;
+      }
+
+      function computeBandStates(assessment, subtypeKey) {
+        const powers = assessment?.band_powers || {};
+        const thresholds = appConfigState.thresholds?.[subtypeKey] || {};
+        const states = {};
+
+        CONFIG_BANDS.forEach((band) => {
+          const value = Number(powers[band]);
+          const range = thresholds?.[band] || { min: 0, max: 1 };
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          if (value < Number(range.min)) {
+            states[band] = "decreased";
+          } else if (value > Number(range.max)) {
+            states[band] = "elevated";
+          }
+        });
+
+        return states;
+      }
+
+      function subtypeBandPreferences(subtypeKey) {
+        if (subtypeKey === "hyperactive_impulsive") {
+          return [
+            { band: "beta", state: "elevated" },
+            { band: "theta", state: "decreased" },
+          ];
+        }
+        if (subtypeKey === "inattentive" || subtypeKey === "combined") {
+          return [
+            { band: "beta", state: "decreased" },
+            { band: "theta", state: "elevated" },
+          ];
+        }
+        return [];
+      }
+
+      function collectRecommendations(subtypeKey, bandStates) {
+        const preferences = subtypeBandPreferences(subtypeKey);
+        const config = appConfigState.recommendations?.[subtypeKey] || {};
+        return preferences
+          .filter((pref) => bandStates[pref.band] === pref.state)
+          .map((pref) => config?.[pref.band]?.[pref.state])
+          .filter((value) => value && String(value).trim())
+          .map((value) => String(value).trim());
+      }
+
+      function buildSubjectRecommendations(assessment, count) {
+        if (count < 2 || !assessment) {
           return "";
         }
-        const items = [
-          "Structured routines with clear task breakdowns and external reminders.",
-          "Behavioral therapy or skills coaching to support attention, planning, and impulse control.",
-          "Environmental supports such as reduced distractions and scheduled breaks.",
-          "Consider school or workplace accommodations when appropriate.",
-          "Additional behavioral assessments to corroborate symptoms across settings (e.g., standardized rating scales and clinical interview).",
-        ];
+        const subtypeKey = mapPredictedSubtype(assessment.predicted_class);
+        if (!subtypeKey) {
+          return "";
+        }
+        const bandStates = computeBandStates(assessment, subtypeKey);
+        const items = collectRecommendations(subtypeKey, bandStates);
+        if (!items.length) {
+          return "";
+        }
         return `
           <div class="recommendation-card">
             <h4>Intervention Strategies &amp; Recommendations</h4>
@@ -865,7 +981,10 @@
 
         if (recommendations) {
           const highConfidenceCount = countHighConfidenceAdhd(assessments);
-          recommendations.innerHTML = buildSubjectRecommendations(highConfidenceCount);
+          recommendations.innerHTML = buildSubjectRecommendations(
+            latestAssessment,
+            highConfidenceCount,
+          );
         }
 
         if (assessments.length === 0) {
@@ -1018,6 +1137,22 @@
         }
       }
 
+      async function loadConfiguration() {
+        try {
+          const response = await fetch("/api/configurations");
+          if (!response.ok) {
+            throw new Error("Failed to load configurations");
+          }
+          const payload = await response.json().catch(() => ({}));
+          appConfigState.thresholds = normalizeThresholdConfig(payload.thresholds || {});
+          appConfigState.recommendations = normalizeRecommendationConfig(
+            payload.recommendations || {},
+          );
+        } catch (error) {
+          showToast(error.message || "Failed to load configurations", "error");
+        }
+      }
+
       async function handleLogout() {
         try {
           await fetch("/api/logout", {
@@ -1093,6 +1228,7 @@
       async function initializePage() {
         setupEventHandlers();
         await loadCurrentClinician();
+        await loadConfiguration();
         await loadSubjects();
       }
 

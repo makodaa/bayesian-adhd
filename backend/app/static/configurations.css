@@ -10,6 +10,11 @@
   gap: 0;
 }
 
+.recommendation-grid {
+  display: grid;
+  gap: 0;
+}
+
 .threshold-section:first-child .threshold-section-header {
   border-bottom-width: 1.5px;
 }
@@ -58,6 +63,14 @@
   padding: 0;
 }
 
+.recommendation-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(320px, 2fr);
+  gap: 2.2rem;
+  align-items: start;
+  padding: 0;
+}
+
 .threshold-row + .threshold-row {
   border-top: none;
 }
@@ -77,7 +90,21 @@
   align-items: center;
 }
 
+.recommendation-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
 .threshold-field {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--config-muted);
+}
+
+.recommendation-field {
   display: grid;
   gap: 0.3rem;
   font-size: 0.74rem;
@@ -93,13 +120,35 @@
   font-size: 0.86rem;
 }
 
+.recommendation-field textarea {
+  width: 100%;
+  padding: 0.38rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  font-size: 0.86rem;
+  resize: vertical;
+  min-height: 3.6rem;
+}
+
 .threshold-field input:focus {
   outline: none;
   border-color: rgba(91, 124, 143, 0.6);
   box-shadow: 0 0 0 3px rgba(91, 124, 143, 0.16);
 }
 
+.recommendation-field textarea:focus {
+  outline: none;
+  border-color: rgba(91, 124, 143, 0.6);
+  box-shadow: 0 0 0 3px rgba(91, 124, 143, 0.16);
+}
+
 #threshold-helper {
+  margin-top: 1rem;
+  color: var(--config-muted);
+}
+
+#recommendation-helper {
   margin-top: 1rem;
   color: var(--config-muted);
 }
@@ -118,14 +167,28 @@
   margin-bottom: 0.9rem;
 }
 
+.recommendation-shell {
+  margin-top: 1.6rem;
+}
+
 @media (max-width: 860px) {
   .threshold-row {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-row {
     grid-template-columns: 1fr;
   }
 
   .threshold-range {
     grid-template-columns: 1fr;
     gap: 0.4rem;
+    align-items: stretch;
+  }
+
+  .recommendation-fields {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
     align-items: stretch;
   }
 }

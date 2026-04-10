@@ -38,6 +38,20 @@ CREATE TABLE clinician_band_thresholds (
     CHECK (min_value >= 0.0 AND max_value <= 1.0 AND min_value <= max_value)
 );
 
+CREATE TABLE clinician_recommendations (
+    id SERIAL PRIMARY KEY,
+    clinician_id INTEGER NOT NULL REFERENCES clinicians(id) ON DELETE CASCADE,
+    adhd_subtype VARCHAR(40) NOT NULL,
+    band VARCHAR(20) NOT NULL,
+    band_state VARCHAR(20) NOT NULL,
+    recommendation_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CHECK (adhd_subtype IN ('inattentive', 'hyperactive_impulsive', 'combined')),
+    CHECK (band IN ('alpha', 'beta', 'theta')),
+    CHECK (band_state IN ('decreased', 'elevated'))
+);
+
 -- Insert Admin Clinician with password adminclinician123
 INSERT INTO clinicians (first_name, last_name, middle_name, occupation, password_hash)
 VALUES ('Admin', 'Clinician', '', 'Administrator', 'scrypt:32768:8:1$W2H7WyHgIQs6dzbI$25d334197247946f01845eb3f8a041e9711b8b2be04c3cd3876c228fbe1bbfa718ef843c7dfd49f1fabcbd0e2c7dbd339a4c1a7c120202c094c5a01aa439fecb');
@@ -161,3 +175,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_clinician_band_thresholds_unique
     ON clinician_band_thresholds(clinician_id, adhd_subtype, band);
 CREATE INDEX IF NOT EXISTS idx_clinician_band_thresholds_clinician
     ON clinician_band_thresholds(clinician_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_clinician_recommendations_unique
+    ON clinician_recommendations(clinician_id, adhd_subtype, band, band_state);
+CREATE INDEX IF NOT EXISTS idx_clinician_recommendations_clinician
+    ON clinician_recommendations(clinician_id);

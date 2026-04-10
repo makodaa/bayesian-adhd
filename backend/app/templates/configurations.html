@@ -221,6 +221,21 @@
 
             <div class="threshold-grid" id="threshold-grid"></div>
           </section>
+          <section class="section-shell recommendation-shell">
+            <div class="section-head">
+               <h2>Subtype Recommendations</h2>
+               <p>
+                 Provide short recommendations for reduced or elevated alpha, beta, and theta power
+                 by ADHD subtype. These appear in subject detail views when the relevant band state
+                 is detected.
+               </p>
+               <p class="helper-copy" id="recommendation-helper">
+                 Leave any field blank to skip that recommendation.
+               </p>
+            </div>
+
+            <div class="recommendation-grid" id="recommendation-grid"></div>
+          </section>
         </main>
       </div>
     </div>
@@ -297,15 +312,21 @@
         if (sidebar) sidebar.classList.toggle("expanded");
       });
 
-      const SUBTYPES = [
-        { key: "inattentive", label: "Inattentive" },
-        { key: "hyperactive_impulsive", label: "Hyperactive-Impulsive" },
-        { key: "combined", label: "Combined" },
-      ];
-      const BANDS = ["delta", "theta", "alpha", "beta", "gamma"];
-      let activeThresholds = {};
+       const SUBTYPES = [
+         { key: "inattentive", label: "Inattentive" },
+         { key: "hyperactive_impulsive", label: "Hyperactive-Impulsive" },
+         { key: "combined", label: "Combined" },
+       ];
+       const BANDS = ["delta", "theta", "alpha", "beta", "gamma"];
+       const RECOMMENDATION_BANDS = ["alpha", "beta", "theta"];
+       const BAND_STATES = [
+         { key: "decreased", label: "Decreased" },
+         { key: "elevated", label: "Elevated" },
+       ];
+       let activeThresholds = {};
+       let activeRecommendations = {};
 
-      function buildThresholdGrid(thresholds) {
+       function buildThresholdGrid(thresholds) {
         const grid = byId("threshold-grid");
         if (!grid) return;
         grid.innerHTML = SUBTYPES.map((subtype) => {
@@ -361,9 +382,56 @@
             </article>
           `;
         }).join("");
-      }
+       }
 
-      function readThresholdInputs() {
+       function buildRecommendationGrid(recommendations) {
+         const container = byId("recommendation-grid");
+         if (!container) return;
+         container.innerHTML = SUBTYPES.map((subtype) => {
+           const rows = RECOMMENDATION_BANDS.map((band) => {
+             const bandLabel = band.charAt(0).toUpperCase() + band.slice(1);
+             const values = recommendations[subtype.key]?.[band] || {};
+             const fields = BAND_STATES.map((state) => {
+               const value = values[state.key] ?? "";
+               return `
+                 <label class="recommendation-field">
+                   <span>${escapeHtml(state.label)}</span>
+                   <textarea
+                     rows="2"
+                     maxlength="800"
+                     data-subtype="${escapeHtml(subtype.key)}"
+                     data-band="${escapeHtml(band)}"
+                     data-state="${escapeHtml(state.key)}"
+                   >${escapeHtml(value)}</textarea>
+                 </label>
+               `;
+             }).join("");
+
+             return `
+               <div class="recommendation-row">
+                 <div class="recommendation-band">
+                   <span>${escapeHtml(bandLabel)}</span>
+                 </div>
+                 <div class="recommendation-fields">
+                   ${fields}
+                 </div>
+               </div>
+             `;
+           }).join("");
+
+           return `
+             <article class="threshold-section recommendation-section">
+               <div class="threshold-section-header">
+                 <h3>${escapeHtml(subtype.label)}</h3>
+                 <p>Recommendations tied to reduced or elevated band power.</p>
+               </div>
+               <div class="recommendation-rows">${rows}</div>
+             </article>
+           `;
+         }).join("");
+       }
+
+       function readThresholdInputs() {
         const data = {};
         SUBTYPES.forEach((subtype) => {
           data[subtype.key] = {};
@@ -385,9 +453,32 @@
         });
 
         return data;
-      }
+       }
 
-      function validateThresholds(thresholds) {
+       function readRecommendationInputs() {
+         const data = {};
+         SUBTYPES.forEach((subtype) => {
+           data[subtype.key] = {};
+           RECOMMENDATION_BANDS.forEach((band) => {
+             data[subtype.key][band] = { decreased: "", elevated: "" };
+           });
+         });
+
+         document.querySelectorAll("#recommendation-grid textarea").forEach((textarea) => {
+           const subtype = textarea.getAttribute("data-subtype");
+           const band = textarea.getAttribute("data-band");
+           const state = textarea.getAttribute("data-state");
+           if (!subtype || !band || !state) return;
+           const value = textarea.value.trim();
+           if (!data[subtype]) data[subtype] = {};
+           if (!data[subtype][band]) data[subtype][band] = {};
+           data[subtype][band][state] = value;
+         });
+
+         return data;
+       }
+
+       function validateThresholds(thresholds) {
         const errors = [];
         SUBTYPES.forEach((subtype) => {
           BANDS.forEach((band) => {
@@ -398,7 +489,24 @@
             if (min == null || max == null || Number.isNaN(min) || Number.isNaN(max)) {
               errors.push(`${subtype.label} ${band} requires min and max.`);
               return;
-            }
+       }
+
+       function validateRecommendations(recommendations) {
+         const errors = [];
+         SUBTYPES.forEach((subtype) => {
+           RECOMMENDATION_BANDS.forEach((band) => {
+             BAND_STATES.forEach((state) => {
+               const value = recommendations[subtype.key]?.[band]?.[state.key];
+               if (value && String(value).length > 800) {
+                 errors.push(
+                   `${subtype.label} ${band} ${state.label.toLowerCase()} is too long.`,
+                 );
+               }
+             });
+           });
+         });
+         return errors;
+       }
             if (min < 0 || max > 100 || min > max) {
               errors.push(`${subtype.label} ${band} must be within 0 and 100.`);
             }
@@ -439,64 +547,83 @@
         }
       }
 
-      async function loadThresholds() {
-        try {
-          const response = await fetch("/api/configurations");
-          if (!response.ok) throw new Error("Unable to load configuration");
-          const payload = await response.json();
-          const thresholds = payload.thresholds || {};
-          const display = convertThresholdsToPercent(thresholds);
-          activeThresholds = display;
-          buildThresholdGrid(display);
-        } catch (error) {
-          showToast(error.message || "Failed to load configuration", "error");
-        }
-      }
+       async function loadThresholds() {
+         try {
+           const response = await fetch("/api/configurations");
+           if (!response.ok) throw new Error("Unable to load configuration");
+           const payload = await response.json();
+           const thresholds = payload.thresholds || {};
+           const display = convertThresholdsToPercent(thresholds);
+           activeThresholds = display;
+           buildThresholdGrid(display);
+           const recommendations = payload.recommendations || {};
+           activeRecommendations = normalizeRecommendations(recommendations);
+           buildRecommendationGrid(activeRecommendations);
+         } catch (error) {
+           showToast(error.message || "Failed to load configuration", "error");
+         }
+       }
 
-      async function loadDefaults() {
-        const response = await fetch("/api/configurations/defaults");
-        if (!response.ok) throw new Error("Unable to load defaults");
-        const payload = await response.json();
-        return convertThresholdsToPercent(payload.thresholds || {});
-      }
+       async function loadDefaults() {
+         const response = await fetch("/api/configurations/defaults");
+         if (!response.ok) throw new Error("Unable to load defaults");
+         const payload = await response.json();
+         return {
+           thresholds: convertThresholdsToPercent(payload.thresholds || {}),
+           recommendations: normalizeRecommendations(payload.recommendations || {}),
+         };
+       }
 
-      async function handleReset() {
-        try {
-          const defaults = await loadDefaults();
-          activeThresholds = defaults;
-          buildThresholdGrid(defaults);
-          showToast("Defaults loaded. Save to apply.", "info");
-        } catch (error) {
-          showToast(error.message || "Failed to load defaults", "error");
-        }
-      }
+       async function handleReset() {
+         try {
+           const defaults = await loadDefaults();
+           activeThresholds = defaults.thresholds;
+           activeRecommendations = defaults.recommendations;
+           buildThresholdGrid(activeThresholds);
+           buildRecommendationGrid(activeRecommendations);
+           showToast("Defaults loaded. Save to apply.", "info");
+         } catch (error) {
+           showToast(error.message || "Failed to load defaults", "error");
+         }
+       }
 
-      async function handleSave() {
-        const raw = readThresholdInputs();
-        const errors = validateThresholds(raw);
-        if (errors.length) {
-          showToast(errors[0], "warning");
-          return;
-        }
-        const normalized = normalizeThresholds(raw);
-        try {
-          const response = await fetch("/api/configurations", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ thresholds: normalized }),
-          });
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            throw new Error(payload.error || "Failed to save configuration");
-          }
-          activeThresholds = raw;
-          showToast("Configuration saved successfully", "success");
-        } catch (error) {
-          showToast(error.message || "Failed to save configuration", "error");
-        }
-      }
+       async function handleSave() {
+         const raw = readThresholdInputs();
+         const errors = validateThresholds(raw);
+         if (errors.length) {
+           showToast(errors[0], "warning");
+           return;
+         }
+         const recommendationValues = readRecommendationInputs();
+         const recommendationErrors = validateRecommendations(recommendationValues);
+         if (recommendationErrors.length) {
+           showToast(recommendationErrors[0], "warning");
+           return;
+         }
+         const normalized = normalizeThresholds(raw);
+         const normalizedRecommendations = normalizeRecommendations(recommendationValues);
+         try {
+           const response = await fetch("/api/configurations", {
+             method: "PUT",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               thresholds: normalized,
+               recommendations: normalizedRecommendations,
+             }),
+           });
+           const payload = await response.json().catch(() => ({}));
+           if (!response.ok) {
+             throw new Error(payload.error || "Failed to save configuration");
+           }
+           activeThresholds = raw;
+           activeRecommendations = recommendationValues;
+           showToast("Configuration saved successfully", "success");
+         } catch (error) {
+           showToast(error.message || "Failed to save configuration", "error");
+         }
+       }
 
-      function convertThresholdsToPercent(thresholds) {
+       function convertThresholdsToPercent(thresholds) {
         const display = {};
         SUBTYPES.forEach((subtype) => {
           const subtypeValues = thresholds[subtype.key] || {};
@@ -510,7 +637,22 @@
           });
         });
         return display;
-      }
+       }
+
+       function normalizeRecommendations(recommendations) {
+         const normalized = {};
+         SUBTYPES.forEach((subtype) => {
+           normalized[subtype.key] = {};
+           RECOMMENDATION_BANDS.forEach((band) => {
+             const bandValues = recommendations[subtype.key]?.[band] || {};
+             normalized[subtype.key][band] = {
+               decreased: String(bandValues.decreased || "").trim(),
+               elevated: String(bandValues.elevated || "").trim(),
+             };
+           });
+         });
+         return normalized;
+       }
 
       byId("reset-thresholds-btn")?.addEventListener("click", handleReset);
       byId("save-thresholds-btn")?.addEventListener("click", handleSave);
