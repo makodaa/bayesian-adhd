@@ -562,14 +562,14 @@
 
 .band-progress {
   height: 18px;
-  border-radius: 0;
+  border-radius: var(--radius-pill);
   background: #e3ebef;
   overflow: hidden;
 }
 
 .band-progress-bar {
   height: 100%;
-  border-radius: 0;
+  border-radius: var(--radius-pill);
   transition: width 260ms ease-out;
 }
 
