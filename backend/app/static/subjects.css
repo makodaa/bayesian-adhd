@@ -380,6 +380,9 @@
 .timeline-list {
   display: grid;
   gap: 0.5rem;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .timeline-card {
