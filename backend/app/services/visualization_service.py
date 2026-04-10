@@ -41,6 +41,13 @@ class VisualizationService:
     DETAIL_MAX_POINTS = 8000
 
     @staticmethod
+    def bytes_to_base64_uri(image_bytes: bytes) -> str:
+        """Convert PNG bytes to a base64-encoded PNG data URI."""
+        import base64
+        encoded = base64.b64encode(image_bytes).decode("utf-8")
+        return f"data:image/png;base64,{encoded}"
+
+    @staticmethod
     def _downsample(data: np.ndarray, max_points: int) -> tuple[np.ndarray, int]:
         sample_count = data.shape[0]
         if sample_count <= max_points:

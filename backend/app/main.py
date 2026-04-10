@@ -854,6 +854,20 @@ def predict():
         except Exception as e:
             logger.warning(f"Failed to generate/save temporal biomarkers: {e}", exc_info=True)
         stage_start = log_stage("Temporal biomarkers", stage_start)
+ 
+        # Generate and save EEG waveform visualizations (waveforms)
+        logger.info(f"Generating waveform visualizations for result {result['result_id']}")
+        try:
+            for band in visualization_service.BAND_FILTERS.keys():
+                image_bytes = visualization_service.render_preview_png(df, band)
+                image_uri = visualization_service.bytes_to_base64_uri(image_bytes)
+                eeg_visualizations_repo.create_visualization(
+                    result["result_id"], band, image_uri
+                )
+            logger.info(f"Waveform visualizations saved for result {result['result_id']}")
+        except Exception as e:
+            logger.warning(f"Failed to generate/save waveform visualizations: {e}", exc_info=True)
+        stage_start = log_stage("Waveform visualizations", stage_start)
 
         if visualization_context_id:
             try:
