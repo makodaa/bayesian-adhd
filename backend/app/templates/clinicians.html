@@ -811,6 +811,46 @@
         activeClinicianId = data.id;
         const status = getStatusPresentation(data);
 
+        function getClassificationClass(label) {
+          const normalized = String(label || "")
+            .trim()
+            .toLowerCase();
+          if (!normalized) {
+            return "pending";
+          }
+          if (normalized.includes("non-adhd") || normalized.includes("non adhd")) {
+            return "non-adhd";
+          }
+          if (normalized.includes("adhd")) {
+            return "adhd";
+          }
+          return "pending";
+        }
+
+        function renderClassificationPill(label) {
+          const classification = label ? String(label) : "No result";
+          const className = getClassificationClass(classification);
+          return `<span class="classification-pill ${className}">${escapeHtml(classification)}</span>`;
+        }
+
+        function getOutcomeGroup(label) {
+          const className = getClassificationClass(label);
+          if (className === "adhd" || className === "non-adhd") {
+            return className;
+          }
+          return "pending";
+        }
+
+        function getConfidenceState(confidence) {
+          if (confidence >= 0.8) {
+            return { label: "High", className: "high" };
+          }
+          if (confidence >= 0.6) {
+            return { label: "Moderate", className: "mid" };
+          }
+          return { label: "Low", className: "low" };
+        }
+
         const profileItems = [
           ["First Name", data.first_name],
           ["Last Name", data.last_name],
@@ -818,61 +858,98 @@
           ["Status", status.label],
         ].filter(([, v]) => v != null && v !== "");
 
-        const profileSection = `
-          <section class="detail-section">
-            <h3>Profile</h3>
-            <ul class="detail-list">
-              ${profileItems
-                .map(
-                  ([label, value]) => `
-                <li class="detail-item">
-                  <span class="detail-label">${escapeHtml(label)}</span>
-                  <span class="detail-value">${escapeHtml(String(value))}</span>
-                </li>`,
-                )
-                .join("")}
-            </ul>
-          </section>`;
-
         const assessments = Array.isArray(data.assessments) ? data.assessments : [];
+
         let timelineHtml = "";
         if (assessments.length === 0) {
-          timelineHtml =
-            '<p style="margin:0;font-size:0.84rem;color:var(--text-700)">No assessments recorded yet.</p>';
+          timelineHtml = "<p class='detail-empty'>No assessments recorded yet.</p>";
         } else {
           timelineHtml = assessments
-            .map((a) => {
-              const clsLower = String(a.predicted_class || "").toLowerCase();
-              const pillClass = clsLower.includes("non")
-                ? "non-adhd"
-                : clsLower.includes("adhd")
-                  ? "adhd"
-                  : "pending";
-              const conf =
-                a.confidence_score != null
-                  ? (Number(a.confidence_score) * 100).toFixed(1) + "%"
-                  : null;
-              return `<div class="timeline-card">
-              <div class="timeline-card-head">
-                <span class="timeline-card-subject">${escapeHtml(a.subject_code || "—")}</span>
-                <span class="timeline-card-date">${a.inferenced_at ? new Date(a.inferenced_at).toLocaleDateString() : "—"}</span>
-              </div>
-              <div class="timeline-card-meta">
-                <span class="status-pill ${pillClass}" style="font-size:0.72rem">${escapeHtml(a.predicted_class || "No result")}</span>
-                ${conf ? `<span style="margin-left:0.5rem;font-size:0.78rem;color:var(--text-500)">${conf} confidence</span>` : ""}
-              </div>
-            </div>`;
+            .map((assessment) => {
+              const confidence = Number(assessment.confidence_score);
+              const confidenceRatio = Number.isFinite(confidence)
+                ? Math.max(0, Math.min(100, confidence * 100))
+                : 0;
+              const confidenceState = getConfidenceState(
+                Number.isFinite(confidence) ? confidence : 0,
+              );
+              const confidenceText = Number.isFinite(confidence)
+                ? `${confidenceRatio.toFixed(1)}% (${confidenceState.label})`
+                : "Not available";
+              const inferencedAt = assessment.inferenced_at
+                ? new Date(assessment.inferenced_at).toLocaleString()
+                : "Not available";
+              const clinicianName = name || "Not recorded";
+              const assessmentId = assessment.result_id
+                ? String(assessment.result_id)
+                : "Not available";
+              const subjectCode = assessment.subject_code || "Not recorded";
+
+              return `
+                <article class="timeline-card">
+                  <div class="timeline-helper">Assessment ID</div>
+                  <div class="timeline-recording mono">${escapeHtml(assessmentId)}</div>
+                  <div class="timeline-row">
+                    <div class="timeline-field">
+                      <span class="timeline-label">Clinician</span>
+                      <span class="timeline-value">${escapeHtml(clinicianName)}</span>
+                      <span class="timeline-subvalue">Subject ${escapeHtml(subjectCode)}</span>
+                    </div>
+                    <div class="timeline-field">
+                      <span class="timeline-label">Date</span>
+                      <span class="timeline-value">${escapeHtml(inferencedAt)}</span>
+                    </div>
+                  </div>
+                  <div class="timeline-row">
+                    <div class="timeline-field">
+                      <span class="timeline-label">Classification</span>
+                      <span class="timeline-value">${renderClassificationPill(assessment.predicted_class || "No result")}</span>
+                    </div>
+                    <div class="timeline-field">
+                      <span class="timeline-label">Confidence</span>
+                      <div class="timeline-confidence">
+                        <div class="confidence-mini-track">
+                          <div class="confidence-mini-fill ${confidenceState.className}" style="width:${confidenceRatio.toFixed(1)}%"></div>
+                        </div>
+                        <span class="timeline-confidence-value mono">${escapeHtml(confidenceText)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              `;
             })
             .join("");
         }
 
-        const timelineSection = `
-          <section class="detail-section">
-            <h3>Assessment Timeline</h3>
-            <div style="display:flex;flex-direction:column;gap:0.45rem">${timelineHtml}</div>
-          </section>`;
+        const profileSection = `
+          <div class="detail-grid">
+            <div class="detail-col">
+              <section class="detail-section">
+                <h3>Profile</h3>
+                <ul class="detail-list">
+                  ${profileItems
+                    .map(
+                      ([label, value]) => `
+                    <li class="detail-item">
+                      <span class="detail-label">${escapeHtml(label)}</span>
+                      <span class="detail-value">${escapeHtml(String(value))}</span>
+                    </li>`,
+                    )
+                    .join("")}
+                </ul>
+              </section>
+            </div>
+            <div class="detail-col">
+              <section class="detail-section detail-section-flat">
+                <h3 class="detail-section-title-underline">Assessment Timeline</h3>
+                <div class="timeline-list">
+                  ${timelineHtml}
+                </div>
+              </section>
+            </div>
+          </div>`;
 
-        byId("clinician-detail-body").innerHTML = profileSection + timelineSection;
+        byId("clinician-detail-body").innerHTML = profileSection;
         updateArchiveControls(data);
       }
 
