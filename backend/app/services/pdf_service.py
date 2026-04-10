@@ -27,6 +27,11 @@ from ..core.logging_config import get_app_logger
 
 logger = get_app_logger(__name__)
 
+PDF_PRIMARY_COLOR_HEX = "#1b4658"
+PDF_PRIMARY_COLOR = colors.HexColor(PDF_PRIMARY_COLOR_HEX)
+COLORED_SECTION_HEADER_PADDING = 4
+COLORED_SECTION_HEADER_SIDE_PADDING = 6
+
 DEFAULT_NORMATIVE_RANGES: dict[str, dict[str, float]] = {
     # TODO: replace with actual normative percentiles
     "delta": {"p25": 25.0, "p75": 55.0},
@@ -267,11 +272,11 @@ def build_band_power_block(
         ("Gamma", "30-100 Hz", "gamma"),
     ]
     bar_colors = {
-        "delta": "#111111",
-        "theta": "#444444",
-        "alpha": "#777777",
-        "beta": "#aaaaaa",
-        "gamma": "#cccccc",
+        "delta": "#9C27B0",
+        "theta": "#2196F3",
+        "alpha": "#4CAF50",
+        "beta": "#FF9800",
+        "gamma": "#F44336",
     }
 
     left_content: list[object] = []
@@ -303,7 +308,7 @@ def build_band_power_block(
         y = total_h - (i + 1) * (bar_h + bar_spacing) + bar_spacing
 
         drawing.add(
-            String(0, y + 2, label, fontSize=6, fontName="Helvetica")
+            String(0, y + 2, label, fontSize=8, fontName="Helvetica")
         )
         rect = Rect(label_w, y, bar_w, bar_h)
         rect.fillColor = colors.HexColor(bar_colors[key])
@@ -315,7 +320,7 @@ def build_band_power_block(
                 label_w + bar_w + 3,
                 y + 2,
                 f"{val:.1f}%",
-                fontSize=6.5,
+                fontSize=8,
                 fontName="Helvetica",
             )
         )
@@ -398,6 +403,66 @@ def _confidence_bar(confidence: float, width: float) -> Drawing:
     return drawing
 
 
+def build_section_header(
+    text: str,
+    styles: dict[str, ParagraphStyle],
+    *,
+    colored: bool = False,
+    tight: bool = False,
+    width: float | None = None,
+    space_before: float | None = None,
+) -> object:
+    if colored:
+        style_key = "SectionHeaderColoredTight" if tight else "SectionHeaderColored"
+        paragraph = Paragraph(text, styles[style_key])
+        table_width = width or doc_width()
+        table = Table([[paragraph]], colWidths=[table_width])
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), PDF_PRIMARY_COLOR),
+                    (
+                        "LEFTPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        COLORED_SECTION_HEADER_SIDE_PADDING,
+                    ),
+                    (
+                        "RIGHTPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        COLORED_SECTION_HEADER_SIDE_PADDING,
+                    ),
+                    (
+                        "TOPPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        COLORED_SECTION_HEADER_PADDING,
+                    ),
+                    (
+                        "BOTTOMPADDING",
+                        (0, 0),
+                        (-1, -1),
+                        COLORED_SECTION_HEADER_PADDING,
+                    ),
+                ]
+            )
+        )
+        if space_before is not None:
+            table.spaceBefore = space_before
+        return table
+
+    style_key = "SectionHeaderPlainTight" if tight else "SectionHeaderPlain"
+    style = styles[style_key]
+    if space_before is not None:
+        style = ParagraphStyle(
+            name=f"{style.name}Custom",
+            parent=style,
+            spaceBefore=space_before,
+        )
+    return Paragraph(text, style)
+
+
 def make_footer_canvas(footer_fields: list[str]):
     class FooterCanvas(rl_canvas.Canvas):
         _footer_fields = footer_fields
@@ -458,14 +523,14 @@ class PDFReportService:
         styles["ReportTitle"] = ParagraphStyle(
             name="ReportTitle",
             fontName="Helvetica-Bold",
-            fontSize=11,
-            textColor=colors.black,
+            fontSize=12,
+            textColor=colors.white,
             spaceAfter=2,
         )
         styles["SectionHeader"] = ParagraphStyle(
             name="SectionHeader",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -476,9 +541,53 @@ class PDFReportService:
         styles["SectionHeaderTight"] = ParagraphStyle(
             name="SectionHeaderTight",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=-6,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SectionHeaderPlain"] = ParagraphStyle(
+            name="SectionHeaderPlain",
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=colors.black,
+            leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SectionHeaderPlainTight"] = ParagraphStyle(
+            name="SectionHeaderPlainTight",
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=colors.black,
+            leftIndent=-6,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SectionHeaderColored"] = ParagraphStyle(
+            name="SectionHeaderColored",
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=colors.white,
+            leftIndent=0,
+            firstLineIndent=0,
+            alignment=0,
+            spaceBefore=6,
+            spaceAfter=1,
+        )
+        styles["SectionHeaderColoredTight"] = ParagraphStyle(
+            name="SectionHeaderColoredTight",
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=colors.white,
+            leftIndent=0,
             firstLineIndent=0,
             alignment=0,
             spaceBefore=6,
@@ -487,7 +596,7 @@ class PDFReportService:
         styles["SubHeader"] = ParagraphStyle(
             name="SubHeader",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -498,7 +607,7 @@ class PDFReportService:
         styles["SubSubHeader"] = ParagraphStyle(
             name="SubSubHeader",
             fontName="Helvetica-BoldOblique",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -506,7 +615,7 @@ class PDFReportService:
         styles["DetailLabel"] = ParagraphStyle(
             name="DetailLabel",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=0,
             firstLineIndent=0,
@@ -517,7 +626,7 @@ class PDFReportService:
         styles["DetailLabelTight"] = ParagraphStyle(
             name="DetailLabelTight",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=-6,
             firstLineIndent=0,
@@ -528,7 +637,7 @@ class PDFReportService:
         styles["SubSubHeaderItalic"] = ParagraphStyle(
             name="SubSubHeaderItalic",
             fontName="Helvetica-Oblique",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             spaceBefore=2,
             spaceAfter=2,
@@ -536,106 +645,106 @@ class PDFReportService:
         styles["BodyText"] = ParagraphStyle(
             name="BodyText",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["HeaderMeta"] = ParagraphStyle(
             name="HeaderMeta",
             fontName="Helvetica",
-            fontSize=7.5,
-            textColor=colors.black,
-            leading=7,
+            fontSize=8,
+            textColor=colors.white,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["BodyTextRight"] = ParagraphStyle(
             name="BodyTextRight",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             alignment=2,
             spaceAfter=2,
         )
         styles["HeaderMetaRight"] = ParagraphStyle(
             name="HeaderMetaRight",
             fontName="Helvetica",
-            fontSize=7.5,
-            textColor=colors.black,
-            leading=7,
+            fontSize=8,
+            textColor=colors.white,
+            leading=8.5,
             alignment=2,
             spaceAfter=2,
         )
         styles["CenteredBody"] = ParagraphStyle(
             name="CenteredBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             alignment=1,
             spaceAfter=2,
         )
         styles["IndentedBody"] = ParagraphStyle(
             name="IndentedBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=12,
-            leading=7,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["FindingsBody"] = ParagraphStyle(
             name="FindingsBody",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             leftIndent=12,
-            leading=8,
+            leading=9,
             spaceAfter=2,
         )
         styles["ShadedBoxText"] = ParagraphStyle(
             name="ShadedBoxText",
             fontName="Helvetica",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["ShadedBoxBold"] = ParagraphStyle(
             name="ShadedBoxBold",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["NarrativeLabel"] = ParagraphStyle(
             name="NarrativeLabel",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.HexColor("#1a3a5c"),
             spaceAfter=2,
         )
         styles["DisclaimerHeader"] = ParagraphStyle(
             name="DisclaimerHeader",
             fontName="Helvetica-Bold",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
             spaceAfter=2,
         )
         styles["DisclaimerBody"] = ParagraphStyle(
             name="DisclaimerBody",
             fontName="Helvetica-Oblique",
-            fontSize=7.5,
+            fontSize=8,
             textColor=colors.black,
-            leading=7,
+            leading=8.5,
             spaceAfter=2,
         )
         styles["LogoPlaceholder"] = ParagraphStyle(
             name="LogoPlaceholder",
             fontName="Helvetica-Oblique",
-            fontSize=7,
+            fontSize=8,
             textColor=colors.HexColor("#999999"),
             alignment=1,
         )
@@ -666,8 +775,6 @@ class PDFReportService:
         story: list = []
         story.extend(self._build_header(report_data))
         story.append(Spacer(1, 0))
-        story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
-        story.append(Spacer(1, 1))
         story.extend(self._build_referral_patient(report_data))
         story.extend(self._build_recording_assessment(report_data))
         story.extend(self._build_findings(report_data))
@@ -849,10 +956,11 @@ class PDFReportService:
                 [
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                    ("TOPPADDING", (0, 0), (-1, -1), 0),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("BACKGROUND", (0, 0), (-1, -1), PDF_PRIMARY_COLOR),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 10),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
                 ]
             )
         )
@@ -863,7 +971,11 @@ class PDFReportService:
         elements: list = []
 
         referral_lines = [
-            Paragraph("REFERRAL FROM", self.styles["SectionHeader"]),
+            build_section_header(
+                "REFERRAL FROM",
+                self.styles,
+                colored=False,
+            ),
             Paragraph(f"Name: {_display(report_data['referral_name'])}", self.styles["BodyText"]),
             Paragraph(
                 f"Institution: {_display(report_data['referral_institution'])}",
@@ -874,7 +986,11 @@ class PDFReportService:
             referral_lines.append(Paragraph(_display(line), self.styles["BodyText"]))
 
         patient_lines = [
-            Paragraph("SUBJECT INFORMATION", self.styles["SectionHeader"]),
+            build_section_header(
+                "SUBJECT INFORMATION",
+                self.styles,
+                colored=False,
+            ),
             Paragraph(
                 f"Subject Code: {_display(report_data['patient_id'])}",
                 self.styles["BodyText"],
@@ -911,7 +1027,13 @@ class PDFReportService:
         elements: list = []
 
         elements.append(
-            Paragraph("ASSESSMENT INFORMATION", self.styles["SectionHeaderTight"])
+            build_section_header(
+                "ASSESSMENT INFORMATION",
+                self.styles,
+                colored=True,
+                tight=True,
+                space_before=6,
+            )
         )
         elements.append(Spacer(1, 1))
 
@@ -1020,12 +1142,20 @@ class PDFReportService:
             )
         )
         elements.append(band_wrapper)
-        elements.append(Spacer(1, 2))
+        elements.append(Spacer(1, 6))
         return elements
 
     def _build_findings(self, report_data: dict) -> list:
         elements: list = []
-        elements.append(Paragraph("FINDINGS", self.styles["SectionHeaderTight"]))
+        elements.append(
+            build_section_header(
+                "FINDINGS",
+                self.styles,
+                colored=True,
+                tight=True,
+                space_before=6,
+            )
+        )
         elements.append(Spacer(1, 1))
 
         elements.append(Paragraph("Spectral Findings", self.styles["SubHeader"]))
@@ -1076,13 +1206,21 @@ class PDFReportService:
 
     def _build_summary_disclaimer_columns(self, report_data: dict, width: float) -> Table:
         summary_block = [
-            Paragraph("SUMMARY OF FINDINGS", self.styles["SectionHeader"]),
+            build_section_header(
+                "SUMMARY OF FINDINGS",
+                self.styles,
+                colored=False,
+            ),
             build_shaded_content_box(
                 report_data["summary_findings"], self.styles, width / 2 - 6
             ),
         ]
         pre_block = [
-            Paragraph("PRE-ASSESSMENT NOTES", self.styles["SectionHeader"]),
+            build_section_header(
+                "PRE-ASSESSMENT NOTES",
+                self.styles,
+                colored=False,
+            ),
             build_shaded_content_box(
                 report_data["clinical_comments"],
                 self.styles,
@@ -1091,7 +1229,11 @@ class PDFReportService:
             ),
         ]
         diagnostic_block = [
-            Paragraph("DIAGNOSTIC SIGNIFICANCE", self.styles["SectionHeader"]),
+            build_section_header(
+                "DIAGNOSTIC SIGNIFICANCE",
+                self.styles,
+                colored=False,
+            ),
             build_shaded_content_box(
                 report_data["diagnostic_significance"],
                 self.styles,
@@ -1100,7 +1242,11 @@ class PDFReportService:
             ),
         ]
         post_block = [
-            Paragraph("POST-ASSESSMENT NOTES", self.styles["SectionHeader"]),
+            build_section_header(
+                "POST-ASSESSMENT NOTES",
+                self.styles,
+                colored=True,
+            ),
             build_shaded_content_box(
                 report_data["post_assessment_notes"],
                 self.styles,
@@ -1112,9 +1258,10 @@ class PDFReportService:
         recommendation_block = None
         if recommendation_text:
             recommendation_block = [
-                Paragraph(
+                build_section_header(
                     "INTERVENTION STRATEGIES & RECOMMENDATIONS",
-                    self.styles["SectionHeader"],
+                    self.styles,
+                    colored=False,
                 ),
                 build_shaded_content_box(
                     recommendation_text,
@@ -1124,7 +1271,11 @@ class PDFReportService:
                 ),
             ]
         disclaimer_block = [
-            Paragraph("IMPORTANT DISCLAIMER", self.styles["SectionHeader"]),
+            build_section_header(
+                "IMPORTANT DISCLAIMER",
+                self.styles,
+                colored=False,
+            ),
             build_disclaimer_box(self.styles, width / 2 - 6),
         ]
 
@@ -1168,6 +1319,7 @@ class PDFReportService:
             ["Technician", clinician_role, "Supervising clinician"],
         ]
         table = Table(rows, colWidths=[doc_width() / 3] * 3)
+        table.spaceBefore = 6
         table.setStyle(
             TableStyle(
                 [
