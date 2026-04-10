@@ -1306,14 +1306,6 @@
         img.classList.remove("hidden");
       }
 
-      function updateDetailButton() {
-        const btn = byId("drawer-eeg-viz-detail-btn");
-        if (!btn) return;
-        const band = eegVizState.currentBand;
-        const quality = eegVizState.bandQuality[band] || "preview";
-        btn.textContent = quality === "detail" ? "View preview" : "View detail";
-      }
-
       function renderEegVizShell(bands) {
         const toggle = byId("drawer-eeg-viz-toggle");
         const container = byId("drawer-eeg-viz-container");
@@ -1338,10 +1330,9 @@
               <div id="drawer-eeg-viz-error" class="eeg-viz-error hidden"></div>
             </div>
             <div class="eeg-viz-meta">
-              <span id="drawer-eeg-viz-status" class="eeg-viz-status">Preview</span>
+              <span id="drawer-eeg-viz-status" class="eeg-viz-status"></span>
               <div class="eeg-viz-actions">
-                <button id="drawer-eeg-viz-detail-btn" type="button" class="btn-secondary-app btn-compact">View detail</button>
-                <button id="drawer-eeg-annotate-btn" type="button" class="eeg-annotate-launch-btn">Annotate</button>
+                <button id="drawer-eeg-annotate-btn" type="button" class="eeg-annotate-launch-btn">View Annotations</button>
               </div>
             </div>
           </div>
@@ -1359,12 +1350,6 @@
           });
         });
 
-        byId("drawer-eeg-viz-detail-btn")?.addEventListener("click", () => {
-          const band = eegVizState.currentBand;
-          const quality = eegVizState.bandQuality[band] || "preview";
-          const nextQuality = quality === "detail" ? "preview" : "detail";
-          loadEegVisualization(band, nextQuality, { setActive: true, userInitiated: true });
-        });
         byId("drawer-eeg-annotate-btn")?.addEventListener("click", () => {
           if (!currentResultId) {
             showToast("Select a result to annotate.", "warning");
@@ -1410,7 +1395,6 @@
             setVizImage(eegVizState.imageCache.get(key));
             eegVizState.bandQuality[band] = quality;
             setVizStatus(quality === "detail" ? "Detail view" : "Preview view");
-            updateDetailButton();
           }
           return;
         }
@@ -1423,7 +1407,6 @@
         if (setActive) {
           setVizLoading(true);
           setVizStatus(quality === "detail" ? "Rendering detail..." : "Loading preview...");
-          updateDetailButton();
         }
 
         if (setActive && quality === "detail") {
@@ -1462,7 +1445,6 @@
               }
               setVizImage(objectUrl);
               setVizStatus(quality === "detail" ? "Detail view" : "Preview view");
-              updateDetailButton();
             }
           })
           .catch((err) => {
@@ -1504,7 +1486,8 @@
         const body = byId("result-detail-body");
         if (!body) return;
 
-        byId("result-detail-title").textContent = `Result: ${data.subject_code || "Details"}`;
+        const recordingLabel = data.recording_id != null ? String(data.recording_id) : "Details";
+        byId("result-detail-title").textContent = `Recording ${recordingLabel}`;
         byId("result-detail-subtitle").textContent = data.inferenced_at
           ? new Date(data.inferenced_at).toLocaleString()
           : "Assessment record";
@@ -1513,34 +1496,41 @@
         const conf = Number(data.confidence_score);
         const confRatio = Number.isFinite(conf) ? Math.max(0, Math.min(100, conf * 100)) : 0;
         const confState = getConfidenceState(Number.isFinite(conf) ? conf : 0);
-        const confText = Number.isFinite(conf)
-          ? `${confRatio.toFixed(1)}% (${confState.label})`
-          : "N/A";
+        const confText = Number.isFinite(conf) ? `${confRatio.toFixed(1)}%` : "N/A";
 
         // Classification section
         const classificationSection = `
           <section class="detail-section">
-            <h3>Classification</h3>
-            <div>${renderClassificationPill(data.predicted_class)}</div>
-            <div>
-              <div class="confidence-mini-head">
-                <span>Confidence</span>
-                <strong class="mono">${escapeHtml(confText)}</strong>
+            <h3>Model Classification</h3>
+            <div class="classification-card">
+              <div class="timeline-helper">Classification</div>
+              <div class="classification-display">${renderClassificationPill(data.predicted_class)}</div>
+              <div class="timeline-row">
+                <div class="timeline-field">
+                  <span class="timeline-label">Clinician</span>
+                  <span class="timeline-value">${escapeHtml([data.clinician_first_name, data.clinician_middle_name, data.clinician_last_name].filter(Boolean).join(" ") || "N/A")}</span>
+                </div>
+                <div class="timeline-field">
+                  <span class="timeline-label">Date</span>
+                  <span class="timeline-value">${escapeHtml(data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : "N/A")}</span>
+                </div>
               </div>
-              <div class="confidence-mini-track">
-                <div class="confidence-mini-fill ${confState.className}" style="width:${confRatio.toFixed(1)}%"></div>
+              <div class="timeline-row">
+                <div class="timeline-field">
+                  <span class="timeline-label">Confidence Level</span>
+                  <span class="timeline-value">${escapeHtml(confState.label)}</span>
+                </div>
+                <div class="timeline-field">
+                  <span class="timeline-label">Confidence</span>
+                  <div class="timeline-confidence">
+                    <div class="confidence-mini-track">
+                      <div class="confidence-mini-fill ${confState.className}" style="width:${confRatio.toFixed(1)}%"></div>
+                    </div>
+                    <span class="timeline-confidence-value mono">${escapeHtml(confText)}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <ul class="detail-list">
-              <li class="detail-item">
-                <span class="detail-label">Clinician</span>
-                <span class="detail-value">${escapeHtml([data.clinician_first_name, data.clinician_middle_name, data.clinician_last_name].filter(Boolean).join(" ") || "N/A")}</span>
-              </li>
-              <li class="detail-item">
-                <span class="detail-label">Date</span>
-                <span class="detail-value">${escapeHtml(data.inferenced_at ? new Date(data.inferenced_at).toLocaleString() : "N/A")}</span>
-              </li>
-            </ul>
           </section>`;
 
         // Subject & Recording section
@@ -1773,7 +1763,7 @@
         const topoSection = `
           <section class="detail-section" id="drawer-topo-section">
             <h3>
-              Topographic Maps
+              Scalp Map Visualization
               <span class="tooltip-anchor">
                 <span
                   class="tooltip-trigger"
@@ -1804,7 +1794,7 @@
         // EEG visualizations placeholder (populated async)
         const eegVizSection = `
           <section class="detail-section" id="drawer-eeg-viz-section">
-            <h3>EEG Signal Visualizations</h3>
+            <h3>Waveform Visualization</h3>
             <div class="topo-toggle-row" id="drawer-eeg-viz-toggle"></div>
             <div id="drawer-eeg-viz-container"></div>
             <div id="drawer-eeg-viz-loading" class="loading-state">
@@ -1812,17 +1802,27 @@
             </div>
           </section>`;
 
-        body.innerHTML =
-          classificationSection +
-          subjectSection +
-          prepSection +
-          bandSection +
-          narrativeSection +
-          recommendationSection +
-          ratioSection +
-          notesSection +
-          eegVizSection +
-          topoSection;
+        const layout = `
+          <div class="detail-flex">
+            <div class="detail-col">
+              ${subjectSection}
+              ${prepSection}
+              ${bandSection}
+              ${ratioSection}
+              ${notesSection}
+            </div>
+            <div class="detail-col detail-col-wide">
+              <div class="detail-row">
+                <div class="detail-cell">${classificationSection}</div>
+                <div class="detail-cell">${narrativeSection}</div>
+              </div>
+              ${eegVizSection}
+              ${topoSection}
+            </div>
+          </div>
+        `;
+
+        body.innerHTML = layout + recommendationSection;
 
 
         // Setup topo toggle
@@ -1870,7 +1870,6 @@
           renderEegVizShell(bands);
           loadEegVisualization(eegVizState.currentBand, "preview", { setActive: true });
           setVizStatus("Preview view");
-          updateDetailButton();
 
           if (eegVizState.currentBand === "raw") {
             eegVizState.warmupTimer = window.setTimeout(() => {

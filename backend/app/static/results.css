@@ -232,6 +232,35 @@
   gap: 0.95rem;
 }
 
+.detail-flex {
+  display: flex;
+  gap: 0.95rem;
+  align-items: flex-start;
+}
+
+.detail-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.detail-col-wide {
+  flex: 2 1 0;
+}
+
+.detail-row {
+  display: flex;
+  gap: 0.95rem;
+  align-items: stretch;
+}
+
+.detail-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .detail-section {
   border: 1px solid #d8e3e8;
   border-radius: var(--radius-md);
@@ -249,6 +278,70 @@
 .detail-section h3 {
   margin: 0;
   font-size: 1.02rem;
+  color: var(--text-900);
+}
+
+.classification-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.classification-display {
+  font-size: 1.08rem;
+  color: var(--text-900);
+  font-weight: 700;
+}
+
+.timeline-helper {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-500);
+  font-weight: 700;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.timeline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.timeline-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-500);
+  font-weight: 600;
+}
+
+.timeline-value {
+  font-size: 0.88rem;
+  color: var(--text-900);
+  font-weight: 600;
+}
+
+.timeline-confidence {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.timeline-confidence .confidence-mini-track {
+  flex: 1;
+  min-width: 110px;
+}
+
+.timeline-confidence-value {
+  font-size: 0.78rem;
   color: var(--text-900);
 }
 
@@ -336,7 +429,7 @@
 .band-bar-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 
@@ -377,7 +470,7 @@
 }
 
 .band-helper-line {
-  margin: -0.2rem 0 0.45rem calc(56px + 0.6rem);
+  margin: -0.15rem 0 0.3rem calc(56px + 0.6rem);
   font-size: 0.74rem;
   color: var(--text-600);
 }
@@ -433,10 +526,10 @@
 
 /* EEG visualization card */
 .eeg-viz-card {
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  padding: 0.65rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   display: grid;
   gap: 0.5rem;
 }
@@ -1240,5 +1333,13 @@
   .detail-footer .btn-primary-app,
   .detail-footer .btn-secondary-app {
     flex: 1 1 auto;
+  }
+
+  .detail-flex {
+    flex-direction: column;
+  }
+
+  .detail-row {
+    flex-direction: column;
   }
 }
