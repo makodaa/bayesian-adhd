@@ -290,6 +290,19 @@
   gap: 0.95rem;
 }
 
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 0.95rem;
+  align-items: start;
+}
+
+.detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
 .detail-section {
   border: 1px solid #d8e3e8;
   border-radius: var(--radius-md);
@@ -300,10 +313,26 @@
   gap: 0.7rem;
 }
 
+.detail-col .detail-section:nth-child(odd):not(.detail-section-flat) {
+  background: #f9fbfc;
+}
+
 .detail-section h3 {
   margin: 0;
   font-size: 1.02rem;
   color: var(--text-900);
+}
+
+
+.detail-section-flat {
+  border: none;
+  background: transparent;
+  padding: 0.2rem 0 0.4rem;
+}
+
+.detail-section-title-underline {
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #dbe6ec;
 }
 
 .recommendation-card {
@@ -357,40 +386,73 @@
   border: 1px solid #dbe6ec;
   border-radius: var(--radius-sm);
   background: #ffffff;
-  padding: 0.65rem 0.7rem;
+  padding: 0.75rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.timeline-head {
-  display: flex;
-  justify-content: space-between;
   gap: 0.6rem;
-  align-items: center;
 }
 
-.timeline-date {
-  font-size: 0.75rem;
+.timeline-helper {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   color: var(--text-500);
-  text-align: right;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-weight: 700;
 }
 
-.timeline-meta {
-  font-size: 0.78rem;
-  color: var(--text-700);
+.timeline-recording {
+  font-size: 1.08rem;
+  color: var(--text-900);
+  font-weight: 700;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.timeline-field {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.55rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.timeline-meta strong {
+.timeline-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-500);
+  font-weight: 600;
+}
+
+.timeline-value {
+  font-size: 0.88rem;
   color: var(--text-900);
   font-weight: 600;
+}
+
+.timeline-field.align-right {
+  align-items: flex-end;
   text-align: right;
+}
+
+.timeline-confidence {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.timeline-confidence .confidence-mini-track {
+  flex: 1;
+  min-width: 110px;
+}
+
+.timeline-confidence-value {
+  font-size: 0.78rem;
+  color: var(--text-900);
 }
 
 /* ─── Confidence mini bar ────────────────────────────────────────────────── */
@@ -508,5 +570,9 @@
   .detail-footer .btn-primary-app,
   .detail-footer .btn-secondary-app {
     flex: 1 1 auto;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 }

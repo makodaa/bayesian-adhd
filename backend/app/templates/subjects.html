@@ -338,15 +338,25 @@
             </button>
           </div>
           <div class="detail-body" id="subject-detail-body">
-            <section class="detail-section">
-              <h3>Subject Information</h3>
-              <ul class="detail-list" id="subject-detail-list"></ul>
-            </section>
-            <section class="detail-section">
-              <h3>Assessment Timeline</h3>
-              <div id="subject-recommendations"></div>
-              <div id="subject-assessment-timeline" class="timeline-list"></div>
-            </section>
+            <div class="detail-grid">
+              <div class="detail-col">
+                <section class="detail-section">
+                  <h3>Subject Information</h3>
+                  <ul class="detail-list" id="subject-detail-list"></ul>
+                </section>
+                <section class="detail-section">
+                  <h3>Assessment Summary</h3>
+                  <ul class="detail-list" id="subject-detail-summary"></ul>
+                </section>
+              </div>
+              <div class="detail-col">
+                <section class="detail-section detail-section-flat">
+                  <h3 class="detail-section-title-underline">Assessment Timeline</h3>
+                  <div id="subject-recommendations"></div>
+                  <div id="subject-assessment-timeline" class="timeline-list"></div>
+                </section>
+              </div>
+            </div>
           </div>
           <div class="detail-footer">
             <button id="detail-view-results-btn" type="button" class="btn-secondary-app">
@@ -745,6 +755,7 @@
         const title = byId("subject-detail-title");
         const subtitle = byId("subject-detail-subtitle");
         const subjectList = byId("subject-detail-list");
+        const summaryList = byId("subject-detail-summary");
         const timeline = byId("subject-assessment-timeline");
         const recommendations = byId("subject-recommendations");
         if (!title || !subtitle || !subjectList || !timeline) {
@@ -755,6 +766,9 @@
         subtitle.textContent = "Loading subject profile and assessment timeline...";
         appState.selectedSubjectCode = "";
         subjectList.innerHTML = "";
+        if (summaryList) {
+          summaryList.innerHTML = "";
+        }
         if (recommendations) {
           recommendations.innerHTML = "";
         }
@@ -772,6 +786,7 @@
         const title = byId("subject-detail-title");
         const subtitle = byId("subject-detail-subtitle");
         const subjectList = byId("subject-detail-list");
+        const summaryList = byId("subject-detail-summary");
         const timeline = byId("subject-assessment-timeline");
         const recommendations = byId("subject-recommendations");
         if (!title || !subtitle || !subjectList || !timeline) {
@@ -781,11 +796,41 @@
         appState.selectedSubjectCode = String(subject.subject_code || "");
 
         const assessments = Array.isArray(subject.assessments) ? subject.assessments : [];
+        const latestAssessment = assessments[0];
+        const latestClassification = latestAssessment?.predicted_class || "No result";
+        const latestDate = formatDateTime(latestAssessment?.inferenced_at);
+        const averageConfidence = assessments.length
+          ? assessments.reduce((total, assessment) => {
+              const confidence = Number(assessment.confidence_score);
+              return total + (Number.isFinite(confidence) ? confidence : 0);
+            }, 0) / assessments.length
+          : null;
+        const averageConfidenceText = Number.isFinite(averageConfidence)
+          ? `${(averageConfidence * 100).toFixed(1)}%`
+          : "Not available";
+        const latestConfidence = Number(latestAssessment?.confidence_score);
+        const latestConfidenceText = Number.isFinite(latestConfidence)
+          ? `${(latestConfidence * 100).toFixed(1)}%`
+          : "Not available";
+        const outcomeGroup = getOutcomeGroup(latestClassification);
+        const outcomeLabel =
+          outcomeGroup === "adhd"
+            ? "ADHD-related"
+            : outcomeGroup === "non-adhd"
+              ? "Non-ADHD"
+              : "Pending";
         const demographics = [
           ["Subject Code", subject.subject_code || "N/A"],
           ["Age", subject.age ?? "N/A"],
           ["Gender", subject.gender || "N/A"],
           ["Total Assessments", assessments.length],
+        ];
+        const summaryItems = [
+          ["Latest Classification", renderClassificationPill(latestClassification), true],
+          ["Latest Confidence", latestConfidenceText],
+          ["Latest Assessment", latestDate],
+          ["Outcome Group", outcomeLabel],
+          ["Average Confidence", averageConfidenceText],
         ];
 
         title.textContent = subject.subject_code
@@ -803,6 +848,20 @@
                 `,
           )
           .join("");
+
+        if (summaryList) {
+          summaryList.innerHTML = summaryItems
+            .map(([label, value, isHtml]) => {
+              const formattedValue = isHtml ? value : escapeHtml(String(value));
+              return `
+                    <li class="detail-item">
+                        <span class="detail-label">${escapeHtml(String(label))}</span>
+                        <span class="detail-value">${formattedValue}</span>
+                    </li>
+                `;
+            })
+            .join("");
+        }
 
         if (recommendations) {
           const highConfidenceCount = countHighConfidenceAdhd(assessments);
@@ -829,25 +888,38 @@
               : "Not available";
             const inferencedAt = formatDateTime(assessment.inferenced_at);
             const clinician = assessment.clinician_name || "Not recorded";
+            const recordingId = assessment.result_id
+              ? String(assessment.result_id)
+              : "Not available";
 
             return `
                     <article class="timeline-card">
-                        <div class="timeline-head">
-                            ${renderClassificationPill(assessment.predicted_class || "No result")}
-                            <span class="timeline-date">${escapeHtml(inferencedAt)}</span>
-                        </div>
-                        <div>
-                            <div class="confidence-mini-head">
-                                <span>Confidence</span>
-                                <strong class="mono">${escapeHtml(confidenceText)}</strong>
+                        <div class="timeline-helper">Recording ID</div>
+                        <div class="timeline-recording mono">${escapeHtml(recordingId)}</div>
+                        <div class="timeline-row">
+                            <div class="timeline-field">
+                                <span class="timeline-label">Clinician</span>
+                                <span class="timeline-value">${escapeHtml(clinician)}</span>
                             </div>
-                            <div class="confidence-mini-track">
-                                <div class="confidence-mini-fill ${confidenceState.className}" style="width:${confidenceRatio.toFixed(1)}%"></div>
+                            <div class="timeline-field">
+                                <span class="timeline-label">Date</span>
+                                <span class="timeline-value">${escapeHtml(inferencedAt)}</span>
                             </div>
                         </div>
-                        <div class="timeline-meta">
-                            <span>Clinician</span>
-                            <strong>${escapeHtml(clinician)}</strong>
+                        <div class="timeline-row">
+                            <div class="timeline-field">
+                                <span class="timeline-label">Classification</span>
+                                <span class="timeline-value">${renderClassificationPill(assessment.predicted_class || "No result")}</span>
+                            </div>
+                            <div class="timeline-field">
+                                <span class="timeline-label">Confidence</span>
+                                <div class="timeline-confidence">
+                                  <div class="confidence-mini-track">
+                                      <div class="confidence-mini-fill ${confidenceState.className}" style="width:${confidenceRatio.toFixed(1)}%"></div>
+                                  </div>
+                                  <span class="timeline-confidence-value mono">${escapeHtml(confidenceText)}</span>
+                                </div>
+                            </div>
                         </div>
                     </article>
                 `;
