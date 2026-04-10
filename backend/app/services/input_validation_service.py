@@ -119,13 +119,16 @@ def compute_age_from_dob(dob: date, reference_date: date | None = None) -> int:
     return max(years, 0)
 
 
-def validate_sleep_hours(value: str | float | None) -> float | None:
-    """Parse and range-check optional sleep hours.
+def validate_sleep_hours(value: str | float | None, required: bool = True) -> float | None:
+    """Parse and range-check sleep hours.
 
-    Returns ``None`` if the value is absent/blank.
-    Raises ``ValueError`` if the value is non-numeric or out of range 0–99.99.
+    Returns ``None`` if the value is absent/blank and ``required`` is False.
+    Raises ``ValueError`` if the value is missing (when required) or non-numeric
+    or out of range 0–99.99.
     """
-    if value is None or value == "":
+    if value is None or (isinstance(value, str) and not value.strip()):
+        if required:
+            raise ValueError("Sleep hours are required.")
         return None
     try:
         hours = float(value)
@@ -141,13 +144,17 @@ def validate_hours_ago(
     field_label: str,
     min_value: float = 0.0,
     max_value: float = 99.99,
+    required: bool = True,
 ) -> float | None:
-    """Parse and range-check an optional hours-ago field.
+    """Parse and range-check an hours-ago field.
 
-    Returns ``None`` if the value is absent/blank.
-    Raises ``ValueError`` if the value is non-numeric or out of range.
+    Returns ``None`` if the value is absent/blank and ``required`` is False.
+    Raises ``ValueError`` if the value is missing (when required) or non-numeric
+    or out of range.
     """
-    if value is None or value == "":
+    if value is None or (isinstance(value, str) and not value.strip()):
+        if required:
+            raise ValueError(f"{field_label} is required.")
         return None
     try:
         hours = float(value)

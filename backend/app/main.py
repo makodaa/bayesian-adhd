@@ -723,12 +723,14 @@ def predict():
             "Time since caffeine intake",
             min_value=0,
             max_value=99,
+            required=False,
         )
         drugs_hours_ago = validate_hours_ago(
             drugs_hours_ago_raw,
             "Time since drug intake",
             min_value=0,
             max_value=99,
+            required=False,
         )
         meal_hours_ago = validate_hours_ago(
             meal_hours_ago_raw,

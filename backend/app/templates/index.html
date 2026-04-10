@@ -977,7 +977,9 @@
                           />
                         </div>
                         <div class="field-wrap">
-                          <label for="sleep-hours">Sleep Hours</label>
+                          <label for="sleep-hours"
+                            >Sleep Hours <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="sleep-hours"
@@ -985,6 +987,7 @@
                             max="99.99"
                             step="0.5"
                             placeholder="Hours slept"
+                            required
                           />
                           <p class="field-error hidden" data-error-for="sleep-hours"></p>
                         </div>
@@ -1013,7 +1016,10 @@
                           <p class="field-error hidden" data-error-for="drugs-hours-ago"></p>
                         </div>
                         <div class="field-wrap">
-                          <label for="meal-hours-ago">Time since last meal (hours)</label>
+                          <label for="meal-hours-ago"
+                            >Time since last meal (hours)
+                            <span class="required-indicator">*</span></label
+                          >
                           <input
                             type="number"
                             id="meal-hours-ago"
@@ -1021,6 +1027,7 @@
                             max="99"
                             step="1"
                             placeholder="Hours since last meal"
+                            required
                           />
                           <p class="field-error hidden" data-error-for="meal-hours-ago"></p>
                         </div>
@@ -2471,7 +2478,13 @@
       }
 
       function validateStepOne() {
-        const requiredFields = ["subject-code", "date-of-birth", "gender"];
+        const requiredFields = [
+          "subject-code",
+          "date-of-birth",
+          "gender",
+          "sleep-hours",
+          "meal-hours-ago",
+        ];
         requiredFields.forEach(clearFieldError);
 
         let hasErrors = false;
@@ -2484,9 +2497,7 @@
         });
 
         // Clear errors for optional fields
-        ["sleep-hours", "coffee-hours-ago", "drugs-hours-ago", "meal-hours-ago"].forEach(
-          clearFieldError,
-        );
+        ["coffee-hours-ago", "drugs-hours-ago"].forEach(clearFieldError);
 
         const dobValue = byId("date-of-birth")?.value || "";
         const dobParsed = parseIsoDate(dobValue);
