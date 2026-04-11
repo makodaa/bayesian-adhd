@@ -543,6 +543,7 @@
       const appConfigState = {
         thresholds: {},
         recommendations: {},
+        subtypeRecommendations: {},
       };
 
       function countHighConfidenceAdhd(assessments) {
@@ -611,6 +612,18 @@
         return normalized;
       }
 
+      function normalizeSubtypeRecommendations(recommendations) {
+        const normalized = {};
+        CONFIG_SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {
+            consistent_subtype: String(
+              recommendations?.[subtype.key]?.consistent_subtype || "",
+            ).trim(),
+          };
+        });
+        return normalized;
+      }
+
       function computeBandStates(assessment, subtypeKey) {
         const powers = assessment?.band_powers || {};
         const thresholds = appConfigState.thresholds?.[subtypeKey] || {};
@@ -622,9 +635,12 @@
           if (!Number.isFinite(value)) {
             return;
           }
-          if (value < Number(range.min)) {
+          const percentValue = value * 100;
+          const minPercent = Number(range.min) * 100;
+          const maxPercent = Number(range.max) * 100;
+          if (percentValue < minPercent) {
             states[band] = "decreased";
-          } else if (value > Number(range.max)) {
+          } else if (percentValue > maxPercent) {
             states[band] = "elevated";
           }
         });
@@ -658,7 +674,24 @@
           .map((value) => String(value).trim());
       }
 
-      function buildSubjectRecommendations(assessment, count) {
+      function countConsistentSubtype(assessments, subtypeKey) {
+        if (!Array.isArray(assessments) || !subtypeKey) {
+          return 0;
+        }
+        return assessments.filter((assessment) => {
+          const confidence = Number(assessment.confidence_score);
+          const isAdhd = getClassificationClass(assessment.predicted_class) === "adhd";
+          const predictedSubtype = mapPredictedSubtype(assessment.predicted_class);
+          return (
+            isAdhd &&
+            predictedSubtype === subtypeKey &&
+            Number.isFinite(confidence) &&
+            confidence >= ADHD_CONFIDENCE_THRESHOLD
+          );
+        }).length;
+      }
+
+      function buildSubjectRecommendations(assessment, assessments, count) {
         if (count < 2 || !assessment) {
           return "";
         }
@@ -668,6 +701,14 @@
         }
         const bandStates = computeBandStates(assessment, subtypeKey);
         const items = collectRecommendations(subtypeKey, bandStates);
+        const consistentCount = countConsistentSubtype(assessments || [], subtypeKey);
+        if (consistentCount >= 2) {
+          const subtypeMessage = appConfigState.subtypeRecommendations?.[subtypeKey]
+            ?.consistent_subtype;
+          if (subtypeMessage && String(subtypeMessage).trim()) {
+            items.unshift(String(subtypeMessage).trim());
+          }
+        }
         if (!items.length) {
           return "";
         }
@@ -983,6 +1024,7 @@
           const highConfidenceCount = countHighConfidenceAdhd(assessments);
           recommendations.innerHTML = buildSubjectRecommendations(
             latestAssessment,
+            assessments,
             highConfidenceCount,
           );
         }
@@ -1147,6 +1189,9 @@
           appConfigState.thresholds = normalizeThresholdConfig(payload.thresholds || {});
           appConfigState.recommendations = normalizeRecommendationConfig(
             payload.recommendations || {},
+          );
+          appConfigState.subtypeRecommendations = normalizeSubtypeRecommendations(
+            payload.subtype_recommendations || {},
           );
         } catch (error) {
           showToast(error.message || "Failed to load configurations", "error");

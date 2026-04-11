@@ -3,6 +3,61 @@
   --config-accent: #5b7c8f;
   --config-muted: #6d7a86;
   --config-band: #f6f8fa;
+  --config-nav-bg: transparent;
+}
+
+.config-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.config-nav {
+  position: sticky;
+  top: 1.2rem;
+  padding: 0.2rem 0 0.2rem 0.8rem;
+  background: var(--config-nav-bg);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.config-nav-title {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--config-muted);
+}
+
+.config-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem 0.3rem 1.4rem;
+  font-size: 0.92rem;
+  color: var(--text-900);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  position: relative;
+}
+
+
+.config-nav-link:hover,
+.config-nav-link:focus {
+  background: rgba(91, 124, 143, 0.12);
+  text-decoration: none;
+}
+
+.config-nav-link.active {
+  background: rgba(91, 124, 143, 0.2);
+}
+
+
+.config-content {
+  display: grid;
+  gap: 1.6rem;
 }
 
 .threshold-grid {
@@ -97,6 +152,21 @@
   align-items: start;
 }
 
+.recommendation-row-single {
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
+.recommendation-fields-single {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr);
+  gap: 1rem;
+}
+
+.recommendation-field-wide textarea {
+  min-height: 4.2rem;
+}
+
 .threshold-field {
   display: grid;
   gap: 0.3rem;
@@ -153,6 +223,7 @@
   color: var(--config-muted);
 }
 
+
 .section-shell {
   border: none;
   box-shadow: none;
@@ -172,6 +243,14 @@
 }
 
 @media (max-width: 860px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-nav {
+    position: static;
+  }
+
   .threshold-row {
     grid-template-columns: 1fr;
   }
@@ -191,4 +270,30 @@
     gap: 0.5rem;
     align-items: stretch;
   }
+}
+.config-page .page-header {
+  position: static;
+}
+
+.config-page .app-main {
+  overflow: hidden;
+}
+
+.config-page .page-body {
+  height: calc(100vh - 110px);
+  overflow: hidden;
+  padding-bottom: 1.6rem;
+  min-height: 0;
+}
+
+.config-page .config-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+.config-page .config-content {
+  overflow: auto;
+  padding-right: 0.5rem;
+  min-height: 0;
+  height: 100%;
 }
