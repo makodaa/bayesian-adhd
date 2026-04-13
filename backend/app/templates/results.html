@@ -770,6 +770,12 @@
           if (!response.ok) return;
           const data = await response.json();
           appState.clinicianThresholds = data.thresholds || null;
+          appState.clinicianRecommendations = normalizeRecommendationConfig(
+            data.recommendations || {},
+          );
+          appState.clinicianSubtypeRecommendations = normalizeSubtypeRecommendations(
+            data.subtype_recommendations || {},
+          );
         } catch (error) {
           console.warn("Failed to load clinician thresholds", error);
         }
@@ -810,6 +816,8 @@
         filters: { search: "", classification: "all", sort: "recent" },
         clinicianId: null,
         clinicianThresholds: null,
+        clinicianRecommendations: {},
+        clinicianSubtypeRecommendations: {},
       };
 
       // ── Classification helpers ──
@@ -836,6 +844,40 @@
         return key.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
       }
 
+      const CONFIG_SUBTYPES = [
+        { key: "inattentive", label: "Inattentive" },
+        { key: "hyperactive_impulsive", label: "Hyperactive-Impulsive" },
+        { key: "combined", label: "Combined" },
+      ];
+      const CONFIG_BANDS = ["alpha", "beta", "theta"];
+
+      function normalizeRecommendationConfig(recommendations) {
+        const normalized = {};
+        CONFIG_SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {};
+          CONFIG_BANDS.forEach((band) => {
+            const bandValues = recommendations?.[subtype.key]?.[band] || {};
+            normalized[subtype.key][band] = {
+              decreased: String(bandValues.decreased || "").trim(),
+              elevated: String(bandValues.elevated || "").trim(),
+            };
+          });
+        });
+        return normalized;
+      }
+
+      function normalizeSubtypeRecommendations(recommendations) {
+        const normalized = {};
+        CONFIG_SUBTYPES.forEach((subtype) => {
+          normalized[subtype.key] = {
+            consistent_subtype: String(
+              recommendations?.[subtype.key]?.consistent_subtype || "",
+            ).trim(),
+          };
+        });
+        return normalized;
+      }
+
 
       function buildBandHelperLine(band, subtypeKey, subtypeLabel) {
         if (!subtypeKey || !subtypeLabel) return "";
@@ -856,9 +898,15 @@
 
       function getSubtypeKeyFromLabel(label) {
         const lowered = String(label || "").toLowerCase();
-        if (lowered.includes("inattentive")) return "inattentive";
-        if (lowered.includes("hyperactive")) return "hyperactive_impulsive";
-        if (lowered.includes("combined")) return "combined";
+        if (lowered.includes("inattentive") || lowered.includes("adhd-i"))
+          return "inattentive";
+        if (
+          lowered.includes("hyperactive") ||
+          lowered.includes("impulsive") ||
+          lowered.includes("adhd-h")
+        )
+          return "hyperactive_impulsive";
+        if (lowered.includes("combined") || lowered.includes("adhd-c")) return "combined";
         return null;
       }
 
@@ -878,6 +926,66 @@
         return getClassificationClass(label) === "adhd";
       }
 
+      function computeBandStatesFromResult(data, subtypeKey) {
+        const bandRows = Array.isArray(data.band_powers) ? data.band_powers : [];
+        const sums = {};
+        const counts = {};
+        bandRows.forEach((row) => {
+          const band = String(row.frequency_band || "").toLowerCase();
+          if (!CONFIG_BANDS.includes(band)) return;
+          const value = Number(row.relative_power);
+          if (!Number.isFinite(value)) return;
+          sums[band] = (sums[band] || 0) + value;
+          counts[band] = (counts[band] || 0) + 1;
+        });
+
+        const thresholds = appState.clinicianThresholds || {};
+        const subtypeThresholds = thresholds[subtypeKey] || {};
+        const states = {};
+        CONFIG_BANDS.forEach((band) => {
+          if (!counts[band]) return;
+          const avgPercent = (sums[band] / counts[band]) * 100;
+          const range = subtypeThresholds?.[band] || {};
+          const min = Number(range.min);
+          const max = Number(range.max);
+          if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+          const minPercent = min * 100;
+          const maxPercent = max * 100;
+          if (avgPercent < minPercent) {
+            states[band] = "decreased";
+          } else if (avgPercent > maxPercent) {
+            states[band] = "elevated";
+          }
+        });
+        return states;
+      }
+
+      function subtypeBandPreferences(subtypeKey) {
+        if (subtypeKey === "hyperactive_impulsive") {
+          return [
+            { band: "beta", state: "elevated" },
+            { band: "theta", state: "decreased" },
+          ];
+        }
+        if (subtypeKey === "inattentive" || subtypeKey === "combined") {
+          return [
+            { band: "beta", state: "decreased" },
+            { band: "theta", state: "elevated" },
+          ];
+        }
+        return [];
+      }
+
+      function collectRecommendations(subtypeKey, bandStates) {
+        const preferences = subtypeBandPreferences(subtypeKey);
+        const config = appState.clinicianRecommendations?.[subtypeKey] || {};
+        return preferences
+          .filter((pref) => bandStates[pref.band] === pref.state)
+          .map((pref) => config?.[pref.band]?.[pref.state])
+          .filter((value) => value && String(value).trim())
+          .map((value) => String(value).trim());
+      }
+
       function buildInterventionRecommendationsSection(data) {
         const count = Number(data.adhd_high_confidence_count || 0);
         const confidence = Number(data.confidence_score);
@@ -885,13 +993,21 @@
           return "";
         }
 
-        const items = [
-          "Structured routines with clear task breakdowns and external reminders.",
-          "Behavioral therapy or skills coaching to support attention, planning, and impulse control.",
-          "Environmental supports such as reduced distractions and scheduled breaks.",
-          "Consider school or workplace accommodations when appropriate.",
-          "Additional behavioral assessments to corroborate symptoms across settings (e.g., standardized rating scales and clinical interview).",
-        ];
+        const subtypeKey = getSubtypeKeyFromLabel(data.predicted_class);
+        if (!subtypeKey) return "";
+        const bandStates = computeBandStatesFromResult(data, subtypeKey);
+        const items = collectRecommendations(subtypeKey, bandStates);
+        const subtypeCount = Number(data.adhd_high_confidence_subtype_count || 0);
+        if (subtypeCount >= 2) {
+          const subtypeMessage =
+            appState.clinicianSubtypeRecommendations?.[subtypeKey]?.consistent_subtype;
+          if (subtypeMessage && String(subtypeMessage).trim()) {
+            items.unshift(String(subtypeMessage).trim());
+          }
+        }
+        if (!items.length) {
+          return "";
+        }
 
         return `
           <section class="detail-section recommendation-section">

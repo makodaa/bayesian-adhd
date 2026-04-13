@@ -141,11 +141,38 @@ class ResultsService:
                     )
                     result["adhd_high_confidence_threshold"] = threshold
 
+                    subtype_key = self._map_predicted_subtype(
+                        result.get("predicted_class")
+                    )
+                    if subtype_key:
+                        result["adhd_high_confidence_subtype_count"] = (
+                            self.results_repo.count_high_confidence_adhd_by_subject_and_subtype(
+                                subject_id,
+                                threshold,
+                                subtype_key,
+                            )
+                        )
+                    else:
+                        result["adhd_high_confidence_subtype_count"] = 0
+
                 logger.info(f"Retrieved full details for result {result_id}")
                 return result
         except Exception as e:
             logger.error(f"Failed to fetch full details for result {result_id}: {e}", exc_info=True)
             raise
+
+    @staticmethod
+    def _map_predicted_subtype(label: str | None) -> str | None:
+        normalized = str(label or "").strip().lower()
+        if "adhd" not in normalized:
+            return None
+        if "inattentive" in normalized or "adhd-i" in normalized:
+            return "inattentive"
+        if "hyperactive" in normalized or "impulsive" in normalized or "adhd-h" in normalized:
+            return "hyperactive_impulsive"
+        if "combined" in normalized or "adhd-c" in normalized:
+            return "combined"
+        return None
 
     def get_high_confidence_adhd_count(
         self,

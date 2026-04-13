@@ -120,3 +120,53 @@ class ResultsRepository(BaseRepository):
                 exc_info=True,
             )
             raise
+
+    def count_high_confidence_adhd_by_subject_and_subtype(
+        self,
+        subject_id: int,
+        confidence_threshold: float,
+        subtype_key: str,
+    ) -> int:
+        """Count high-confidence ADHD-positive results for a subject and subtype."""
+        logger.debug(
+            "Counting high-confidence ADHD results for subject %s subtype %s",
+            subject_id,
+            subtype_key,
+        )
+        subtype_conditions = {
+            "inattentive": "(LOWER(r.predicted_class) LIKE '%%inattentive%%' OR LOWER(r.predicted_class) LIKE '%%adhd-i%%')",
+            "hyperactive_impulsive": "(LOWER(r.predicted_class) LIKE '%%hyperactive%%' OR LOWER(r.predicted_class) LIKE '%%impulsive%%' OR LOWER(r.predicted_class) LIKE '%%adhd-h%%')",
+            "combined": "(LOWER(r.predicted_class) LIKE '%%combined%%' OR LOWER(r.predicted_class) LIKE '%%adhd-c%%')",
+        }
+        subtype_clause = subtype_conditions.get(subtype_key)
+        if not subtype_clause:
+            return 0
+
+        query = f"""
+        SELECT COUNT(*)
+        FROM results r
+        JOIN recordings rec ON r.recording_id = rec.id
+        WHERE rec.subject_id = %s
+          AND r.confidence_score >= %s
+          AND r.predicted_class IS NOT NULL
+          AND LOWER(r.predicted_class) LIKE '%%adhd%%'
+          AND LOWER(r.predicted_class) NOT LIKE '%%non-adhd%%'
+          AND LOWER(r.predicted_class) NOT LIKE '%%non adhd%%'
+          AND {subtype_clause};
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (subject_id, confidence_threshold))
+                result = cursor.fetchone()
+                count = result[0] if result else 0
+                return int(count or 0)
+        except Exception as e:
+            logger.error(
+                "Failed to count high-confidence ADHD results for subject %s subtype %s: %s",
+                subject_id,
+                subtype_key,
+                e,
+                exc_info=True,
+            )
+            raise

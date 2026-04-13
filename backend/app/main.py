@@ -1309,6 +1309,10 @@ def delete_result_annotation(result_id: int, annotation_id: int):
 def generate_result_pdf(result_id):
     """Generate and download PDF report for a result."""
     try:
+        clinician_id = session.get("clinician_id")
+        if not isinstance(clinician_id, int):
+            return jsonify({"error": "Invalid clinician session"}), 401
+
         # Get full result details
         result = results_service.get_result_with_full_details(result_id)
         if not result:
@@ -1328,6 +1332,19 @@ def generate_result_pdf(result_id):
         for row in eeg_viz_rows:
             eeg_visualizations[row["band_name"]] = row["image_data"]
         result["eeg_visualizations"] = eeg_visualizations
+
+        # Attach clinician configuration for recommendations
+        result["clinician_thresholds"] = clinician_threshold_service.get_thresholds(
+            clinician_id
+        )
+        result["clinician_recommendations"] = (
+            clinician_recommendation_service.get_recommendation_matrix(clinician_id)
+        )
+        result["clinician_subtype_recommendations"] = (
+            clinician_subtype_recommendation_service.get_recommendation_matrix(
+                clinician_id
+            )
+        )
 
         pdf_bytes = pdf_service.generate_report(result, clinician_data)
 

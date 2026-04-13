@@ -124,10 +124,115 @@ def _is_adhd_label(predicted_class: str) -> bool:
 def _build_intervention_recommendations(count: int) -> str:
     return (
         "Two or more high-confidence ADHD-positive results were recorded "
-        f"(count: {count}). Consider the following general intervention strategies:<br/>"
-        "1) Structured routines with clear task breakdowns and external reminders.<br/>"
-        "2) Behavioral therapy or skills coaching targeting attention, planning, and impulse control.<br/>"
+        f"(count: {count})."
     )
+
+
+def _map_predicted_subtype(label: str | None) -> str | None:
+    normalized = str(label or "").strip().lower()
+    if "adhd" not in normalized:
+        return None
+    if "inattentive" in normalized or "adhd-i" in normalized:
+        return "inattentive"
+    if "hyperactive" in normalized or "impulsive" in normalized or "adhd-h" in normalized:
+        return "hyperactive_impulsive"
+    if "combined" in normalized or "adhd-c" in normalized:
+        return "combined"
+    return None
+
+
+def _subtype_band_preferences(subtype_key: str | None) -> list[dict[str, str]]:
+    if subtype_key == "hyperactive_impulsive":
+        return [
+            {"band": "beta", "state": "elevated"},
+            {"band": "theta", "state": "decreased"},
+        ]
+    if subtype_key in ("inattentive", "combined"):
+        return [
+            {"band": "beta", "state": "decreased"},
+            {"band": "theta", "state": "elevated"},
+        ]
+    return []
+
+
+def _compute_band_states(
+    band_power: dict[str, float],
+    thresholds: dict[str, dict[str, dict[str, float]]],
+    subtype_key: str | None,
+) -> dict[str, str]:
+    states: dict[str, str] = {}
+    if not subtype_key:
+        return states
+    subtype_thresholds = thresholds.get(subtype_key, {}) if thresholds else {}
+    for band in ("alpha", "beta", "theta"):
+        value = band_power.get(band)
+        if value is None:
+            continue
+        band_range = subtype_thresholds.get(band) or {}
+        min_val = band_range.get("min")
+        max_val = band_range.get("max")
+        if min_val is None or max_val is None:
+            continue
+        min_pct = float(min_val) * 100
+        max_pct = float(max_val) * 100
+        if value < min_pct:
+            states[band] = "decreased"
+        elif value > max_pct:
+            states[band] = "elevated"
+    return states
+
+
+def _collect_recommendations(
+    subtype_key: str | None,
+    band_states: dict[str, str],
+    recommendations: dict[str, dict[str, dict[str, str]]],
+) -> list[str]:
+    if not subtype_key:
+        return []
+    preferences = _subtype_band_preferences(subtype_key)
+    subtype_recs = recommendations.get(subtype_key, {}) if recommendations else {}
+    items: list[str] = []
+    for pref in preferences:
+        band = pref["band"]
+        state = pref["state"]
+        if band_states.get(band) != state:
+            continue
+        text = subtype_recs.get(band, {}).get(state, "")
+        if text and str(text).strip():
+            items.append(str(text).strip())
+    return items
+
+
+def _build_configured_recommendations(
+    count: int,
+    subtype_count: int,
+    predicted_class: str,
+    band_power: dict[str, float],
+    thresholds: dict[str, dict[str, dict[str, float]]],
+    recommendations: dict[str, dict[str, dict[str, str]]],
+    subtype_recommendations: dict[str, dict[str, str]],
+) -> str | None:
+    subtype_key = _map_predicted_subtype(predicted_class)
+    if not subtype_key:
+        return None
+    band_states = _compute_band_states(band_power, thresholds, subtype_key)
+    items = _collect_recommendations(subtype_key, band_states, recommendations)
+    if subtype_count >= 2:
+        subtype_message = (
+            subtype_recommendations.get(subtype_key, {}).get("consistent_subtype")
+            if subtype_recommendations
+            else ""
+        )
+        if subtype_message and str(subtype_message).strip():
+            items.insert(0, str(subtype_message).strip())
+    if not items:
+        return None
+
+    header = _build_intervention_recommendations(count)
+    item_lines = "<br/>".join(
+        f"{index + 1}) {item}" for index, item in enumerate(items)
+    )
+    return f"{header}<br/>{item_lines}"
 
 
 def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
@@ -848,16 +953,30 @@ class PDFReportService:
         confidence_pct = confidence * 100 if confidence <= 1 else confidence
 
         high_confidence_count = int(result_data.get("adhd_high_confidence_count") or 0)
+        subtype_confidence_count = int(
+            result_data.get("adhd_high_confidence_subtype_count") or 0
+        )
         eligible_for_recommendations = (
             _is_adhd_label(predicted_class)
             and confidence_value >= ADHD_HIGH_CONFIDENCE_THRESHOLD
             and high_confidence_count >= 2
         )
-        intervention_recommendations = (
-            _build_intervention_recommendations(high_confidence_count)
-            if eligible_for_recommendations
-            else None
+        clinician_thresholds = result_data.get("clinician_thresholds") or {}
+        clinician_recommendations = result_data.get("clinician_recommendations") or {}
+        clinician_subtype_recommendations = (
+            result_data.get("clinician_subtype_recommendations") or {}
         )
+        intervention_recommendations = None
+        if eligible_for_recommendations:
+            intervention_recommendations = _build_configured_recommendations(
+                high_confidence_count,
+                subtype_confidence_count,
+                predicted_class,
+                band_power,
+                clinician_thresholds,
+                clinician_recommendations,
+                clinician_subtype_recommendations,
+            )
         behavioral_notes = (
             _display(result_data.get("behavioral_notes"), "No notes")
             if eligible_for_recommendations
