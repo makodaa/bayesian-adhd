@@ -898,6 +898,7 @@
 
       function getSubtypeKeyFromLabel(label) {
         const lowered = String(label || "").toLowerCase();
+        if (!lowered.includes("adhd")) return null;
         if (lowered.includes("inattentive") || lowered.includes("adhd-i"))
           return "inattentive";
         if (
@@ -917,6 +918,7 @@
       }
 
       const ADHD_CONFIDENCE_THRESHOLD = 0.8;
+      const THRESHOLD_TOLERANCE_PCT = 2.5;
 
       function isHighConfidence(confidence) {
         return Number.isFinite(confidence) && confidence >= ADHD_CONFIDENCE_THRESHOLD;
@@ -942,7 +944,9 @@
         const thresholds = appState.clinicianThresholds || {};
         const subtypeThresholds = thresholds[subtypeKey] || {};
         const states = {};
-        CONFIG_BANDS.forEach((band) => {
+        const preferences = subtypeBandPreferences(subtypeKey);
+        preferences.forEach((pref) => {
+          const band = pref.band;
           if (!counts[band]) return;
           const avgPercent = (sums[band] / counts[band]) * 100;
           const range = subtypeThresholds?.[band] || {};
@@ -951,10 +955,10 @@
           if (!Number.isFinite(min) || !Number.isFinite(max)) return;
           const minPercent = min * 100;
           const maxPercent = max * 100;
-          if (avgPercent < minPercent) {
-            states[band] = "decreased";
-          } else if (avgPercent > maxPercent) {
-            states[band] = "elevated";
+          const minBound = minPercent - THRESHOLD_TOLERANCE_PCT;
+          const maxBound = maxPercent + THRESHOLD_TOLERANCE_PCT;
+          if (avgPercent >= minBound && avgPercent <= maxBound) {
+            states[band] = pref.state;
           }
         });
         return states;
@@ -976,18 +980,35 @@
         return [];
       }
 
-      function collectRecommendations(subtypeKey, bandStates) {
+      function collectRecommendationDetails(subtypeKey, bandStates) {
         const preferences = subtypeBandPreferences(subtypeKey);
         const config = appState.clinicianRecommendations?.[subtypeKey] || {};
         return preferences
           .filter((pref) => bandStates[pref.band] === pref.state)
-          .map((pref) => config?.[pref.band]?.[pref.state])
-          .filter((value) => value && String(value).trim())
-          .map((value) => String(value).trim());
+          .map((pref) => {
+            const text = config?.[pref.band]?.[pref.state];
+            return {
+              band: pref.band,
+              state: pref.state,
+              text: text && String(text).trim() ? String(text).trim() : "",
+            };
+          })
+          .filter((item) => item.text);
+      }
+
+      function buildThresholdHeader(details) {
+        if (!details.length) return "";
+        const parts = details.map((item) => {
+          const bandLabel = item.band.charAt(0).toUpperCase() + item.band.slice(1);
+          const stateLabel = item.state === "elevated" ? "Elevated" : "Reduced";
+          return `${bandLabel} ${stateLabel}`;
+        });
+        return parts.join(", ");
       }
 
       function buildInterventionRecommendationsSection(data) {
         const count = Number(data.adhd_high_confidence_count || 0);
+        const subtypeCount = Number(data.adhd_high_confidence_subtype_count || 0);
         const confidence = Number(data.confidence_score);
         if (!isAdhdLabel(data.predicted_class) || !isHighConfidence(confidence) || count < 2) {
           return "";
@@ -996,23 +1017,34 @@
         const subtypeKey = getSubtypeKeyFromLabel(data.predicted_class);
         if (!subtypeKey) return "";
         const bandStates = computeBandStatesFromResult(data, subtypeKey);
-        const items = collectRecommendations(subtypeKey, bandStates);
-        const subtypeCount = Number(data.adhd_high_confidence_subtype_count || 0);
+        const recommendationDetails = collectRecommendationDetails(subtypeKey, bandStates);
+        const items = recommendationDetails.map((item) => item.text);
+        const thresholdHeader = buildThresholdHeader(recommendationDetails);
+        let subtypeMessage = "";
         if (subtypeCount >= 2) {
-          const subtypeMessage =
-            appState.clinicianSubtypeRecommendations?.[subtypeKey]?.consistent_subtype;
-          if (subtypeMessage && String(subtypeMessage).trim()) {
-            items.unshift(String(subtypeMessage).trim());
-          }
+          subtypeMessage = appState.clinicianSubtypeRecommendations?.[subtypeKey]
+            ?.consistent_subtype;
         }
+        const subtypeText = subtypeMessage && String(subtypeMessage).trim()
+          ? String(subtypeMessage).trim()
+          : "";
         if (!items.length) {
-          return "";
+          return subtypeText ? `
+          <section class="detail-section recommendation-section">
+            <h3>Intervention Strategies &amp; Recommendations</h3>
+            <p class="recommendation-meta">${escapeHtml(subtypeText)}</p>
+          </section>` : "";
         }
 
         return `
           <section class="detail-section recommendation-section">
             <h3>Intervention Strategies &amp; Recommendations</h3>
-            <p class="recommendation-meta">Trigger: ${escapeHtml(String(count))} high-confidence ADHD-positive results recorded for this subject.</p>
+            ${subtypeText ? `<p class="recommendation-meta">${escapeHtml(subtypeText)}</p>` : ""}
+            ${
+              thresholdHeader
+                ? `<p class="recommendation-meta"><strong>${escapeHtml(thresholdHeader)}:</strong></p>`
+                : ""
+            }
             <ul class="recommendation-list">
               ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
             </ul>
@@ -1859,21 +1891,22 @@
         }
 
         const notesSection = `
-          <section class="detail-section">
-            <h3>Notes &amp; Disclaimers</h3>
-            <div style="background:#fff3cd;border:1px solid #e9d87a;padding:0.65rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;margin-bottom:${disclaimers.length ? "0.5rem" : "0"}">
-              <strong>Important:</strong> This system does not provide a definitive diagnosis. Results are for informational purposes only and must not be used as the sole basis for clinical decisions.
-            </div>
+          <div style="background:#fff3cd;border:1px solid #e9d87a;padding:0.65rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;">
+            <div style="font-weight:700;font-size:0.88rem;color:var(--text-900);margin-bottom:0.3rem;">Disclaimer</div>
+            <p style="margin:0;">
+              This report is generated by a computational EEG analysis tool and is intended
+              to support - not replace - clinical evaluation. All results must be interpreted
+              by a qualified healthcare professional in the context of the patient's full
+              clinical history and presentation.
+            </p>
             ${
               disclaimers.length
-                ? `<div style="background:#fff8e6;border:1px solid #f0d080;padding:0.55rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem;line-height:1.45;">
-              <ul style="margin:0;padding-left:1.2rem;">
-                ${disclaimers.map((d) => `<li style="margin:0.2rem 0">${escapeHtml(d)}</li>`).join("")}
-              </ul>
-            </div>`
+                ? `<ul style="margin:0.45rem 0 0;padding-left:1.2rem;">
+              ${disclaimers.map((d) => `<li style="margin:0.2rem 0">${escapeHtml(d)}</li>`).join("")}
+            </ul>`
                 : ""
             }
-          </section>`;
+          </div>`;
 
         // Topo maps placeholder (populated async)
         const topoSection = `
@@ -1918,27 +1951,61 @@
             </div>
           </section>`;
 
-        const layout = `
-          <div class="detail-flex">
-            <div class="detail-col">
-              ${subjectSection}
-              ${prepSection}
-              ${bandSection}
-              ${ratioSection}
-              ${notesSection}
+        const resultsOverviewSection = `
+          <section class="detail-group">
+            <div class="detail-group-header">
+              <h3>Clinical Summary</h3>
             </div>
-            <div class="detail-col detail-col-wide">
-              <div class="detail-row">
-                <div class="detail-cell">${classificationSection}</div>
-                <div class="detail-cell">${narrativeSection}</div>
+            <div class="detail-group-body">
+              <div class="detail-flex">
+                <div class="detail-col">
+                  ${subjectSection}
+                  ${bandSection}
+                  ${ratioSection}
+                </div>
+                <div class="detail-col detail-col-wide">
+                  <div class="detail-row">
+                    <div class="detail-cell">${classificationSection}</div>
+                    <div class="detail-cell">${narrativeSection}</div>
+                  </div>
+                  ${eegVizSection}
+                  ${topoSection}
+                </div>
               </div>
-              ${eegVizSection}
-              ${topoSection}
             </div>
-          </div>
+          </section>
         `;
 
-        body.innerHTML = layout + recommendationSection;
+        const guidanceSection = `
+          <section class="detail-group">
+            <div class="detail-group-header">
+              <h3>Safety &amp; Guidance</h3>
+            </div>
+            <div class="detail-group-body">
+              ${notesSection}
+              ${recommendationSection || ""}
+            </div>
+          </section>
+        `;
+
+        const preprocessingSection = `
+          <section class="detail-group">
+            <div class="detail-group-header">
+              <h3>Processing Notes</h3>
+            </div>
+            <div class="detail-group-body">
+              ${prepSection}
+            </div>
+          </section>
+        `;
+
+        const layout = `
+          ${resultsOverviewSection}
+          ${guidanceSection}
+          ${preprocessingSection}
+        `;
+
+        body.innerHTML = layout;
 
 
         // Setup topo toggle

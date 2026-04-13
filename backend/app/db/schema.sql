@@ -68,6 +68,133 @@ CREATE TABLE clinician_subtype_recommendations (
 INSERT INTO clinicians (first_name, last_name, middle_name, occupation, password_hash)
 VALUES ('Admin', 'Clinician', '', 'Administrator', 'scrypt:32768:8:1$W2H7WyHgIQs6dzbI$25d334197247946f01845eb3f8a041e9711b8b2be04c3cd3876c228fbe1bbfa718ef843c7dfd49f1fabcbd0e2c7dbd339a4c1a7c120202c094c5a01aa439fecb');
 
+-- Seed default ranges and interventions for the admin clinician
+WITH admin AS (
+    SELECT id
+    FROM clinicians
+    WHERE first_name = 'Admin' AND last_name = 'Clinician'
+    ORDER BY id
+    LIMIT 1
+)
+INSERT INTO clinician_band_thresholds
+    (clinician_id, adhd_subtype, band, min_value, max_value, created_at, updated_at)
+SELECT
+    admin.id,
+    values_data.adhd_subtype,
+    values_data.band,
+    values_data.min_value,
+    values_data.max_value,
+    NOW(),
+    NOW()
+FROM admin
+JOIN (
+    VALUES
+        ('inattentive', 'delta', 0.40, 0.90),
+        ('inattentive', 'theta', 0.10, 0.25),
+        ('inattentive', 'alpha', 0.03, 0.15),
+        ('inattentive', 'beta', 0.02, 0.15),
+        ('inattentive', 'gamma', 0.00, 0.08),
+        ('hyperactive_impulsive', 'delta', 0.40, 0.90),
+        ('hyperactive_impulsive', 'theta', 0.05, 0.20),
+        ('hyperactive_impulsive', 'alpha', 0.06, 0.18),
+        ('hyperactive_impulsive', 'beta', 0.05, 0.18),
+        ('hyperactive_impulsive', 'gamma', 0.00, 0.08),
+        ('combined', 'delta', 0.40, 0.90),
+        ('combined', 'theta', 0.05, 0.20),
+        ('combined', 'alpha', 0.03, 0.15),
+        ('combined', 'beta', 0.02, 0.15),
+        ('combined', 'gamma', 0.00, 0.08)
+) AS values_data(adhd_subtype, band, min_value, max_value)
+    ON TRUE
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM clinician_band_thresholds existing
+    WHERE existing.clinician_id = admin.id
+      AND existing.adhd_subtype = values_data.adhd_subtype
+      AND existing.band = values_data.band
+);
+
+WITH admin AS (
+    SELECT id
+    FROM clinicians
+    WHERE first_name = 'Admin' AND last_name = 'Clinician'
+    ORDER BY id
+    LIMIT 1
+)
+INSERT INTO clinician_recommendations
+    (clinician_id, adhd_subtype, band, band_state, recommendation_text, created_at, updated_at)
+SELECT
+    admin.id,
+    values_data.adhd_subtype,
+    values_data.band,
+    values_data.band_state,
+    values_data.recommendation_text,
+    NOW(),
+    NOW()
+FROM admin
+JOIN (
+    VALUES
+        ('inattentive', 'alpha', 'decreased', 'Support focus with structured routines and shorter tasks.'),
+        ('inattentive', 'alpha', 'elevated', 'Encourage active engagement and break long tasks into segments.'),
+        ('inattentive', 'beta', 'decreased', 'Promote alertness with brief movement and clear task cues.'),
+        ('inattentive', 'beta', 'elevated', 'Use calming pacing and reduce competing stimuli.'),
+        ('inattentive', 'theta', 'decreased', 'Monitor fatigue and allow regular rest breaks.'),
+        ('inattentive', 'theta', 'elevated', 'Use attention supports and minimize distractions.'),
+        ('hyperactive_impulsive', 'alpha', 'decreased', 'Add calming strategies and reduce sensory load.'),
+        ('hyperactive_impulsive', 'alpha', 'elevated', 'Channel energy into planned movement and short tasks.'),
+        ('hyperactive_impulsive', 'beta', 'decreased', 'Use clear structure and frequent check-ins.'),
+        ('hyperactive_impulsive', 'beta', 'elevated', 'Incorporate relaxation techniques and slow pacing.'),
+        ('hyperactive_impulsive', 'theta', 'decreased', 'Watch for overstimulation and offer quiet breaks.'),
+        ('hyperactive_impulsive', 'theta', 'elevated', 'Reinforce self-regulation and guided breathing.'),
+        ('combined', 'alpha', 'decreased', 'Balance focus supports with calming routines.'),
+        ('combined', 'alpha', 'elevated', 'Use engaging tasks with predictable structure.'),
+        ('combined', 'beta', 'decreased', 'Provide clear prompts and short task cycles.'),
+        ('combined', 'beta', 'elevated', 'Reduce pacing demands and reinforce relaxation.'),
+        ('combined', 'theta', 'decreased', 'Allow recovery time and monitor fatigue.'),
+        ('combined', 'theta', 'elevated', 'Use attention aids and simplify task environment.')
+) AS values_data(adhd_subtype, band, band_state, recommendation_text)
+    ON TRUE
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM clinician_recommendations existing
+    WHERE existing.clinician_id = admin.id
+      AND existing.adhd_subtype = values_data.adhd_subtype
+      AND existing.band = values_data.band
+      AND existing.band_state = values_data.band_state
+);
+
+WITH admin AS (
+    SELECT id
+    FROM clinicians
+    WHERE first_name = 'Admin' AND last_name = 'Clinician'
+    ORDER BY id
+    LIMIT 1
+)
+INSERT INTO clinician_subtype_recommendations
+    (clinician_id, adhd_subtype, trigger_key, recommendation_text, created_at, updated_at)
+SELECT
+    admin.id,
+    values_data.adhd_subtype,
+    values_data.trigger_key,
+    values_data.recommendation_text,
+    NOW(),
+    NOW()
+FROM admin
+JOIN (
+    VALUES
+        ('inattentive', 'consistent_subtype', 'Pattern suggests inattentive presentation; prioritize focus supports.'),
+        ('hyperactive_impulsive', 'consistent_subtype', 'Pattern suggests hyperactive-impulsive presentation; emphasize regulation strategies.'),
+        ('combined', 'consistent_subtype', 'Pattern suggests combined presentation; balance focus and regulation supports.')
+) AS values_data(adhd_subtype, trigger_key, recommendation_text)
+    ON TRUE
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM clinician_subtype_recommendations existing
+    WHERE existing.clinician_id = admin.id
+      AND existing.adhd_subtype = values_data.adhd_subtype
+      AND existing.trigger_key = values_data.trigger_key
+);
+
 CREATE TABLE recordings (
     id SERIAL PRIMARY KEY,
     file_name VARCHAR(50) NOT NULL,

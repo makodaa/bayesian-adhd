@@ -121,13 +121,6 @@ def _is_adhd_label(predicted_class: str) -> bool:
     return "non-adhd" not in label and "non adhd" not in label
 
 
-def _build_intervention_recommendations(count: int) -> str:
-    return (
-        "Two or more high-confidence ADHD-positive results were recorded "
-        f"(count: {count})."
-    )
-
-
 def _map_predicted_subtype(label: str | None) -> str | None:
     normalized = str(label or "").strip().lower()
     if "adhd" not in normalized:
@@ -155,11 +148,22 @@ def _subtype_band_preferences(subtype_key: str | None) -> list[dict[str, str]]:
     return []
 
 
+def _preference_state_for_band(
+    subtype_key: str | None, band: str
+) -> str | None:
+    preferences = _subtype_band_preferences(subtype_key)
+    for pref in preferences:
+        if pref.get("band") == band:
+            return pref.get("state")
+    return None
+
+
 def _compute_band_states(
     band_power: dict[str, float],
     thresholds: dict[str, dict[str, dict[str, float]]],
     subtype_key: str | None,
 ) -> dict[str, str]:
+    tolerance_pct = 2.5
     states: dict[str, str] = {}
     if not subtype_key:
         return states
@@ -175,23 +179,25 @@ def _compute_band_states(
             continue
         min_pct = float(min_val) * 100
         max_pct = float(max_val) * 100
-        if value < min_pct:
-            states[band] = "decreased"
-        elif value > max_pct:
-            states[band] = "elevated"
+        min_bound = min_pct - tolerance_pct
+        max_bound = max_pct + tolerance_pct
+        if min_bound <= value <= max_bound:
+            preference_state = _preference_state_for_band(subtype_key, band)
+            if preference_state:
+                states[band] = preference_state
     return states
 
 
-def _collect_recommendations(
+def _collect_recommendation_details(
     subtype_key: str | None,
     band_states: dict[str, str],
     recommendations: dict[str, dict[str, dict[str, str]]],
-) -> list[str]:
+) -> list[dict[str, str]]:
     if not subtype_key:
         return []
     preferences = _subtype_band_preferences(subtype_key)
     subtype_recs = recommendations.get(subtype_key, {}) if recommendations else {}
-    items: list[str] = []
+    items: list[dict[str, str]] = []
     for pref in preferences:
         band = pref["band"]
         state = pref["state"]
@@ -199,8 +205,32 @@ def _collect_recommendations(
             continue
         text = subtype_recs.get(band, {}).get(state, "")
         if text and str(text).strip():
-            items.append(str(text).strip())
+            items.append({"band": band, "state": state, "text": str(text).strip()})
     return items
+
+
+def _format_intervention_notes(
+    subtype_message: str,
+    recommendations: list[dict[str, str]],
+) -> str | None:
+    lines: list[str] = []
+    if subtype_message:
+        lines.append(subtype_message)
+
+    if recommendations:
+        header_parts = []
+        for item in recommendations:
+            band_label = item["band"].capitalize()
+            state_label = "Elevated" if item["state"] == "elevated" else "Reduced"
+            header_parts.append(f"{band_label} {state_label}")
+        header = ", ".join(header_parts)
+        if header:
+            lines.append(f"<b>{header}:</b>")
+        lines.extend(f"- {item['text']}" for item in recommendations)
+
+    if not lines:
+        return None
+    return "<br/>".join(lines)
 
 
 def _build_configured_recommendations(
@@ -216,23 +246,19 @@ def _build_configured_recommendations(
     if not subtype_key:
         return None
     band_states = _compute_band_states(band_power, thresholds, subtype_key)
-    items = _collect_recommendations(subtype_key, band_states, recommendations)
+    items = _collect_recommendation_details(subtype_key, band_states, recommendations)
+    subtype_message = ""
     if subtype_count >= 2:
         subtype_message = (
             subtype_recommendations.get(subtype_key, {}).get("consistent_subtype")
             if subtype_recommendations
             else ""
         )
-        if subtype_message and str(subtype_message).strip():
-            items.insert(0, str(subtype_message).strip())
-    if not items:
-        return None
-
-    header = _build_intervention_recommendations(count)
-    item_lines = "<br/>".join(
-        f"{index + 1}) {item}" for index, item in enumerate(items)
+    formatted = _format_intervention_notes(
+        str(subtype_message).strip() if subtype_message else "",
+        items,
     )
-    return f"{header}<br/>{item_lines}"
+    return formatted
 
 
 def _extract_ratio(ratios: list[dict], ratio_name: str) -> float:
@@ -977,9 +1003,9 @@ class PDFReportService:
                 clinician_recommendations,
                 clinician_subtype_recommendations,
             )
-        behavioral_notes = (
-            _display(result_data.get("behavioral_notes"), "No notes")
-            if eligible_for_recommendations
+        intervention_notes = (
+            intervention_recommendations
+            if intervention_recommendations
             else "No notes"
         )
 
@@ -1044,7 +1070,7 @@ class PDFReportService:
             "diagnostic_significance": diagnostic_significance,
             "clinical_comments": clinical_comments,
             "intervention_recommendations": intervention_recommendations,
-            "behavioral_notes": behavioral_notes,
+            "intervention_notes": intervention_notes,
             "post_assessment_notes": _display(
                 result_data.get("post_assessment_notes"), "Not recorded"
             ),
@@ -1369,14 +1395,14 @@ class PDFReportService:
                 bold=True,
             ),
         ]
-        behavioral_block = [
+        intervention_block = [
             build_section_header(
-                "BEHAVIORAL NOTES",
+                "INTERVENTION NOTES",
                 self.styles,
                 colored=False,
             ),
             build_shaded_content_box(
-                report_data["behavioral_notes"],
+                report_data["intervention_notes"],
                 self.styles,
                 width / 2 - 6,
                 min_height=40,
@@ -1422,7 +1448,7 @@ class PDFReportService:
 
         rows = [
             [summary_block, pre_block],
-            [diagnostic_block, behavioral_block],
+            [diagnostic_block, intervention_block],
             [disclaimer_block, ""],
         ]
 

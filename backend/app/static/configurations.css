@@ -154,7 +154,7 @@
 
 .recommendation-row-single {
   padding-top: 0.4rem;
-  border-top: 1px dashed rgba(15, 23, 42, 0.12);
+  margin-bottom: 0.6rem;
 }
 
 .recommendation-fields-single {
