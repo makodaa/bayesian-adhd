@@ -134,24 +134,24 @@ SELECT
 FROM admin
 JOIN (
     VALUES
-        ('inattentive', 'alpha', 'decreased', 'Support focus with structured routines and shorter tasks.'),
-        ('inattentive', 'alpha', 'elevated', 'Encourage active engagement and break long tasks into segments.'),
-        ('inattentive', 'beta', 'decreased', 'Promote alertness with brief movement and clear task cues.'),
-        ('inattentive', 'beta', 'elevated', 'Use calming pacing and reduce competing stimuli.'),
-        ('inattentive', 'theta', 'decreased', 'Monitor fatigue and allow regular rest breaks.'),
-        ('inattentive', 'theta', 'elevated', 'Use attention supports and minimize distractions.'),
-        ('hyperactive_impulsive', 'alpha', 'decreased', 'Add calming strategies and reduce sensory load.'),
-        ('hyperactive_impulsive', 'alpha', 'elevated', 'Channel energy into planned movement and short tasks.'),
-        ('hyperactive_impulsive', 'beta', 'decreased', 'Use clear structure and frequent check-ins.'),
-        ('hyperactive_impulsive', 'beta', 'elevated', 'Incorporate relaxation techniques and slow pacing.'),
-        ('hyperactive_impulsive', 'theta', 'decreased', 'Watch for overstimulation and offer quiet breaks.'),
-        ('hyperactive_impulsive', 'theta', 'elevated', 'Reinforce self-regulation and guided breathing.'),
-        ('combined', 'alpha', 'decreased', 'Balance focus supports with calming routines.'),
-        ('combined', 'alpha', 'elevated', 'Use engaging tasks with predictable structure.'),
-        ('combined', 'beta', 'decreased', 'Provide clear prompts and short task cycles.'),
-        ('combined', 'beta', 'elevated', 'Reduce pacing demands and reinforce relaxation.'),
-        ('combined', 'theta', 'decreased', 'Allow recovery time and monitor fatigue.'),
-        ('combined', 'theta', 'elevated', 'Use attention aids and simplify task environment.')
+        ('inattentive', 'alpha', 'decreased', 'Use a daily schedule with short, simple tasks.'),
+        ('inattentive', 'alpha', 'elevated', 'Break big homework into small, easy steps.'),
+        ('inattentive', 'beta', 'decreased', 'Take quick wiggle breaks to help stay alert.'),
+        ('inattentive', 'beta', 'elevated', 'Find a quiet, calm spot to do work.'),
+        ('inattentive', 'theta', 'decreased', 'Take short rests to prevent getting too tired.'),
+        ('inattentive', 'theta', 'elevated', 'Keep the desk clear of toys and noise.'),
+        ('hyperactive_impulsive', 'alpha', 'decreased', 'Use soft music or dim lights to stay calm.'),
+        ('hyperactive_impulsive', 'alpha', 'elevated', 'Do a quick stretch before starting a task.'),
+        ('hyperactive_impulsive', 'beta', 'decreased', 'Check in with a parent every few minutes.'),
+        ('hyperactive_impulsive', 'beta', 'elevated', 'Take slow, deep breaths to slow things down.'),
+        ('hyperactive_impulsive', 'theta', 'decreased', 'Go to a quiet corner if feeling overwhelmed.'),
+        ('hyperactive_impulsive', 'theta', 'elevated', 'Practice ''belly breathing'' to help stay in control.'),
+        ('combined', 'alpha', 'decreased', 'Mix quiet work time with calming activities.'),
+        ('combined', 'alpha', 'elevated', 'Follow the same routine for schoolwork every day.'),
+        ('combined', 'beta', 'decreased', 'Use a timer to see how much is done.'),
+        ('combined', 'beta', 'elevated', 'Slow down and work at a comfortable pace.'),
+        ('combined', 'theta', 'decreased', 'Take a five-minute break after every task.'),
+        ('combined', 'theta', 'elevated', 'Use a checklist to mark off finished work.')
 ) AS values_data(adhd_subtype, band, band_state, recommendation_text)
     ON TRUE
 WHERE NOT EXISTS (
@@ -182,9 +182,9 @@ SELECT
 FROM admin
 JOIN (
     VALUES
-        ('inattentive', 'consistent_subtype', 'Pattern suggests inattentive presentation; prioritize focus supports.'),
-        ('hyperactive_impulsive', 'consistent_subtype', 'Pattern suggests hyperactive-impulsive presentation; emphasize regulation strategies.'),
-        ('combined', 'consistent_subtype', 'Pattern suggests combined presentation; balance focus and regulation supports.')
+        ('inattentive', 'consistent_subtype', 'This pattern suggests your child finds it hard to stay focused; prioritize using tools that help them stay organized.'),
+        ('hyperactive_impulsive', 'consistent_subtype', 'This pattern suggests your child has a lot of energy; emphasize strategies that help them feel calm and in control.'),
+        ('combined', 'consistent_subtype', 'This pattern suggests a mix of both; balance focus tools with ways to manage high energy.')
 ) AS values_data(adhd_subtype, trigger_key, recommendation_text)
     ON TRUE
 WHERE NOT EXISTS (
